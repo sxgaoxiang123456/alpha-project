@@ -1,6 +1,11 @@
 # Claude Code 配置
-.claude/
+# .claude/ 整体不忽略，按子目录精确控制
 .mcp.json
+
+# MCP 虚拟环境和构建产物
+.claude/mcp/*/.venv/
+.claude/mcp/*/build/
+.claude/mcp/*/*.egg-info/
 
 # Python
 __pycache__/
