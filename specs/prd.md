@@ -314,7 +314,7 @@ A 股个人投资者面临的信息过载问题日益严重。同花顺 MAU 超 
 - `error`: string, 失败原因（如有）
 
 **边界条件**：
-- 飞书免费额度耗尽（10,000 次/月）→ 自动切换 Telegram，Dashboard 提示"主通道额度耗尽"
+- 飞书 Open API QPS 限流或连续 API 错误 → 自动切换 Telegram，Dashboard 提示"主通道限流/不可用"
 - Telegram 需代理但代理不可用 → 本地日志记录，标记为"待重试"
 - 推送内容过长 → 截断为摘要+"查看详情"链接
 - 网络超时 → 重试 2 次，仍失败则降级
@@ -588,7 +588,7 @@ Dashboard (首页)
 - 规则开关（启用/暂停）
 
 **设置页**
-- 推送通道配置（Webhook URL / Bot Token）
+- 推送通道配置（飞书 app_id / app_secret / brand / chat_id，Telegram Bot Token）
 - 数据源偏好设置
 - 导入/导出自选股（CSV）
 
@@ -651,7 +651,7 @@ Dashboard (首页)
 
 ### AC-F3-03：推送通道降级
 
-**Given** 飞书 Webhook 配置错误
+**Given** 飞书认证失败（app_id/app_secret 配置错误）或 API 限流
 **When** 预警触发
 **Then** 自动尝试 Telegram 通道，Telegram 成功则用户收到通知；双失败则 Dashboard 显示未读标记
 
@@ -813,7 +813,7 @@ Dashboard (首页)
 | R-02 | 爬虫法律风险 | 高 | 低 | **绝不直接爬取东方财富/雪球**，仅通过封装库间接使用 |
 | R-03 | 推送过频导致用户关闭通知 | 中 | 高 | 冷却期机制 + 分级触达 + 用户可设置每日推送上限 |
 | R-04 | Tushare 商用边界模糊 | 中 | 低 | 系统仅服务部署者本人，不对外提供数据服务 |
-| R-05 | 飞书 API 限制/额度耗尽 | 中 | 中 | 双通道冗余（Telegram 备用）+ 本地日志兜底 |
+| R-05 | 飞书 Open API QPS 限流或连续错误 | 中 | 中 | 双通道冗余（Telegram 备用）+ 本地日志兜底 |
 | R-06 | 涉及"投资建议"红线 | 高 | 低 | 全程加免责声明："仅供参考，不构成投资建议" |
 | R-07 | LLM API 成本上涨/服务中断 | 低 | 低 | 支持模型热切换（GPT-4o-mini / DeepSeek / 本地模型） |
 | R-08 | 单进程架构扩展瓶颈 | 中 | 中 | MVP 期自选股上限 100 只；> 200 只时评估分布式重构 |
@@ -845,7 +845,7 @@ Dashboard (首页)
 | DR-01 | v1.0 不做实盘交易 | ✅ 已闭环 | 合规 + 技术门槛 |
 | DR-02 | v1.0 不做 WebSocket 实时推送 | ✅ 已闭环 | 零成本方案无法保障 |
 | DR-03 | v1.0 不做 MCP Server | ✅ 已闭环 | 生态不成熟 |
-| DR-04 | 推送主通道选飞书 | ✅ 已闭环 | 10 分钟接入，10,000 次/月免费 |
+| DR-04 | 推送主通道选飞书（lark-cli Open API） | ✅ 已闭环 | 通过 lark-cli 调用 Open API，企业自建应用约 20 QPS，无月额度限制 |
 | DR-05 | 数据方案零成本起步 | ✅ 已闭环 | AkShare + BaoStock 验证后再升级 |
 
 ---
@@ -908,7 +908,7 @@ Dashboard (首页)
 | AkShare | 开源 Python 财经数据接口库 |
 | BaoStock | 开源 A 股历史数据接口 |
 | Tushare | 积分制金融数据 API 平台 |
-| 飞书 Webhook | 飞书开放平台机器人消息推送接口 |
+| 飞书 Open API（lark-cli） | 飞书官方 CLI 工具，调用开放平台 API 发送消息 |
 | LLM | 大语言模型（如 GPT-4o-mini、DeepSeek） |
 | PWA | Progressive Web App，可安装到手机桌面的 Web 应用 |
 | 复权 | 考虑分红、配股后的股票价格调整 |
