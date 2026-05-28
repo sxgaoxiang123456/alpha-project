@@ -7,7 +7,7 @@
 
 ## Summary
 
-自选股管理是系统的数据入口和基础数据层。本计划涵盖：股票搜索与添加、CSV 批量导入/导出、分组 CRUD、持仓成本管理、以及单只股票删除与批量删除。实现一个基于 FastAPI + SQLAlchemy + SQLite 的 Web API 层，配合轻量级 Jinja2 模板前端，支撑 Dashboard 的自选股展示与操作。
+自选股管理是系统的数据入口和基础数据层。本计划涵盖：股票搜索与添加、CSV 批量导入/导出、分组 CRUD、持仓成本管理、以及单只股票删除与批量删除。实现一个基于 FastAPI + SQLAlchemy + SQLite 的 Web API 层，配合 Jinja2 服务端渲染 + Tailwind CSS 前端（设计参考：`design-reference/stitch-export/watchlist_management_a_share_ai_monitor/code.html`），支撑 Dashboard 的自选股展示与操作。
 
 ---
 
@@ -19,10 +19,13 @@
 **Data Validation**: Pydantic 2.0+（请求/响应模型校验）  
 **Storage**: SQLite 3.39+（MVP 单用户零配置方案，通过 SQLAlchemy 抽象后续可无缝迁移 PostgreSQL）  
 **Template Engine**: Jinja2 3.1+（Dashboard HTML 渲染）  
+**CSS Framework**: Tailwind CSS 3.4+（CDN 引入，设计系统参考 `design-reference/DESIGN.md`）  
+**Icons**: Material Symbols Outlined（Google Fonts CDN）  
+**Fonts**: Hanken Grotesk（标题）、JetBrains Mono（数据/价格）、Inter（正文）  
 **Server**: Uvicorn 0.27+（ASGI 服务器）  
 **Testing**: pytest 8.0+ + httpx 0.27+（异步测试客户端）  
 **Target Platform**: Linux Docker 容器（Alpine 或 slim 基础镜像）  
-**Project Type**: Web application（后端 API + 服务端渲染前端）  
+**Project Type**: Web application（后端 API + 服务端渲染前端，Jinja2 + Tailwind CSS）  
 **Performance Goals**: 自选股列表查询 p95 < 200ms，批量导入 20 只 < 10s  
 **Constraints**: 单进程单用户架构，自选股上限 100 只，CSV 单次上限 100 行  
 **Scale/Scope**: 个人级部署，单用户并发，100 只自选股 × 不限制分组数量
@@ -81,18 +84,26 @@ AlphaProject/
 │   │   └── stock.py            # Pydantic 模型：股票信息/搜索结果
 │   ├── static/
 │   │   ├── css/
+│   │   │   └── watchlist.css   # 自选股页面专用样式（响应式、hover 效果）
 │   │   └── js/
+│   │       └── watchlist.js    # 批量选择、分组切换、行内编辑交互
 │   └── templates/
-│       ├── base.html           # 基础布局模板
+│       ├── base.html           # 基础布局模板：HTML5 骨架 + Tailwind CDN + Google Fonts + Material Symbols
 │       ├── watchlist/
-│       │   ├── list.html       # 自选股列表页（分组筛选）
-│       │   ├── add.html        # 添加股票弹窗/页面
-│       │   └── edit.html       # 编辑持仓信息弹窗
+│       │   ├── list.html       # 自选股列表主页面：SideNavBar + TopNavBar + FilterSidebar + StockDataTable + EmptyState
+│       │   ├── add_modal.html  # 添加股票弹窗（CommandBar 搜索 + 分组选择）
+│       │   └── edit_modal.html # 编辑持仓信息弹窗（成本/股数编辑）
 │       ├── groups/
-│       │   └── manage.html     # 分组管理页面
+│       │   └── manage.html     # 分组管理页面（CRUD + 删除确认弹窗）
 │       └── components/
-│           ├── search_box.html # 搜索框组件
-│           └── stock_card.html # 股票卡片组件
+│           ├── side_nav.html        # SideNavBar 组件（导航菜单 + AI 简报按钮）
+│           ├── top_nav.html         # TopNavBar 组件（CommandBar 搜索框 + 通知 + 用户头像）
+│           ├── filter_sidebar.html  # FilterSidebar 组件（分组列表 + 新建分组）
+│           ├── stock_table.html     # StockDataTable 组件（表头控制 + 数据表格 + 批量操作）
+│           ├── stock_table_row.html # StockDataTable 行组件（代码/名称 + 分组标签 + 价格/成本/盈亏 + 迷你趋势图 + 操作按钮）
+│           ├── empty_state.html     # EmptyState 组件（空自选股引导页）
+│           ├── alert_badge.html     # AlertBadge 组件（触及目标/预警标签）
+│           └── metric_tag.html      # MetricCard(Tag) 组件（分组标签样式）
 ├── data/
 │   └── watchlist.db            # SQLite 数据库文件（gitignored）
 ├── tests/
@@ -119,7 +130,66 @@ AlphaProject/
 - models/ 使用 SQLAlchemy 2.0 声明式风格，为后续 SQLAlchemy Async 迁移预留接口
 - routers/ 按资源划分（watchlist, groups, import_export），符合 RESTful 设计
 - schemas/ 独立存放 Pydantic 模型，与 SQLAlchemy 模型分离，避免循环依赖
-- templates/ 使用 Jinja2 服务端渲染，HTMX 处理无刷新交互，避免引入前端构建工具链
+- templates/ 使用 Jinja2 服务端渲染 + Tailwind CSS CDN，纯 CSS 交互（hover、transition），无需前端构建工具链
+- 组件化模板：每个 UI 组件独立为 Jinja2 macro/ include，便于在 Dashboard 复用
+- 设计系统严格遵循 `design-reference/DESIGN.md` 的配色、字体、间距规范
+
+---
+
+## Frontend Design
+
+本章节定义自选股管理模块的前端 UI 设计，基于 `design-reference/DESIGN.md` 设计系统和 `design-reference/stitch-export/watchlist_management_a_share_ai_monitor/code.html` 视觉参考样本。
+
+### 页面布局
+
+自选股列表页采用 **12 列固定网格** 布局（DESIGN.md §Layout & Spacing）：
+- **Desktop**: SideNavBar（固定宽 256px）+ Main Content Area（flex-1，1280px 居中）
+- **Main Content**: TopNavBar（sticky，高 64px）+ Page Content（可滚动）
+- **Page Content**: Header Section（标题 + 操作按钮）+ Main Workspace Grid（12 列）
+  - Filter Sidebar：`col-span-12 md:col-span-3 lg:col-span-2`
+  - Data Table Area：`col-span-12 md:col-span-9 lg:col-span-10`
+
+### 组件清单
+
+| 组件名 | 类型 | 对应 DESIGN.md 章节 | 视觉参考样本路径 |
+|:---|:---|:---|:---|
+| SideNavBar | 布局组件 | §Layout & Spacing（导航栏） | `design-reference/stitch-export/watchlist_management_a_share_ai_monitor/code.html` L121-153 |
+| TopNavBar | 布局组件 | §Layout & Spacing（顶部栏） | 同上 L157-179 |
+| CommandBar | 输入组件 | §Components / Input Forms (Command Bar) | 同上 L159-161 |
+| FilterSidebar | 导航组件 | §Layout & Spacing（侧边栏） | 同上 L196-219 |
+| StockDataTable | 数据组件 | §Components / Stock Data Tables | 同上 L247-359 |
+| MetricTag | 标签组件 | §Components / Metric Cards（标签变体） | 同上 L275-276, L307-308 |
+| AlertBadge | 状态组件 | §Components / Alert Badges | 同上 L349 |
+| Checkbox | 表单组件 | §Components / Checkboxes | 同上 L251-252, L266-267 |
+| EmptyState | 空状态组件 | —（页面级空状态） | 同上 L365-378（注释区） |
+| MiniSparkline | 图表组件 | §Components / Stock Data Tables（Mini-Charts） | 同上 L281-286, L313-318 |
+
+### 设计 Token 映射
+
+| Token 类别 | 设计值 | Tailwind 类名 |
+|:---|:---|:---|
+| Background | `#11131c` | `bg-background` |
+| Surface Base | `#0F172A` | `bg-surface-base` |
+| Surface Raised | `#1E293B` | `bg-surface-raised` |
+| Primary | `#b7c4ff` | `text-primary` / `bg-primary` |
+| Primary Container | `#0052ff` | `bg-primary-container` |
+| Market Up | `#F43F5E` | `text-market-up` |
+| Market Down | `#10B981` | `text-market-down` |
+| Market Warning | `#F59E0B` | `text-market-warning` |
+| On Surface | `#e1e1ef` | `text-on-surface` |
+| On Surface Variant | `#c3c5d9` | `text-on-surface-variant` |
+| Outline Variant | `#434656` | `border-outline-variant` |
+| Headline Font | Hanken Grotesk | `font-headline-lg` / `font-headline-md` |
+| Data Font | JetBrains Mono | `font-data-table` / `font-display-price` |
+| Body Font | Inter | `font-body-md` / `font-label-caps` |
+
+### 响应式断点
+
+| 断点 | 布局变化 |
+|:---|:---|
+| Desktop (>= 1024px) | 12 列网格，SideNav 固定，FilterSidebar 2 列，Table 10 列 |
+| Tablet (768-1023px) | FilterSidebar 3 列，Table 9 列 |
+| Mobile (< 768px) | FilterSidebar 全宽堆叠，Table 全宽横向滚动，SideNav 收起为 bottom nav |
 
 ---
 
@@ -187,11 +257,16 @@ graph TD
 
     subgraph "前端层"
         Browser[用户浏览器]
-        HTMX[HTMX 交互]
+        Tailwind[Tailwind CSS CDN]
         Jinja2[Jinja2 模板渲染]
+        JS[原生 JS 交互]
     end
 
     Browser -->|HTTP| FastAPI
+    Jinja2 --> Browser
+    Browser --> Tailwind
+    Browser --> JS
+    JS -->|GET/POST| FastAPI
     FastAPI --> RouterWatchlist
     FastAPI --> RouterGroups
     FastAPI --> RouterImport
@@ -212,8 +287,9 @@ graph TD
 
     FastAPI --> Jinja2
     Jinja2 --> Browser
-    Browser --> HTMX
-    HTMX --> FastAPI
+    Browser --> Tailwind
+    Browser --> JS
+    JS -->|GET/POST| FastAPI
 ```
 
 ---
@@ -304,17 +380,18 @@ graph TD
 
 **反决策**: PostgreSQL 需要额外容器，增加部署复杂度，MVP 期收益不匹配成本。
 
-### DD-002: Jinja2 + HTMX 而非 React/Vue
+### DD-002: Jinja2 + Tailwind CSS CDN 而非 React/Vue SPA
 
-**决策**: 使用服务端渲染 + HTMX 实现前端交互。
+**决策**: 使用 Jinja2 服务端渲染 + Tailwind CSS CDN 实现前端，纯原生 JS 处理交互（批量选择、分组切换、行内编辑）。
 
 **理由**:
-- 减少前端构建工具链（无需 Node.js、webpack、npm）
-- 降低整体部署包体积和复杂度
-- 本 feature 交互简单（表单提交、列表展示、弹窗），无需 SPA 架构
-- 符合"能跑就行"的 MVP 原则
+- 设计参考 `watchlist_management_a_share_ai_monitor/code.html` 已基于 Tailwind CSS CDN，无需额外构建工具链
+- 视觉设计系统（`design-reference/DESIGN.md`）的配色、字体、间距通过 Tailwind Config 直接映射为 utility class
+- 本 feature 交互以展示和表单为主（列表筛选、批量选择、弹窗编辑），无需 SPA 状态管理
+- Jinja2 macro/component 模板可直接复用到 006-dashboard 模块
+- 减少部署包体积，零 npm/node 依赖
 
-**反决策**: React/Vue 引入前端工程化，对个人部署者增加学习成本。
+**反决策**: React/Vue SPA 引入前端工程化和状态管理，对个人部署者增加学习成本和构建复杂度。HTMX 因设计样本未使用且 Tailwind + 原生 JS 足够覆盖交互需求，不再引入。
 
 ### DD-003: CSV 行数前置检查而非流式处理
 

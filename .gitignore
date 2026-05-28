@@ -1,6 +1,7 @@
 # Claude Code 配置
 # .claude/ 整体不忽略，按子目录精确控制
 .mcp.json
+.claude/worktrees/
 
 # MCP 虚拟环境和构建产物
 .claude/mcp/*/.venv/

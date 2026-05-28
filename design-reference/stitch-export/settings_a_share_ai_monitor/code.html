@@ -1,0 +1,347 @@
+<!DOCTYPE html><html class="dark" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Settings - A-Share AI Monitor</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "primary-container": "#0052ff",
+                      "surface-raised": "#1E293B",
+                      "surface-container-low": "#191b25",
+                      "surface-bright": "#373943",
+                      "on-tertiary-fixed-variant": "#891e00",
+                      "inverse-on-surface": "#2e303a",
+                      "on-error-container": "#ffdad6",
+                      "on-primary": "#002682",
+                      "on-primary-fixed-variant": "#0038b6",
+                      "market-warning": "#F59E0B",
+                      "primary-fixed": "#dde1ff",
+                      "secondary": "#b7c8e1",
+                      "on-secondary-fixed": "#0b1c30",
+                      "outline": "#8d90a2",
+                      "secondary-fixed": "#d3e4fe",
+                      "surface-tint": "#b7c4ff",
+                      "on-tertiary": "#611300",
+                      "surface-variant": "#32343f",
+                      "error-container": "#93000a",
+                      "tertiary": "#ffb4a1",
+                      "surface-base": "#0F172A",
+                      "tertiary-container": "#bf3003",
+                      "tertiary-fixed": "#ffdbd2",
+                      "on-tertiary-fixed": "#3c0800",
+                      "surface-dim": "#11131c",
+                      "secondary-container": "#3a4a5f",
+                      "surface": "#11131c",
+                      "background": "#11131c",
+                      "on-secondary": "#213145",
+                      "market-up": "#F43F5E",
+                      "outline-variant": "#434656",
+                      "inverse-primary": "#004ced",
+                      "surface-lowest": "#020617",
+                      "primary": "#b7c4ff",
+                      "surface-container-lowest": "#0c0e17",
+                      "on-background": "#e1e1ef",
+                      "surface-container-highest": "#32343f",
+                      "on-tertiary-container": "#ffddd5",
+                      "inverse-surface": "#e1e1ef",
+                      "error": "#ffb4ab",
+                      "surface-container-high": "#282934",
+                      "on-primary-fixed": "#001452",
+                      "surface-container": "#1d1f29",
+                      "on-surface": "#e1e1ef",
+                      "secondary-fixed-dim": "#b7c8e1",
+                      "on-secondary-container": "#a9bad3",
+                      "on-primary-container": "#dfe3ff",
+                      "tertiary-fixed-dim": "#ffb4a1",
+                      "on-secondary-fixed-variant": "#38485d",
+                      "primary-fixed-dim": "#b7c4ff",
+                      "market-down": "#10B981",
+                      "on-error": "#690005",
+                      "on-surface-variant": "#c3c5d9"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "stack-tight": "4px",
+                      "container-gap": "24px",
+                      "card-padding": "16px",
+                      "table-row-height": "40px",
+                      "stack-md": "12px"
+              },
+              "fontFamily": {
+                      "headline-md": [
+                              "Hanken Grotesk"
+                      ],
+                      "data-table": [
+                              "JetBrains Mono"
+                      ],
+                      "display-price": [
+                              "JetBrains Mono"
+                      ],
+                      "headline-lg": [
+                              "Hanken Grotesk"
+                      ],
+                      "label-caps": [
+                              "Inter"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "headline-md": [
+                              "18px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "data-table": [
+                              "13px",
+                              {
+                                      "lineHeight": "16px",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "display-price": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-lg": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "label-caps": [
+                              "11px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+    </script>
+<style>
+        body {
+            background-color: #020617; /* surface-lowest fallback */
+            color: #e1e1ef; /* on-background fallback */
+        }
+        /* Hide scrollbar for clean look but allow scrolling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #020617;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1E293B;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #32343f;
+        }
+    </style>
+</head>
+<body class="bg-surface-lowest text-on-background font-body-md text-body-md antialiased overflow-x-hidden">
+<!-- SideNavBar -->
+<nav class="bg-surface-container-lowest dark:bg-surface-container-lowest border-r border-outline-variant dark:border-outline-variant w-64 h-screen fixed left-0 top-0 flex flex-col h-full py-6 z-40">
+<div class="px-6 mb-8 flex flex-col gap-1">
+<span class="font-headline-lg text-headline-lg font-bold text-primary-container dark:text-primary">A股 AI 盯盘助手</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant">机构级</span>
+</div>
+<div class="flex-1 px-4 space-y-2">
+<a class="flex items-center gap-3 px-4 py-3 rounded text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-variant dark:hover:bg-surface-variant transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-headline-md text-headline-md text-sm">控制面板</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-variant dark:hover:bg-surface-variant transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">monitoring</span>
+<span class="font-headline-md text-headline-md text-sm">自选股</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-variant dark:hover:bg-surface-variant transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">notifications_active</span>
+<span class="font-headline-md text-headline-md text-sm">预警规则</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded text-primary dark:text-primary-fixed border-r-2 border-primary-container font-bold bg-surface-container-high dark:bg-surface-container-high transition-transform hover:scale-[0.99]" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">settings</span>
+<span class="font-headline-md text-headline-md text-sm">设置</span>
+</a>
+</div>
+<div class="px-6 mt-auto pt-6 border-t border-outline-variant">
+<button class="w-full py-2 bg-primary-container text-white rounded font-headline-md text-headline-md text-sm hover:bg-primary-fixed-variant transition-colors flex items-center justify-center gap-2"><span class="material-symbols-outlined text-sm">save</span> 保存配置</button>
+</div>
+</nav>
+<!-- TopNavBar -->
+<header class="ml-64 flex justify-between items-center px-8 h-16 w-[calc(100%-16rem)] bg-surface dark:bg-surface/80 backdrop-blur-md border-b border-outline-variant dark:border-outline-variant full-width top-0 sticky z-50 transition-all duration-200">
+<div class="flex items-center gap-4">
+<span class="font-headline-md text-headline-md text-primary dark:text-primary hidden">A-Share AI Monitor</span>
+<!-- Search positioned on left as per specs, though specs also say "A-Share AI Monitor" is product name, keeping search prominent -->
+<div class="relative w-96 hidden md:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">search</span>
+<input class="w-full bg-surface-raised border border-outline-variant rounded py-1.5 pl-10 pr-4 font-data-table text-data-table text-on-surface focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-all placeholder:text-on-surface-variant" placeholder="Search stock code or name (e.g. 600519)..." type="text">
+</div>
+</div>
+<div class="flex items-center gap-6">
+<button class="text-on-surface-variant hover:text-primary dark:hover:text-primary-fixed transition-colors">
+<span class="material-symbols-outlined">sync</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary dark:hover:text-primary-fixed transition-colors">
+<span class="material-symbols-outlined">account_balance_wallet</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary dark:hover:text-primary-fixed transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute -top-1 -right-1 w-2 h-2 bg-market-up rounded-full"></span>
+</button>
+<div class="w-8 h-8 rounded-full bg-surface-variant overflow-hidden border border-outline-variant">
+<img alt="User Avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCxxYjjYQn_8_PUMCwLgS4DMpSLMZnN8ey9tRPDozksBtdG51oYITE5h_-zn3jqKM0-kAUg3elGWwlglYv11xTQxV4sTTi3SEzUXQKBopZ7oDG8vBR2F02pfpXp45I8e5cf3rmS-nJaSB0upeA_BNYIwUE13Gl9kepujKSVTr_eimpYFDDXuNmOJ2MYD0nNSxK1qq81APzQ5-yp7pNMZArxZKKqDp5RtPBBM9FxfozCVQ0PuWLc7yJE_9ofyFAXS5sTkwUM59vm7fM">
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-64 p-8 min-h-screen">
+<div class="max-w-4xl mx-auto space-y-8">
+<!-- Page Header -->
+<div class="mb-8">
+<h1 class="font-headline-lg text-headline-lg text-on-surface">系统设置</h1>
+<p class="text-on-surface-variant mt-1">配置数据流水线、告警通道及系统偏好。</p>
+</div>
+<!-- Bento Grid Layout for Settings -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-container-gap">
+<!-- Data Source Configuration -->
+<div class="bg-surface-base border border-outline-variant rounded p-card-padding col-span-1 lg:col-span-2 shadow-sm">
+<div class="flex items-center gap-2 mb-6 border-b border-outline-variant pb-4">
+<span class="material-symbols-outlined text-primary">database</span>
+<h2 class="font-headline-md text-headline-md">数据源配置</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<div class="space-y-4">
+<label class="flex items-center gap-3 cursor-pointer">
+<input checked="" class="w-4 h-4 text-primary-container bg-surface-raised border-outline-variant focus:ring-primary-container rounded-sm" name="datasource" type="radio">
+<div>
+<span class="block font-headline-md text-headline-md text-sm text-on-surface">主数据源 (AkShare)</span>
+<span class="block text-on-surface-variant text-xs">高频、全市场覆盖。</span>
+</div>
+</label>
+<label class="flex items-center gap-3 cursor-pointer opacity-70">
+<input class="w-4 h-4 text-primary-container bg-surface-raised border-outline-variant focus:ring-primary-container rounded-sm" name="datasource" type="radio">
+<div>
+<span class="block font-headline-md text-headline-md text-sm text-on-surface">备用数据源 (BaoStock)</span>
+<span class="block text-on-surface-variant text-xs">故障切换源，频率较低。</span>
+</div>
+</label>
+</div>
+<div class="bg-surface-raised border border-outline-variant rounded p-4 flex flex-col justify-center">
+<div class="flex items-center justify-between mb-2">
+<span class="font-label-caps text-label-caps text-on-surface-variant">连接状态</span>
+<span class="flex items-center gap-1 text-market-down font-data-table text-data-table"><span class="material-symbols-outlined text-xs">check_circle</span> 稳定</span>
+</div>
+<div class="font-data-table text-data-table text-on-surface flex justify-between border-t border-outline-variant pt-2">
+<span class="text-on-surface-variant">延迟:</span>
+<span class="">24ms</span>
+</div>
+<div class="font-data-table text-data-table text-on-surface flex justify-between mt-1">
+<span class="text-on-surface-variant">最后同步:</span>
+<span class="">12:04:15 PM</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Push Channel Configuration -->
+<div class="bg-surface-base border border-outline-variant rounded p-card-padding">
+<div class="flex items-center gap-2 mb-6 border-b border-outline-variant pb-4">
+<span class="material-symbols-outlined text-primary">campaign</span>
+<h2 class="font-headline-md text-headline-md">推送通道</h2>
+</div>
+<div class="space-y-6">
+<!-- Feishu -->
+<div class="space-y-2">
+<label class="font-label-caps text-label-caps text-on-surface-variant block">飞书 Webhook 地址</label>
+<div class="flex gap-2">
+<input class="flex-1 bg-surface-raised border border-outline-variant rounded py-1.5 px-3 font-data-table text-data-table text-on-surface focus:border-primary-container outline-none" type="password" value="https://open.feishu.cn/open-apis/bot/v2/hook/...">
+<button class="px-3 py-1.5 bg-surface-variant hover:bg-surface-bright border border-outline-variant rounded font-headline-md text-sm transition-colors whitespace-nowrap">测试</button>
+</div>
+<p class="text-xs text-on-surface-variant">用于在飞书群组接收实时 AI 信号告警。</p>
+</div>
+<!-- Telegram -->
+<div class="space-y-2">
+<label class="font-label-caps text-label-caps text-on-surface-variant block">Telegram 机器人令牌</label>
+<div class="flex gap-2">
+<input class="flex-1 bg-surface-raised border border-outline-variant rounded py-1.5 px-3 font-data-table text-data-table text-on-surface focus:border-primary-container outline-none placeholder:text-on-surface-variant/50" placeholder="bot123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11" type="password">
+<button class="px-3 py-1.5 bg-surface-variant hover:bg-surface-bright border border-outline-variant rounded font-headline-md text-sm transition-colors whitespace-nowrap">测试</button>
+</div>
+<p class="text-xs text-on-surface-variant">从 BotFather 获取，用于安全的手机端通知。</p>
+</div>
+</div>
+</div>
+<!-- System Preferences -->
+<div class="bg-surface-base border border-outline-variant rounded p-card-padding flex flex-col">
+<div class="flex items-center gap-2 mb-6 border-b border-outline-variant pb-4">
+<span class="material-symbols-outlined text-primary">tune</span>
+<h2 class="font-headline-md text-headline-md">系统偏好</h2>
+</div>
+<div class="space-y-8 flex-1">
+<!-- Refresh Interval -->
+<div class="space-y-3">
+<div class="flex justify-between items-center">
+<label class="font-label-caps text-label-caps text-on-surface-variant block">数据刷新间隔</label>
+<span class="font-data-table text-data-table text-primary">3 分钟</span>
+</div>
+<input class="w-full h-1 bg-surface-raised rounded-lg appearance-none cursor-pointer accent-primary-container" max="5" min="1" type="range" value="3">
+<div class="flex justify-between text-xs text-on-surface-variant font-data-table">
+<span class="">1分钟</span>
+<span class="">3分钟</span>
+<span class="">5分钟</span>
+</div>
+</div>
+<!-- Cooldown -->
+<div class="space-y-3">
+<label class="font-label-caps text-label-caps text-on-surface-variant block">默认告警冷却</label>
+<select class="w-full bg-surface-raised border border-outline-variant rounded py-2 px-3 font-body-md text-on-surface focus:border-primary-container outline-none appearance-none">
+<option>15 分钟</option>
+<option selected="">30 分钟</option>
+<option>1 小时</option>
+<option>收盘后</option>
+</select>
+<p class="text-xs text-on-surface-variant">防止股票在告警阈值附近波动时产生信息轰炸。</p>
+</div>
+</div>
+</div>
+<!-- Export/Import Actions -->
+<div class="col-span-1 lg:col-span-2 flex justify-end gap-4 mt-4 border-t border-outline-variant pt-6">
+<button class="px-6 py-2 bg-surface-base hover:bg-surface-variant border border-outline-variant rounded font-headline-md text-headline-md text-sm transition-colors flex items-center gap-2"><span class="material-symbols-outlined text-sm">download</span> 导出自选股 (CSV)</button>
+<button class="px-6 py-2 bg-primary-container hover:bg-primary-fixed-variant text-white rounded font-headline-md text-headline-md text-sm transition-colors flex items-center gap-2 shadow-md"><span class="material-symbols-outlined text-sm">save</span> 保存配置</button>
+</div>
+</div>
+</div>
+</main>
+
+
+</body></html>

@@ -7,7 +7,7 @@
 
 ## Summary
 
-基础 Dashboard 是系统的用户主界面，负责将所有后台数据（自选股、行情、预警、简报、推送历史、通道状态）整合为一个低密度、易读的首页。核心实现：用户打开页面 → 后端聚合多个上游模块数据 → Jinja2 模板渲染 → HTMX 驱动局部刷新 → 浏览器展示。同时支持移动端自适应、首次使用引导、数据源降级提示。
+基础 Dashboard 是系统的用户主界面，负责将所有后台数据（自选股、行情、预警、简报、推送历史、通道状态）整合为一个低密度、易读的首页。核心实现：用户打开页面 → 后端聚合多个上游模块数据 → Jinja2 模板渲染 → Tailwind CSS 样式 → 浏览器展示。设计参考：`design-reference/stitch-export/dashboard_a_share_ai_monitor/code.html`。同时支持移动端自适应、首次使用引导、数据源降级提示。
 
 ---
 
@@ -19,14 +19,16 @@
 **Data Validation**: Pydantic 2.0+（复用 F1）
 **Storage**: SQLite 3.39+（复用 F1）
 **Template Engine**: Jinja2 3.1+（复用 F1/F4，新增 Dashboard 模板）
-**Frontend**: HTMX 1.9+（复用 F1 架构基线）
-**CSS**: Tailwind CSS 3.4+（新增，通过 CDN）
+**CSS Framework**: Tailwind CSS 3.4+（CDN 引入，设计系统参考 `design-reference/DESIGN.md`）
+**Icons**: Material Symbols Outlined（Google Fonts CDN）
+**Fonts**: Hanken Grotesk（标题）、JetBrains Mono（数据/价格）、Inter（正文）
+**Frontend Interaction**: 原生 JS（60 秒轮询刷新、数据源恢复检测）
 **Testing**: pytest 8.0+ + httpx 0.27+ + pytest-asyncio 0.23+（复用 F1）
 **Target Platform**: Linux Docker 容器
-**Project Type**: Web application — 数据展示层
+**Project Type**: Web application — 数据展示层（Jinja2 + Tailwind CSS）
 **Performance Goals**: 首屏加载 < 3 秒，缓存渲染 < 1 秒，行情刷新不闪屏
 **Constraints**: 单用户系统（MVP 无认证），移动端 viewport < 768px 自适应，自选股上限 50 只
-**Scale/Scope**: 1 个首页 + 3 个模板组件 + 1 个聚合服务
+**Scale/Scope**: 1 个首页 + 8 个模板组件 + 2 个路由 + 1 个聚合服务 + 1 个配置服务
 
 ---
 
@@ -99,17 +101,20 @@ app/schemas/
 │   └── settings.py           # 新建：SettingRequest, SettingResponse Pydantic 模型
 │
 app/templates/
-│   ├── dashboard.html        # 新建：Dashboard 主页面模板
+│   ├── dashboard.html           # 新建：Dashboard 主页面模板（12 列网格布局）
+│   ├── settings.html            # 新建：设置页模板（推送通道/数据源/偏好配置表单）
 │   ├── components/
-│   │   ├── market_index.html    # 新建：大盘指数组件
-│   │   ├── stock_card.html      # 新建：自选股卡片组件（含迷你趋势图）
-│   │   ├── briefing_card.html   # 新建：简报卡片组件
-│   │   ├── alert_banner.html    # 新建：今日预警汇总横幅
-│   │   ├── push_history.html    # 新建：推送历史组件
-│   │   ├── channel_status.html  # 新建：通道状态组件
-│   │   ├── quick_actions.html   # 新建：快捷入口组件
-│   │   └── onboarding.html      # 新建：首次使用引导组件
-│   └── base.html             # 新建：基础布局模板（含 HTMX、Tailwind CDN）
+│   │   ├── side_nav.html           # 新建：SideNavBar 组件（Logo + 导航菜单 + AI 简报按钮）
+│   │   ├── top_nav.html            # 新建：TopNavBar 组件（CommandBar 搜索框 + 通知 + 用户头像）
+│   │   ├── market_index.html       # 新建：大盘指数组件（3 列 MetricCard：上证/深证/创业）
+│   │   ├── watchlist_snapshot.html # 新建：自选股快照表格（Stock Data Table 简化版）
+│   │   ├── briefing_card.html      # 新建：AI 简报卡片组件（右侧栏，含 insight 列表）
+│   │   ├── alert_banner.html       # 新建：今日预警汇总横幅（可折叠）
+│   │   ├── push_history.html       # 新建：推送历史组件（最近推送记录列表）
+│   │   ├── channel_status.html     # 新建：通道状态组件（飞书/Telegram 健康状态）
+│   │   ├── quick_actions.html      # 新建：快捷入口组件（2x2/4 网格按钮组）
+│   │   └── onboarding.html         # 新建：首次使用引导组件（空状态引导页）
+│   └── base.html                # 新建：基础布局模板（Tailwind CDN + Google Fonts + Material Symbols）
 │
 app/static/
 │   ├── css/
@@ -131,12 +136,72 @@ tests/
 **结构决策说明**:
 - `dashboard_service.py` 是本 feature 核心，负责聚合所有上游数据（F1 自选股、F2 行情缓存、F3 预警/简报、F4 推送历史/通道状态），对外提供统一的 `get_dashboard_data()` 接口
 - `dashboard.py` 路由只负责：接收请求 → 调用聚合服务 → 渲染模板，不直接访问任何上游模块
-- 前端采用 HTMX + Jinja2 服务器端渲染（SSR），MVP 不做 SPA。HTMX 负责局部刷新（行情数据、推送历史）
-- 迷你趋势图采用 SVG 内联渲染（当日分时数据），不引入图表库，降低加载开销
+- 前端采用 Jinja2 服务端渲染 + Tailwind CSS CDN，纯原生 JS 处理交互（60 秒轮询、数据源恢复检测）
+- 设计系统严格遵循 `design-reference/DESIGN.md` 的配色、字体、间距规范，通过 Tailwind Config 映射为 utility class
+- 行情刷新采用服务端渲染 Partial HTML（非 JSON API），`dashboard.js` 定时请求后 DOM 替换
 - 首次使用引导通过检查自选股数量判断，无独立状态表
 - 移动端自适应通过 CSS 媒体查询 + Tailwind 响应式类实现，后端只返回同一套数据
 - 快捷入口固定 4 个，前端硬编码，不做配置表
 - `settings_service.py` 是独立的横向模块，被 F4/F5/F6 复用，负责所有用户级配置的持久化（`app_settings` 表）和敏感字段加解密
+
+---
+
+## Frontend Design
+
+本章节定义 Dashboard 模块的前端 UI 设计，基于 `design-reference/DESIGN.md` 设计系统和 `design-reference/stitch-export/dashboard_a_share_ai_monitor/code.html` 视觉参考样本。
+
+### 页面布局
+
+Dashboard 首页采用 **12 列固定网格** 布局（DESIGN.md §Layout & Spacing），max-width 1280px 居中：
+- **Desktop**: SideNavBar（固定宽 256px，hidden on mobile）+ Main Content Area（flex-1，md:ml-64）
+- **Main Content**: TopNavBar（sticky，高 64px，backdrop-blur-md）+ Dashboard Content（可滚动）
+- **Dashboard Content**: 12 列网格
+  - Market Indices Row: `col-span-12 grid grid-cols-1 md:grid-cols-3 gap-container-gap`
+  - Left Column: `col-span-12 lg:col-span-8`（Watchlist Snapshot + Quick Access Grid）
+  - Right Column: `col-span-12 lg:col-span-4`（AI Briefing Card）
+
+### 组件清单
+
+| 组件名 | 类型 | 对应 DESIGN.md 章节 | 视觉参考样本路径 |
+|:---|:---|:---|:---|
+| SideNavBar | 布局组件 | §Layout & Spacing（导航栏） | `design-reference/stitch-export/dashboard_a_share_ai_monitor/code.html` L108-144 |
+| TopNavBar | 布局组件 | §Layout & Spacing（顶部栏） | 同上 L146-170 |
+| CommandBar | 输入组件 | §Components / Input Forms (Command Bar) | 同上 L149-153 |
+| MarketIndexCard | 数据组件 | §Components / Metric Cards | 同上 L176-207 |
+| WatchlistSnapshot | 数据组件 | §Components / Stock Data Tables | 同上 L212-286 |
+| QuickActions | 交互组件 | —（快捷入口） | 同上 L288-305 |
+| AIBriefingCard | 展示组件 | —（AI 简报区域） | 同上 L307-336 |
+| AlertBanner | 状态组件 | §Components / Alert Badges | 设计样本未直接展示，由 DESIGN.md §Alert Badges 规范推导 |
+| PushHistory | 数据组件 | — | 设计样本未直接展示，由 spec 需求推导 |
+| ChannelStatus | 状态组件 | — | 设计样本未直接展示，由 spec 需求推导 |
+| Onboarding | 引导组件 | — | 设计样本未直接展示，由 spec 需求推导 |
+
+### 设计 Token 映射
+
+| Token 类别 | 设计值 | Tailwind 类名 |
+|:---|:---|:---|
+| Background | `#11131c` | `bg-background` |
+| Surface Base | `#0F172A` | `bg-surface-base` |
+| Surface Raised | `#1E293B` | `bg-surface-raised` |
+| Primary | `#b7c4ff` | `text-primary` |
+| Primary Container | `#0052ff` | `bg-primary-container` |
+| Market Up | `#F43F5E` | `text-market-up` |
+| Market Down | `#10B981` | `text-market-down` |
+| Market Warning | `#F59E0B` | `text-market-warning` |
+| On Surface | `#e1e1ef` | `text-on-surface` |
+| On Surface Variant | `#c3c5d9` | `text-on-surface-variant` |
+| Outline Variant | `#434656` | `border-outline-variant` |
+| Headline Font | Hanken Grotesk | `font-headline-lg` / `font-headline-md` |
+| Data Font | JetBrains Mono | `font-data-table` / `font-display-price` |
+| Body Font | Inter | `font-body-md` / `font-label-caps` |
+
+### 响应式断点
+
+| 断点 | 布局变化 |
+|:---|:---|
+| Desktop (>= 1024px) | 12 列网格，SideNav 固定显示，Left Column 8 列 + Right Column 4 列 |
+| Tablet (768-1023px) | SideNav 隐藏，Market Indices 3 列，Left/Right Column 全宽堆叠 |
+| Mobile (< 768px) | SideNav 收起，Market Indices 单列，Quick Actions 2x2 网格，表格横向滚动 |
 
 ---
 
@@ -170,7 +235,7 @@ graph LR
 
 ```mermaid
 graph LR
-    JS[dashboard.js<br/>60秒定时器] --"HTMX GET"--> Router2[dashboard.py
+    JS[dashboard.js<br/>60秒定时器] --"fetch GET"--> Router2[dashboard.py
 /market_data]
     Router2 --"调用"--> Service2[dashboard_service
 get_market_data]
@@ -178,8 +243,8 @@ get_market_data]
     Service2 --"预警"--> AlertSvc[alert_service]
     Cache --> CacheDB[(SQLite<br/>cache)]
     AlertSvc --> AlertDB[(SQLite<br/>alerts)]
-    Service2 --"返回"--> Partial[HTML Partial<br/>market_index + stock_cards]
-    Partial --"HTMX swap"--> Browser2[浏览器<br/>局部更新]
+    Service2 --"返回"--> Partial[HTML Partial<br/>market_index + watchlist_snapshot]
+    Partial --"DOM innerHTML swap"--> Browser2[浏览器<br/>局部更新]
 ```
 
 ### 数据源异常降级
@@ -219,8 +284,9 @@ graph LR
 | Uvicorn | 0.27+ | ASGI 服务器 |
 | APScheduler | 3.10+ | 定时任务状态读取 |
 | python-dotenv | 1.0+ | 环境变量加载 |
-| HTMX | 1.9+ | 前端局部刷新（CDN 引入） |
 | Tailwind CSS | 3.4+ | 响应式样式（CDN 引入） |
+| Material Symbols | — | Google Fonts CDN 图标 |
+| Native JS | — | 60 秒轮询定时器 + DOM 局部更新 |
 
 ### 开发/测试依赖（复用 F1）
 
@@ -270,11 +336,11 @@ graph LR
 | ID | 风险描述 | 严重度 | 概率 | 缓解方案 |
 |:---|:---|:------:|:----:|:---|
 | R-PLAN-01 | 聚合多个上游服务导致页面加载缓慢（串行调用） | 高 | 中 | ① 使用 `asyncio.gather()` 并行调用独立的上游服务；② 对不经常变化的数据（分组、通道状态）做短时内存缓存；③ 设置各上游调用超时（2 秒），超时返回降级数据 |
-| R-PLAN-02 | HTMX 局部刷新与全局状态不一致 | 中 | 中 | ① 每个刷新请求返回完整的 Partial HTML（含当前状态标记）；② 使用 HTMX `hx-swap-oob` 更新多个独立区域；③ 服务端状态变更时推送 `HX-Trigger` 事件 |
-| R-PLAN-03 | 迷你趋势图 SVG 渲染性能差（50 只股票 × 240 个数据点） | 中 | 低 | ① 后端只返回趋势图必需的简化数据（开盘/最高/最低/收盘 + 6 个关键时点）；② 使用纯 SVG path 渲染，不做动画；③ 自选股超过 20 只时只渲染前 20 只趋势图 |
+| R-PLAN-02 | JS 局部刷新与全局状态不一致 | 中 | 中 | ① 每个刷新请求返回完整的 Partial HTML（含当前状态标记）；② `dashboard.js` 使用 `innerHTML` 替换时保留状态标记；③ 服务端状态变更时通过自定义事件通知 JS 重刷 |
+| R-PLAN-03 | 表格渲染性能差（50 只股票大数据量） | 中 | 低 | ① 后端只返回必要字段（代码/名称/价格/涨跌幅/趋势方向）；② 使用纯 CSS 趋势箭头（Material Symbols）替代 SVG 迷你图；③ 自选股超过 20 只时表格启用虚拟滚动或分页 |
 | R-PLAN-04 | 移动端自适应 CSS 覆盖不完整，部分元素溢出 | 低 | 中 | ① 使用 Tailwind 响应式前缀（md:、lg:）系统化处理；② 测试矩阵覆盖 320px/375px/414px/768px 四种宽度；③ 大盘指数区域在移动端允许横向滚动 |
 | R-PLAN-05 | 上游模块（F1-F4）未就绪导致 Dashboard 无法开发 | 高 | 低 | ① Dashboard 开发使用 mock 服务层；② 定义 DashboardService 接口契约，上游只需满足接口即可集成；③ 并行开发，接口先行 |
-| R-PLAN-06 | 定时刷新导致服务器负载过高 | 低 | 低 | ① 刷新只返回变化的数据（HTMX 局部替换）；② 行情数据走缓存不直接查数据源；③ 刷新接口返回 ETag，无变化返回 304 |
+| R-PLAN-06 | 定时刷新导致服务器负载过高 | 低 | 低 | ① 刷新只返回变化的数据（JS `innerHTML` 局部替换）；② 行情数据走缓存不直接查数据源；③ 刷新接口返回 ETag，无变化返回 304 |
 
 ---
 
@@ -282,13 +348,13 @@ graph LR
 
 ### DD-001: Dashboard 采用服务端渲染（SSR）而非 SPA
 
-**决策**: Dashboard 使用 Jinja2 模板 + HTMX 实现服务器端渲染，不做 React/Vue SPA。
+**决策**: Dashboard 使用 Jinja2 模板 + Tailwind CSS CDN 实现服务器端渲染，不做 React/Vue SPA。原生 JS 处理 60 秒轮询刷新和数据源恢复检测。
 
 **理由**:
-- 系统架构基线已选定 HTMX + Jinja2，保持一致性
-- Dashboard 是信息展示页，交互以读取为主，SSR 加载更快、SEO 友好
+- 设计参考 `dashboard_a_share_ai_monitor/code.html` 已基于 Tailwind CSS CDN，无需额外构建工具链
+- Dashboard 是信息展示页，交互以读取为主，SSR 加载更快
 - SPA 需要额外构建步骤（npm/bundler），增加部署复杂度
-- HTMX 局部刷新足以满足行情更新需求
+- Tailwind CSS utility class 足够表达设计系统的所有样式需求
 
 **反决策**: React/Vue SPA 能提供更丰富的客户端交互，但 MVP 阶段收益不足以抵消复杂度。
 
@@ -316,17 +382,18 @@ graph LR
 
 **反决策**: 串行调用实现简单，但 3-5 个上游服务各 200ms 就会累积到 1 秒以上。
 
-### DD-004: 行情刷新采用服务端渲染 Partial 而非 JSON API
+### DD-004: 行情刷新采用原生 JS fetch + Partial HTML 而非 JSON API
 
-**决策**: 60 秒定时刷新通过 HTMX 请求返回 HTML Partial（大盘指数 + 自选股卡片），而非 JSON 数据。
+**决策**: 60 秒定时刷新通过原生 JS `fetch()` 请求返回 HTML Partial（大盘指数 + 自选股快照），`dashboard.js` 使用 `innerHTML` 替换对应容器内容。
 
 **理由**:
-- HTMX 设计哲学：HTML 超媒体作为应用状态引擎
+- 设计参考 `dashboard_a_share_ai_monitor/code.html` 未使用 HTMX，使用原生 JS 更轻量
 - 服务端渲染 Partial 比 JSON + 客户端模板渲染更简单，前后端只用一种模板语言（Jinja2）
 - 无需维护两套渲染逻辑（SSR 初始加载 + CSR 刷新）
 - 失败降级时服务端可以直接在 Partial 中嵌入错误提示 HTML
+- `dashboard.js` 可自主控制刷新频率、暂停/恢复逻辑、数据源恢复检测
 
-**反决策**: JSON API 更通用（便于未来移动端 App 复用），但 MVP 阶段无此需求。
+**反决策**: JSON API 更通用（便于未来移动端 App 复用），但 MVP 阶段无此需求。HTMX 因设计样本未使用，不再引入。
 
 ### DD-005: 用户配置由 settings_service 统一持久化
 
