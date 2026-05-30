@@ -10,7 +10,7 @@
 
 **Purpose**: 项目初始化与容器化配置
 
-- [ ] **T1 [BE]** 创建项目骨架：`requirements.txt` + `Dockerfile` + `docker-compose.yml` + `.env.example`
+- [X] **T1 [BE]** 创建项目骨架：`requirements.txt` + `Dockerfile` + `docker-compose.yml` + `.env.example`
   - [FR-001~FR-012 全局基础设施] [无依赖] [出参验证: `docker build -t stock-mgt .` 成功]
   - 包含：FastAPI + SQLAlchemy + Pydantic + AkShare + pytest + httpx 等全部依赖
 
