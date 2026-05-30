@@ -22,7 +22,7 @@
 
 **⚠️ CRITICAL**: 所有用户故事依赖此阶段完成
 
-- [ ] **T2 [BE]** 创建配置与数据库层：`app/config.py`（环境变量加载）+ `app/database.py`（SQLAlchemy 引擎/SessionLocal/建表）+ `app/main.py`（FastAPI 入口）
+- [X] **T2 [BE]** 创建配置与数据库层：`app/config.py`（环境变量加载）+ `app/database.py`（SQLAlchemy 引擎/SessionLocal/建表）+ `app/main.py`（FastAPI 入口）
   - [架构设计 DD-001] [依赖: T1] [出参验证: `uvicorn app.main:app` 启动无报错，访问 `/docs` 显示 Swagger UI]
 
 - [ ] **T3 [BE] [P]** 创建 Stock 数据模型：`app/models/stock.py`

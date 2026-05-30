@@ -1,7 +1,7 @@
 # 实施进度 · 自选股管理
 
 ## 当前任务
-T1 已完成，等待下一任务。
+T2 已完成，Foundation 阶段可继续推进 T3/T4。
 
 ## 已完成
 - [X] T01 · 创建项目骨架：requirements.txt + Dockerfile + docker-compose.yml + .env.example
@@ -14,6 +14,11 @@ T1 已完成，等待下一任务。
   - 复审验证：2026-05-30 `docker compose config --quiet` 与 `docker build -t stock-mgt .` 均通过。
   - 最终复审修复：2026-05-30 将 `.dockerignore` 的 `.credentials.yaml/.yml/.json` 具体规则收敛为 `.credentials.*`，覆盖 `.credentials.toml`、`.credentials.local`、`.credentials.dev` 等本地凭据文件。
   - 最终复审验证：2026-05-30 `docker compose config --quiet` 与 `docker build -t stock-mgt .` 均通过。
+
+- [X] T02 · 创建配置与数据库层：app/config.py + app/database.py + app/main.py
+  - RED：2026-05-30 `python -m pytest tests/unit/test_config_database_main.py` 失败，4 个用例均因 `ModuleNotFoundError: No module named 'app'` 暴露配置/数据库/FastAPI 入口尚不存在。
+  - GREEN：新增 `app/__init__.py`、`app/config.py`、`app/database.py`、`app/main.py`；配置层读取 `DATABASE_URL` 并提供 SQLite 默认值，数据库层暴露 `engine`/`SessionLocal`/`Base`/`init_db()`，FastAPI 入口提供 `/health` 与 Swagger `/docs`。
+  - 验证：2026-05-30 `python -m pytest tests/unit/test_config_database_main.py` 通过（4 passed）；`uvicorn app.main:app --host 127.0.0.1 --port 8001` 启动后 `/health` 与 `/docs` 均返回 200。
 
 ## 阻塞项
 （无）
