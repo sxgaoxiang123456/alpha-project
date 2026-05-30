@@ -22,7 +22,7 @@ services:
       QUOTE_REFRESH_INTERVAL: ${QUOTE_REFRESH_INTERVAL:-180}
       QUOTE_CACHE_TTL: ${QUOTE_CACHE_TTL:-300}
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     volumes:
       - ./data:/app/data
     restart: unless-stopped

@@ -14,9 +14,12 @@ dist/
 .coverage
 coverage/
 *.log*
-.env
-.env.local
-.env.*.local
+.env*
+!.env.example
+.mcp.json
+.credentials.yaml
+.credentials.yml
+.credentials.json
 data/
 db/
 *.db
