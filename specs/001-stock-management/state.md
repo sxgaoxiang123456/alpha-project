@@ -1,7 +1,7 @@
 # 实施进度 · 自选股管理
 
 ## 当前任务
-T2 已完成，Foundation 阶段可继续推进 T3/T4。
+T3 已完成，Foundation 阶段可继续推进 T4。
 
 ## 已完成
 - [X] T01 · 创建项目骨架：requirements.txt + Dockerfile + docker-compose.yml + .env.example
@@ -19,6 +19,11 @@ T2 已完成，Foundation 阶段可继续推进 T3/T4。
   - RED：2026-05-30 `python -m pytest tests/unit/test_config_database_main.py` 失败，4 个用例均因 `ModuleNotFoundError: No module named 'app'` 暴露配置/数据库/FastAPI 入口尚不存在。
   - GREEN：新增 `app/__init__.py`、`app/config.py`、`app/database.py`、`app/main.py`；配置层读取 `DATABASE_URL` 并提供 SQLite 默认值，数据库层暴露 `engine`/`SessionLocal`/`Base`/`init_db()`，FastAPI 入口提供 `/health` 与 Swagger `/docs`。
   - 验证：2026-05-30 `python -m pytest tests/unit/test_config_database_main.py` 通过（4 passed）；`uvicorn app.main:app --host 127.0.0.1 --port 8001` 启动后 `/health` 与 `/docs` 均返回 200。
+
+- [X] T03 · 创建 Stock 数据模型：app/models/stock.py
+  - RED：2026-05-30 `python -m pytest tests/unit/test_models.py` 失败，4 个用例均因 `ModuleNotFoundError: No module named 'app.models'` 暴露 Stock 模型尚不存在。
+  - GREEN：新增 `app/models/__init__.py` 与 `app/models/stock.py`；Stock 使用 `stocks` 表，包含 `code/name/market/sector/status` 字段，`code` 为主键，`name`/`market` 非空。
+  - 验证：2026-05-30 `python -m pytest tests/unit/test_models.py` 通过（4 passed）；`python -m pytest tests/unit/test_config_database_main.py` 回归通过（4 passed）。
 
 ## 阻塞项
 （无）

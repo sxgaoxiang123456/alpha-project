@@ -25,7 +25,7 @@
 - [X] **T2 [BE]** 创建配置与数据库层：`app/config.py`（环境变量加载）+ `app/database.py`（SQLAlchemy 引擎/SessionLocal/建表）+ `app/main.py`（FastAPI 入口）
   - [架构设计 DD-001] [依赖: T1] [出参验证: `uvicorn app.main:app` 启动无报错，访问 `/docs` 显示 Swagger UI]
 
-- [ ] **T3 [BE] [P]** 创建 Stock 数据模型：`app/models/stock.py`
+- [X] **T3 [BE] [P]** 创建 Stock 数据模型：`app/models/stock.py`
   - [FR-002] [依赖: T2] [出参验证: `Stock.__table__.create()` 成功，表含 code/name/market/sector/status 字段]
 
 - [ ] **T4 [BE] [P]** 创建 Group 数据模型：`app/models/group.py`，含默认分组"默认分组"自动初始化逻辑
