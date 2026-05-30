@@ -120,4 +120,13 @@ MVP 阶段前端仅针对桌面端（1280px 及以上宽度）进行设计、开
 - 每次修改必须同步更新"Sync Impact Report"注释，记录版本变更、修改项与待办跟进。
 - 开发过程中若发现 Constitution 与代码实现冲突，必须暂停实现并先修订 Constitution，禁止以代码迁就过时的原则。
 
+## Implementation Discipline (for Superpowers handoff)
+
+- Before executing any tasks.md, ALWAYS read .specify/memory/constitution.md FIRST.
+- Always follow TDD: Red (failing test) → Green (minimum code) → Refactor.
+- Always update tasks.md checkbox after EACH task completes.
+- After each task: commit, then STOP and wait for "next".
+- All [FE] tasks: MUST read root DESIGN.md and the matched
+  design-reference/stitch-export/<page>/ BEFORE writing any component code.
+
 **Version**: 0.2.0 | **Ratified**: TODO(RATIFICATION_DATE) | **Last Amended**: 2026-05-28
