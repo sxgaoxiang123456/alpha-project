@@ -18,9 +18,7 @@ coverage/
 .env*
 !.env.example
 .mcp.json
-.credentials.yaml
-.credentials.yml
-.credentials.json
+.credentials.*
 data/
 db/
 *.db
