@@ -10,6 +10,8 @@ T1 已完成，等待下一任务。
   - 验证：2026-05-30 `docker build -t stock-mgt .` 成功生成 `stock-mgt:latest`。
   - 审查修复：2026-05-30 扩展 `.dockerignore` 敏感本地配置排除（`.env*`，保留 `.env.example`，并排除 `.mcp.json`、`.credentials.*`）；`docker-compose.yml` 端口改为仅绑定 localhost。
   - 审查验证：2026-05-30 `docker compose config --quiet` 与 `docker build -t stock-mgt .` 均通过。
+  - 复审修复：2026-05-30 在 `.dockerignore` 增加 `*.csv`，避免真实导入/持仓 CSV 被 `COPY . .` 打入镜像。
+  - 复审验证：2026-05-30 `docker compose config --quiet` 与 `docker build -t stock-mgt .` 均通过。
 
 ## 阻塞项
 （无）

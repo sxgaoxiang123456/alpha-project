@@ -14,6 +14,7 @@ dist/
 .coverage
 coverage/
 *.log*
+*.csv
 .env*
 !.env.example
 .mcp.json
