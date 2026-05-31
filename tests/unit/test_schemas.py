@@ -14,13 +14,22 @@ def test_watchlist_create_rejects_invalid_cost_price_string():
 
 def test_stock_and_watchlist_reject_non_six_digit_codes():
     from app.schemas.stock import StockBase
-    from app.schemas.watchlist import WatchlistItemCreate
+    from app.schemas.watchlist import WatchlistCsvRow, WatchlistItemCreate
 
     with pytest.raises(ValidationError):
         StockBase(code="60051A", name="贵州茅台", market="沪")
 
     with pytest.raises(ValidationError):
         WatchlistItemCreate(stock_code="60051")
+
+    with pytest.raises(ValidationError):
+        StockBase(code="６００５１９", name="贵州茅台", market="沪")
+
+    with pytest.raises(ValidationError):
+        WatchlistItemCreate(stock_code="٦٠٠٥١٩")
+
+    with pytest.raises(ValidationError):
+        WatchlistCsvRow(code="６００５１９", name="贵州茅台")
 
 
 def test_watchlist_rejects_negative_cost_price_and_shares():
@@ -72,11 +81,20 @@ def test_watchlist_csv_row_validates_csv_contract():
         cost_price="1500.50",
         shares=100,
     )
+    blank_optional_row = WatchlistCsvRow(
+        code="000001",
+        name="平安银行",
+        group="观察",
+        cost_price="",
+        shares="   ",
+    )
 
     assert row.code == "600519"
     assert row.group == "持仓"
     assert row.cost_price == Decimal("1500.50")
     assert row.shares == 100
+    assert blank_optional_row.cost_price is None
+    assert blank_optional_row.shares is None
 
     with pytest.raises(ValidationError):
         WatchlistCsvRow(code="60051A", name="贵州茅台")
@@ -138,3 +156,20 @@ def test_response_schemas_support_model_validate_from_attributes():
     assert watchlist_response.shares == 100
     assert watchlist_response.stock == stock_response
     assert watchlist_response.group == group_response
+
+
+def test_watchlist_response_rejects_negative_cost_price_from_attributes():
+    from app.models.watchlist import WatchlistItem
+    from app.schemas import WatchlistItemResponse
+
+    item = WatchlistItem(
+        id=8,
+        stock_code="600519",
+        group_id=1,
+        added_at=datetime(2026, 5, 31, 11, 0, tzinfo=UTC),
+        cost_price=Decimal("-1.00"),
+        shares=100,
+    )
+
+    with pytest.raises(ValidationError):
+        WatchlistItemResponse.model_validate(item)

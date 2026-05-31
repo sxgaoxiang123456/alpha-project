@@ -33,7 +33,7 @@ class WatchlistItemResponse(BaseModel):
     stock_code: str = Field(..., min_length=6, max_length=6)
     group_id: int = Field(..., ge=1)
     added_at: datetime
-    cost_price: Decimal | None = None
+    cost_price: Decimal | None = Field(default=None, ge=0)
     shares: int | None = Field(default=None, ge=0)
     stock: StockResponse | None = None
     group: GroupResponse | None = None
@@ -50,6 +50,13 @@ class WatchlistCsvRow(BaseModel):
     group: str = Field(default="默认分组", min_length=1, max_length=64)
     cost_price: Decimal | None = Field(default=None, ge=0)
     shares: int | None = Field(default=None, ge=0)
+
+    @field_validator("cost_price", "shares", mode="before")
+    @classmethod
+    def blank_optional_number_to_none(cls, value):
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value
 
     @field_validator("code")
     @classmethod

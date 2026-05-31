@@ -48,6 +48,9 @@ T6 已完成，Foundation 阶段完成；可继续推进 T7。
   - RED：2026-05-31 `python -m pytest tests/unit/test_schemas.py` 失败，新增 schema 用例发现 `app.schemas.watchlist` 与 `app.schemas` 包导出尚不存在。
   - GREEN：新增 `app/schemas/__init__.py` 与 `stock.py`、`group.py`、`watchlist.py`，覆盖股票代码、分组名、持仓成本/股数与 CSV 行校验，并支持响应 schema 从 ORM 属性构造。
   - 验证：2026-05-31 `python -m pytest tests/unit/test_schemas.py` 通过（8 passed）。
+  - 审查修复 RED：2026-05-31 `python -m pytest tests/unit/test_schemas.py` 失败，新增用例发现 Unicode 数字代码被接受、CSV 空成本/股数未按选填处理、响应 schema 未拦截负成本。
+  - 审查修复 GREEN：股票代码改为 ASCII 6 位数字校验；CSV 行 schema 将空白成本/股数字段转换为 `None`；`WatchlistItemResponse.cost_price` 增加非负校验。
+  - 审查修复验证：2026-05-31 `python -m pytest tests/unit/test_schemas.py` 通过（9 passed）。
 
 ## 阻塞项
 （无）

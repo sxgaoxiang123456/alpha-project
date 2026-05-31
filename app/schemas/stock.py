@@ -1,3 +1,5 @@
+import re
+
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
@@ -38,6 +40,6 @@ class StockSearchResult(StockResponse):
 def validate_stock_code(value: str) -> str:
     """校验 A 股 6 位数字代码。"""
 
-    if not value.isdigit() or len(value) != 6:
+    if re.fullmatch(r"[0-9]{6}", value) is None:
         raise ValueError("股票代码必须是 6 位数字")
     return value
