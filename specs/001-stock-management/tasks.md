@@ -31,7 +31,7 @@
 - [X] **T4 [BE] [P]** 创建 Group 数据模型：`app/models/group.py`，含默认分组"默认分组"自动初始化逻辑
   - [FR-004] [依赖: T2] [出参验证: 启动时自动创建 id=1 的默认分组记录]
 
-- [ ] **T5 [BE]** 创建 WatchlistItem 数据模型：`app/models/watchlist.py`，含与 Stock/Group 的外键关联 + stock_code 唯一约束
+- [X] **T5 [BE]** 创建 WatchlistItem 数据模型：`app/models/watchlist.py`，含与 Stock/Group 的外键关联 + stock_code 唯一约束
   - [FR-003, FR-004, FR-008] [依赖: T3, T4] [出参验证: 插入重复 stock_code 触发 IntegrityError]
 
 - [ ] **T6 [BE] [P]** 创建 Pydantic schemas：`app/schemas/stock.py` + `app/schemas/watchlist.py` + `app/schemas/group.py`

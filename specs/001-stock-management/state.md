@@ -1,7 +1,7 @@
 # 实施进度 · 自选股管理
 
 ## 当前任务
-T4 已完成，Foundation 阶段可继续推进 T5。
+T5 已完成，Foundation 阶段可继续推进 T6。
 
 ## 已完成
 - [X] T01 · 创建项目骨架：requirements.txt + Dockerfile + docker-compose.yml + .env.example
@@ -35,6 +35,11 @@ T4 已完成，Foundation 阶段可继续推进 T5。
   - 审查修复 RED：2026-05-31 `python -m pytest tests/unit/test_models.py` 失败，新增 PostgreSQL DDL 用例发现 `groups.id` 仍编译为 `SERIAL`，未避开默认分组 `id=1` 的序列起点风险。
   - 审查修复 GREEN：将 `Group.id` 改为 `Identity(start=2)`，PostgreSQL DDL 编译为 identity 且起点为 2，避免后续自定义分组与默认分组主键冲突。
   - 审查修复验证：2026-05-31 `python -m pytest tests/unit/test_models.py tests/unit/test_config_database_main.py` 通过。
+
+- [X] T05 · 创建 WatchlistItem 数据模型：app/models/watchlist.py
+  - RED：2026-05-31 `python -m pytest tests/unit/test_models.py` 失败，新增 T5 用例发现 `watchlist_items` 未由 lifespan/init_db 创建，且 `app.models.watchlist` 尚未实现。
+  - GREEN：新增 `app/models/watchlist.py` 与 `WatchlistItem` 模型（`id/stock_code/group_id/added_at/cost_price/shares`），`stock_code` 外键到 `stocks.code` 且唯一，`group_id` 外键到 `groups.id`，并建立 `stock`/`group` 关系；在 `app.models` 导出以供 `init_db()` 注册。
+  - 验证：2026-05-31 `python -m pytest tests/unit/test_models.py tests/unit/test_config_database_main.py` 通过（22 passed）。
 
 ## 阻塞项
 （无）
