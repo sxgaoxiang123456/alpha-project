@@ -34,7 +34,7 @@
 - [X] **T5 [BE]** 创建 WatchlistItem 数据模型：`app/models/watchlist.py`，含与 Stock/Group 的外键关联 + stock_code 唯一约束
   - [FR-003, FR-004, FR-008] [依赖: T3, T4] [出参验证: 插入重复 stock_code 触发 IntegrityError]
 
-- [ ] **T6 [BE] [P]** 创建 Pydantic schemas：`app/schemas/stock.py` + `app/schemas/watchlist.py` + `app/schemas/group.py`
+- [X] **T6 [BE] [P]** 创建 Pydantic schemas：`app/schemas/stock.py` + `app/schemas/watchlist.py` + `app/schemas/group.py`
   - [FR-001~FR-012 API 契约] [依赖: T5] [出参验证: 无效数据（如 cost_price="abc"）触发 pydantic.ValidationError]
 
 **Checkpoint**: Foundation ready — 数据库可连接、表结构正确、schema 校验生效

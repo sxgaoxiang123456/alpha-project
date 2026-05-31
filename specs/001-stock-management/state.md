@@ -1,7 +1,7 @@
 # 实施进度 · 自选股管理
 
 ## 当前任务
-T5 已完成，Foundation 阶段可继续推进 T6。
+T6 已完成，Foundation 阶段完成；可继续推进 T7。
 
 ## 已完成
 - [X] T01 · 创建项目骨架：requirements.txt + Dockerfile + docker-compose.yml + .env.example
@@ -43,6 +43,11 @@ T5 已完成，Foundation 阶段可继续推进 T6。
   - 审查修复 RED：2026-05-31 `python -m pytest tests/unit/test_models.py` 失败，新增生产 SQLite `init_db()` 路径用例发现非法 `WatchlistItem(stock_code="999999", group_id=999)` 提交未触发 `IntegrityError`（`Failed: DID NOT RAISE`）。
   - 审查修复 GREEN：在 SQLite engine 连接建立时通过 SQLAlchemy event listener 执行 `PRAGMA foreign_keys=ON`，使 `stocks.code` / `groups.id` 外键在默认 SQLite 环境真实生效。
   - 审查修复验证：2026-05-31 `python -m pytest tests/unit/test_models.py tests/unit/test_config_database_main.py` 通过（23 passed）。
+
+- [X] T06 · 创建 Pydantic schemas：app/schemas/stock.py + app/schemas/watchlist.py + app/schemas/group.py
+  - RED：2026-05-31 `python -m pytest tests/unit/test_schemas.py` 失败，新增 schema 用例发现 `app.schemas.watchlist` 与 `app.schemas` 包导出尚不存在。
+  - GREEN：新增 `app/schemas/__init__.py` 与 `stock.py`、`group.py`、`watchlist.py`，覆盖股票代码、分组名、持仓成本/股数与 CSV 行校验，并支持响应 schema 从 ORM 属性构造。
+  - 验证：2026-05-31 `python -m pytest tests/unit/test_schemas.py` 通过（8 passed）。
 
 ## 阻塞项
 （无）
