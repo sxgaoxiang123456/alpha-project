@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.engine import make_url
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
@@ -26,11 +26,21 @@ def _ensure_sqlite_parent_dir(database_url: str) -> None:
 
 def _create_engine(database_url: str):
     connect_args = {}
-    if database_url.startswith("sqlite"):
+    is_sqlite = database_url.startswith("sqlite")
+    if is_sqlite:
         _ensure_sqlite_parent_dir(database_url)
         connect_args = {"check_same_thread": False}
 
-    return create_engine(database_url, connect_args=connect_args)
+    created_engine = create_engine(database_url, connect_args=connect_args)
+
+    if is_sqlite:
+        @event.listens_for(created_engine, "connect")
+        def _enable_sqlite_foreign_keys(dbapi_connection, _connection_record):
+            cursor = dbapi_connection.cursor()
+            cursor.execute("PRAGMA foreign_keys=ON")
+            cursor.close()
+
+    return created_engine
 
 
 engine = _create_engine(settings.database_url)

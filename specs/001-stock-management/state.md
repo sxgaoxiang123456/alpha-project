@@ -40,6 +40,9 @@ T5 已完成，Foundation 阶段可继续推进 T6。
   - RED：2026-05-31 `python -m pytest tests/unit/test_models.py` 失败，新增 T5 用例发现 `watchlist_items` 未由 lifespan/init_db 创建，且 `app.models.watchlist` 尚未实现。
   - GREEN：新增 `app/models/watchlist.py` 与 `WatchlistItem` 模型（`id/stock_code/group_id/added_at/cost_price/shares`），`stock_code` 外键到 `stocks.code` 且唯一，`group_id` 外键到 `groups.id`，并建立 `stock`/`group` 关系；在 `app.models` 导出以供 `init_db()` 注册。
   - 验证：2026-05-31 `python -m pytest tests/unit/test_models.py tests/unit/test_config_database_main.py` 通过（22 passed）。
+  - 审查修复 RED：2026-05-31 `python -m pytest tests/unit/test_models.py` 失败，新增生产 SQLite `init_db()` 路径用例发现非法 `WatchlistItem(stock_code="999999", group_id=999)` 提交未触发 `IntegrityError`（`Failed: DID NOT RAISE`）。
+  - 审查修复 GREEN：在 SQLite engine 连接建立时通过 SQLAlchemy event listener 执行 `PRAGMA foreign_keys=ON`，使 `stocks.code` / `groups.id` 外键在默认 SQLite 环境真实生效。
+  - 审查修复验证：2026-05-31 `python -m pytest tests/unit/test_models.py tests/unit/test_config_database_main.py` 通过（23 passed）。
 
 ## 阻塞项
 （无）

@@ -34,7 +34,7 @@ def load_watchlist_model():
     return WatchlistItem
 
 
-def import_fresh_app_main():
+def import_fresh_database():
     for module_name in (
         "app.main",
         "app.models.watchlist",
@@ -45,6 +45,11 @@ def import_fresh_app_main():
         "app.config",
     ):
         sys.modules.pop(module_name, None)
+    return importlib.import_module("app.database")
+
+
+def import_fresh_app_main():
+    import_fresh_database()
     return importlib.import_module("app.main")
 
 
@@ -308,6 +313,26 @@ def test_watchlist_stock_code_is_unique_and_duplicate_insert_raises_integrity_er
                 session.commit()
     finally:
         engine.dispose()
+
+
+def test_watchlist_sqlite_init_db_rejects_missing_stock_and_group_foreign_keys(
+    monkeypatch, tmp_path
+):
+    database_path = tmp_path / "watchlist.db"
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{database_path}")
+    database = import_fresh_database()
+
+    try:
+        database.init_db()
+        from app.models.watchlist import WatchlistItem
+
+        with database.SessionLocal() as session:
+            session.add(WatchlistItem(stock_code="999999", group_id=999))
+
+            with pytest.raises(IntegrityError):
+                session.commit()
+    finally:
+        database.engine.dispose()
 
 
 def test_watchlist_round_trips_stock_group_and_optional_holding_fields():
