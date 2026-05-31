@@ -24,9 +24,12 @@ T3 已完成，Foundation 阶段可继续推进 T4。
   - RED：2026-05-30 `python -m pytest tests/unit/test_models.py` 失败，4 个用例均因 `ModuleNotFoundError: No module named 'app.models'` 暴露 Stock 模型尚不存在。
   - GREEN：新增 `app/models/__init__.py` 与 `app/models/stock.py`；Stock 使用 `stocks` 表，包含 `code/name/market/sector/status` 字段，`code` 为主键，`name`/`market` 非空。
   - 验证：2026-05-30 `python -m pytest tests/unit/test_models.py` 通过（4 passed）；`python -m pytest tests/unit/test_config_database_main.py` 回归通过（4 passed）。
+  - 审查修复 RED：2026-05-31 `python -m pytest tests/unit/test_models.py` 失败，新增应用 lifespan 初始化路径用例发现 `stocks` 不在 `init_db()` 创建后的临时 SQLite 表列表中（`AssertionError: assert 'stocks' in []`）。
+  - 审查修复 GREEN：在 `app.database.init_db()` 调用 `Base.metadata.create_all()` 前集中导入 `app.models`，确保 Stock 模型注册到 metadata。
+  - 审查修复验证：2026-05-31 `python -m pytest tests/unit/test_models.py` 通过（5 passed）；`python -m pytest tests/unit/test_config_database_main.py` 回归通过（4 passed）。
 
 ## 阻塞项
 （无）
 
 ## 最后更新
-2026-05-30
+2026-05-31

@@ -40,4 +40,6 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 def init_db() -> None:
     """按当前已注册的 SQLAlchemy metadata 建表。"""
 
+    import app.models  # noqa: F401
+
     Base.metadata.create_all(bind=engine)
