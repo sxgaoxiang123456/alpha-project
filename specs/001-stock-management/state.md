@@ -1,7 +1,7 @@
 # 实施进度 · 自选股管理
 
 ## 当前任务
-T3 已完成，Foundation 阶段可继续推进 T4。
+T4 已完成，Foundation 阶段可继续推进 T5。
 
 ## 已完成
 - [X] T01 · 创建项目骨架：requirements.txt + Dockerfile + docker-compose.yml + .env.example
@@ -27,6 +27,11 @@ T3 已完成，Foundation 阶段可继续推进 T4。
   - 审查修复 RED：2026-05-31 `python -m pytest tests/unit/test_models.py` 失败，新增应用 lifespan 初始化路径用例发现 `stocks` 不在 `init_db()` 创建后的临时 SQLite 表列表中（`AssertionError: assert 'stocks' in []`）。
   - 审查修复 GREEN：在 `app.database.init_db()` 调用 `Base.metadata.create_all()` 前集中导入 `app.models`，确保 Stock 模型注册到 metadata。
   - 审查修复验证：2026-05-31 `python -m pytest tests/unit/test_models.py` 通过（5 passed）；`python -m pytest tests/unit/test_config_database_main.py` 回归通过（4 passed）。
+
+- [X] T04 · 创建 Group 数据模型：app/models/group.py
+  - RED：2026-05-31 `python -m pytest tests/unit/test_models.py` 失败，新增用例发现 `groups` 表不存在（`sqlite3.OperationalError: no such table: groups`），且 `app.models.group` 尚未实现。
+  - GREEN：新增 `app/models/group.py` 与 `Group` 模型（`id/name/created_at/is_default`），在 `app.models` 导出，并在 `init_db()` 建表后幂等创建 `id=1, name="默认分组", is_default=True` 的默认分组。
+  - 验证：2026-05-31 `python -m pytest tests/unit/test_models.py` 通过（10 passed）；`python -m pytest tests/unit/test_config_database_main.py` 回归通过（4 passed）。
 
 ## 阻塞项
 （无）

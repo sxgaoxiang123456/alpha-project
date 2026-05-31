@@ -28,7 +28,7 @@
 - [X] **T3 [BE] [P]** 创建 Stock 数据模型：`app/models/stock.py`
   - [FR-002] [依赖: T2] [出参验证: `Stock.__table__.create()` 成功，表含 code/name/market/sector/status 字段]
 
-- [ ] **T4 [BE] [P]** 创建 Group 数据模型：`app/models/group.py`，含默认分组"默认分组"自动初始化逻辑
+- [X] **T4 [BE] [P]** 创建 Group 数据模型：`app/models/group.py`，含默认分组"默认分组"自动初始化逻辑
   - [FR-004] [依赖: T2] [出参验证: 启动时自动创建 id=1 的默认分组记录]
 
 - [ ] **T5 [BE]** 创建 WatchlistItem 数据模型：`app/models/watchlist.py`，含与 Stock/Group 的外键关联 + stock_code 唯一约束

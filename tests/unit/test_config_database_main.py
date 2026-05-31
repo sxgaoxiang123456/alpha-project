@@ -32,7 +32,14 @@ def test_settings_uses_sqlite_default_when_database_url_missing(monkeypatch):
 def test_database_exposes_engine_session_base_and_init_db(monkeypatch, tmp_path):
     database_path = tmp_path / "watchlist.db"
     monkeypatch.setenv("DATABASE_URL", f"sqlite:///{database_path}")
-    database = import_fresh("app.database", "app.config", "app.database")
+    database = import_fresh(
+        "app.database",
+        "app.models.group",
+        "app.models.stock",
+        "app.models",
+        "app.config",
+        "app.database",
+    )
 
     assert database.engine is not None
     assert database.SessionLocal is not None
@@ -48,18 +55,31 @@ def test_database_exposes_engine_session_base_and_init_db(monkeypatch, tmp_path)
 def test_fastapi_app_serves_health_and_docs(monkeypatch, tmp_path):
     database_path = tmp_path / "app.db"
     monkeypatch.setenv("DATABASE_URL", f"sqlite:///{database_path}")
-    main = import_fresh("app.main", "app.config", "app.database", "app.main")
+    main = import_fresh(
+        "app.main",
+        "app.main",
+        "app.models.group",
+        "app.models.stock",
+        "app.models",
+        "app.database",
+        "app.config",
+    )
 
-    assert isinstance(main.app, FastAPI)
+    try:
+        assert isinstance(main.app, FastAPI)
 
-    with TestClient(main.app) as client:
-        health_response = client.get("/health")
-        docs_response = client.get("/docs")
+        with TestClient(main.app) as client:
+            health_response = client.get("/health")
+            docs_response = client.get("/docs")
 
-    assert health_response.status_code == 200
-    assert health_response.json() == {
-        "status": "ok",
-        "message": "A股自动盯盘AI助手运行中",
-    }
-    assert docs_response.status_code == 200
-    assert "Swagger UI" in docs_response.text
+        assert health_response.status_code == 200
+        assert health_response.json() == {
+            "status": "ok",
+            "message": "A股自动盯盘AI助手运行中",
+        }
+        assert docs_response.status_code == 200
+        assert "Swagger UI" in docs_response.text
+    finally:
+        database = sys.modules.get("app.database")
+        if database is not None:
+            database.engine.dispose()

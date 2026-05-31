@@ -38,8 +38,20 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
 def init_db() -> None:
-    """按当前已注册的 SQLAlchemy metadata 建表。"""
+    """按当前已注册的 SQLAlchemy metadata 建表，并初始化系统默认数据。"""
 
     import app.models  # noqa: F401
+    from app.models.group import DEFAULT_GROUP_ID, DEFAULT_GROUP_NAME, Group
 
     Base.metadata.create_all(bind=engine)
+
+    with SessionLocal() as session:
+        if session.get(Group, DEFAULT_GROUP_ID) is None:
+            session.add(
+                Group(
+                    id=DEFAULT_GROUP_ID,
+                    name=DEFAULT_GROUP_NAME,
+                    is_default=True,
+                )
+            )
+            session.commit()
