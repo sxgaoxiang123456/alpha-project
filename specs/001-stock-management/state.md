@@ -32,6 +32,9 @@ T4 已完成，Foundation 阶段可继续推进 T5。
   - RED：2026-05-31 `python -m pytest tests/unit/test_models.py` 失败，新增用例发现 `groups` 表不存在（`sqlite3.OperationalError: no such table: groups`），且 `app.models.group` 尚未实现。
   - GREEN：新增 `app/models/group.py` 与 `Group` 模型（`id/name/created_at/is_default`），在 `app.models` 导出，并在 `init_db()` 建表后幂等创建 `id=1, name="默认分组", is_default=True` 的默认分组。
   - 验证：2026-05-31 `python -m pytest tests/unit/test_models.py` 通过（10 passed）；`python -m pytest tests/unit/test_config_database_main.py` 回归通过（4 passed）。
+  - 审查修复 RED：2026-05-31 `python -m pytest tests/unit/test_models.py` 失败，新增 PostgreSQL DDL 用例发现 `groups.id` 仍编译为 `SERIAL`，未避开默认分组 `id=1` 的序列起点风险。
+  - 审查修复 GREEN：将 `Group.id` 改为 `Identity(start=2)`，PostgreSQL DDL 编译为 identity 且起点为 2，避免后续自定义分组与默认分组主键冲突。
+  - 审查修复验证：2026-05-31 `python -m pytest tests/unit/test_models.py tests/unit/test_config_database_main.py` 通过。
 
 ## 阻塞项
 （无）
