@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html class="dark" lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}A股 AI 盯盘助手{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "background": "#11131c",
+                        "surface": "#11131c",
+                        "surface-dim": "#11131c",
+                        "surface-bright": "#373943",
+                        "surface-container-lowest": "#0c0e17",
+                        "surface-container-low": "#191b25",
+                        "surface-container": "#1d1f29",
+                        "surface-container-high": "#282934",
+                        "surface-container-highest": "#32343f",
+                        "surface-base": "#0F172A",
+                        "surface-raised": "#1E293B",
+                        "surface-lowest": "#020617",
+                        "surface-variant": "#32343f",
+                        "on-surface": "#e1e1ef",
+                        "on-surface-variant": "#c3c5d9",
+                        "inverse-surface": "#e1e1ef",
+                        "inverse-on-surface": "#2e303a",
+                        "outline": "#8d90a2",
+                        "outline-variant": "#434656",
+                        "primary": "#b7c4ff",
+                        "on-primary": "#002682",
+                        "primary-container": "#0052ff",
+                        "on-primary-container": "#dfe3ff",
+                        "inverse-primary": "#004ced",
+                        "secondary": "#b7c8e1",
+                        "on-secondary": "#213145",
+                        "secondary-container": "#3a4a5f",
+                        "on-secondary-container": "#a9bad3",
+                        "tertiary": "#ffb4a1",
+                        "on-tertiary": "#611300",
+                        "tertiary-container": "#bf3003",
+                        "on-tertiary-container": "#ffddd5",
+                        "error": "#ffb4ab",
+                        "on-error": "#690005",
+                        "error-container": "#93000a",
+                        "on-error-container": "#ffdad6",
+                        "market-up": "#F43F5E",
+                        "market-down": "#10B981",
+                        "market-warning": "#F59E0B",
+                    },
+                    fontFamily: {
+                        "headline-lg": ["Hanken Grotesk", "sans-serif"],
+                        "headline-md": ["Hanken Grotesk", "sans-serif"],
+                        "body-md": ["Inter", "sans-serif"],
+                        "data-table": ["JetBrains Mono", "monospace"],
+                        "display-price": ["JetBrains Mono", "monospace"],
+                        "label-caps": ["Inter", "sans-serif"],
+                    },
+                    spacing: {
+                        "container-gap": "24px",
+                        "card-padding": "16px",
+                        "table-row-height": "40px",
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-family: 'Material Symbols Outlined';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            -webkit-font-feature-settings: 'liga';
+            -webkit-font-smoothing: antialiased;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="bg-background text-on-surface font-body-md h-screen overflow-hidden flex">
+    {% include "components/side_nav.html" %}
+    <main class="flex-1 ml-64 flex flex-col h-screen bg-background relative overflow-hidden">
+        {% include "components/top_nav.html" %}
+        <div class="flex-1 overflow-y-auto p-8 relative">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
