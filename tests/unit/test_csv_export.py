@@ -10,7 +10,7 @@ import pytest
 # ---------------------------------------------------------------------------
 
 def test_export_empty_watchlist_returns_header_only():
-    from app.services.csv_export import export_watchlist_to_csv
+    from backend.services.csv_export import export_watchlist_to_csv
 
     result = export_watchlist_to_csv([])
     text = result.decode("utf-8")
@@ -21,7 +21,7 @@ def test_export_empty_watchlist_returns_header_only():
 
 
 def test_export_watchlist_with_items():
-    from app.services.csv_export import export_watchlist_to_csv
+    from backend.services.csv_export import export_watchlist_to_csv
 
     items = [
         {
@@ -61,7 +61,7 @@ def test_export_watchlist_with_items():
 
 def test_export_format_matches_import_format():
     """导出格式必须与导入格式一致，确保用户可导出后再导入。"""
-    from app.services.csv_export import export_watchlist_to_csv
+    from backend.services.csv_export import export_watchlist_to_csv
 
     items = [
         {
@@ -94,7 +94,7 @@ def test_export_format_matches_import_format():
 
 
 def test_export_with_missing_stock_or_group_uses_defaults():
-    from app.services.csv_export import export_watchlist_to_csv
+    from backend.services.csv_export import export_watchlist_to_csv
 
     items = [
         {

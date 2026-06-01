@@ -1,6 +1,6 @@
-from app.schemas.group import GroupCreate, GroupResponse, GroupUpdate
-from app.schemas.stock import StockBase, StockResponse, StockSearchResult
-from app.schemas.watchlist import (
+from backend.schemas.group import GroupCreate, GroupResponse, GroupUpdate
+from backend.schemas.stock import StockBase, StockResponse, StockSearchResult
+from backend.schemas.watchlist import (
     WatchlistCsvRow,
     WatchlistItemCreate,
     WatchlistItemResponse,

@@ -3,9 +3,9 @@ from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from app.models.group import DEFAULT_GROUP_ID
-from app.schemas.group import GroupResponse
-from app.schemas.stock import StockResponse, validate_stock_code
+from backend.models.group import DEFAULT_GROUP_ID
+from backend.schemas.group import GroupResponse
+from backend.schemas.stock import StockResponse, validate_stock_code
 
 
 class WatchlistItemCreate(BaseModel):

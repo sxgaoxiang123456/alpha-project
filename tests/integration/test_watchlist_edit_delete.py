@@ -9,24 +9,24 @@ def _fresh_app(monkeypatch, tmp_path):
     monkeypatch.setenv("DATABASE_URL", f"sqlite:///{database_path}")
 
     modules_to_clear = [
-        "app.main",
-        "app.routers.watchlist",
-        "app.routers.groups",
-        "app.routers.import_export",
-        "app.services.stock_search",
-        "app.services.csv_import",
-        "app.dependencies",
-        "app.models.group",
-        "app.models.stock",
-        "app.models.watchlist",
-        "app.models",
-        "app.database",
-        "app.config",
+        "backend.main",
+        "backend.routers.watchlist",
+        "backend.routers.groups",
+        "backend.routers.import_export",
+        "backend.services.stock_search",
+        "backend.services.csv_import",
+        "backend.dependencies",
+        "backend.models.group",
+        "backend.models.stock",
+        "backend.models.watchlist",
+        "backend.models",
+        "backend.database",
+        "backend.config",
     ]
     for name in modules_to_clear:
         sys.modules.pop(name, None)
 
-    main = __import__("app.main", fromlist=["app"])
+    main = __import__("backend.main", fromlist=["backend"])
     return main.app, database_path
 
 
@@ -44,10 +44,10 @@ class TestPutWatchlist:
     def test_edit_cost_price_and_shares_returns_200(self, monkeypatch, tmp_path):
         app, db_path = _fresh_app(monkeypatch, tmp_path)
 
-        import app.services.stock_search as ss
+        import backend.services.stock_search as ss
 
         def mock_search(query, **kwargs):
-            from app.schemas.stock import StockSearchResult
+            from backend.schemas.stock import StockSearchResult
 
             return StockSearchResult.model_validate(
                 _mock_search_stock_result("600519", "贵州茅台")
@@ -84,10 +84,10 @@ class TestDeleteWatchlist:
     def test_delete_single_stock_returns_204(self, monkeypatch, tmp_path):
         app, db_path = _fresh_app(monkeypatch, tmp_path)
 
-        import app.services.stock_search as ss
+        import backend.services.stock_search as ss
 
         def mock_search(query, **kwargs):
-            from app.schemas.stock import StockSearchResult
+            from backend.schemas.stock import StockSearchResult
 
             return StockSearchResult.model_validate(
                 _mock_search_stock_result("600519", "贵州茅台")
@@ -118,10 +118,10 @@ class TestBatchDeleteWatchlist:
     def test_batch_delete_returns_200_with_count(self, monkeypatch, tmp_path):
         app, db_path = _fresh_app(monkeypatch, tmp_path)
 
-        import app.services.stock_search as ss
+        import backend.services.stock_search as ss
 
         def mock_search(query, **kwargs):
-            from app.schemas.stock import StockSearchResult
+            from backend.schemas.stock import StockSearchResult
 
             return StockSearchResult.model_validate(
                 _mock_search_stock_result(query, f"股票{query}")
@@ -144,10 +144,10 @@ class TestBatchDeleteWatchlist:
     def test_batch_delete_partial_missing_returns_success_for_existing(self, monkeypatch, tmp_path):
         app, db_path = _fresh_app(monkeypatch, tmp_path)
 
-        import app.services.stock_search as ss
+        import backend.services.stock_search as ss
 
         def mock_search(query, **kwargs):
-            from app.schemas.stock import StockSearchResult
+            from backend.schemas.stock import StockSearchResult
 
             return StockSearchResult.model_validate(
                 _mock_search_stock_result(query, f"股票{query}")

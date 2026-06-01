@@ -18,21 +18,21 @@ def _fresh_app(monkeypatch, tmp_path):
     monkeypatch.setenv("DATABASE_URL", f"sqlite:///{database_path}")
 
     modules_to_clear = [
-        "app.main",
-        "app.routers.watchlist",
-        "app.services.stock_search",
-        "app.dependencies",
-        "app.models.group",
-        "app.models.stock",
-        "app.models.watchlist",
-        "app.models",
-        "app.database",
-        "app.config",
+        "backend.main",
+        "backend.routers.watchlist",
+        "backend.services.stock_search",
+        "backend.dependencies",
+        "backend.models.group",
+        "backend.models.stock",
+        "backend.models.watchlist",
+        "backend.models",
+        "backend.database",
+        "backend.config",
     ]
     for name in modules_to_clear:
         sys.modules.pop(name, None)
 
-    main = importlib.import_module("app.main")
+    main = importlib.import_module("backend.main")
     return main.app, database_path
 
 
@@ -50,13 +50,13 @@ class TestPostWatchlist:
     def test_add_stock_returns_201_and_item(self, monkeypatch, tmp_path):
         app, db_path = _fresh_app(monkeypatch, tmp_path)
 
-        import app.services.stock_search as ss
+        import backend.services.stock_search as ss
 
         original_search = ss.search_stock
 
         def mock_search(query, **kwargs):
             if query == "600519":
-                from app.schemas.stock import StockSearchResult
+                from backend.schemas.stock import StockSearchResult
 
                 return StockSearchResult.model_validate(
                     _mock_search_stock_result("600519", "贵州茅台")
@@ -82,10 +82,10 @@ class TestPostWatchlist:
     def test_add_duplicate_stock_returns_409(self, monkeypatch, tmp_path):
         app, db_path = _fresh_app(monkeypatch, tmp_path)
 
-        import app.services.stock_search as ss
+        import backend.services.stock_search as ss
 
         def mock_search(query, **kwargs):
-            from app.schemas.stock import StockSearchResult
+            from backend.schemas.stock import StockSearchResult
 
             return StockSearchResult.model_validate(
                 _mock_search_stock_result("600519", "贵州茅台")
@@ -103,7 +103,7 @@ class TestPostWatchlist:
     def test_add_invalid_code_returns_404(self, monkeypatch, tmp_path):
         app, db_path = _fresh_app(monkeypatch, tmp_path)
 
-        import app.services.stock_search as ss
+        import backend.services.stock_search as ss
 
         def mock_search(query, **kwargs):
             return None
@@ -119,10 +119,10 @@ class TestPostWatchlist:
     def test_add_over_limit_returns_429(self, monkeypatch, tmp_path):
         app, db_path = _fresh_app(monkeypatch, tmp_path)
 
-        import app.services.stock_search as ss
+        import backend.services.stock_search as ss
 
         def mock_search(query, **kwargs):
-            from app.schemas.stock import StockSearchResult
+            from backend.schemas.stock import StockSearchResult
 
             return StockSearchResult.model_validate(
                 _mock_search_stock_result(query, f"股票{query}")
@@ -146,10 +146,10 @@ class TestGetWatchlistSearch:
     def test_search_by_code_returns_candidates(self, monkeypatch, tmp_path):
         app, db_path = _fresh_app(monkeypatch, tmp_path)
 
-        import app.services.stock_search as ss
+        import backend.services.stock_search as ss
 
         def mock_search_stocks(query, **kwargs):
-            from app.schemas.stock import StockSearchResult
+            from backend.schemas.stock import StockSearchResult
 
             return [
                 StockSearchResult.model_validate(
@@ -171,10 +171,10 @@ class TestGetWatchlistSearch:
     def test_search_by_name_returns_candidates(self, monkeypatch, tmp_path):
         app, db_path = _fresh_app(monkeypatch, tmp_path)
 
-        import app.services.stock_search as ss
+        import backend.services.stock_search as ss
 
         def mock_search_stocks(query, **kwargs):
-            from app.schemas.stock import StockSearchResult
+            from backend.schemas.stock import StockSearchResult
 
             return [
                 StockSearchResult.model_validate(
@@ -200,10 +200,10 @@ class TestGetWatchlist:
     def test_list_returns_items_with_stock_and_group(self, monkeypatch, tmp_path):
         app, db_path = _fresh_app(monkeypatch, tmp_path)
 
-        import app.services.stock_search as ss
+        import backend.services.stock_search as ss
 
         def mock_search(query, **kwargs):
-            from app.schemas.stock import StockSearchResult
+            from backend.schemas.stock import StockSearchResult
 
             return StockSearchResult.model_validate(
                 _mock_search_stock_result("600519", "贵州茅台")

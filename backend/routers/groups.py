@@ -3,10 +3,10 @@ from typing import Literal
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from app.dependencies import get_db
-from app.models.group import DEFAULT_GROUP_ID, Group
-from app.schemas.group import GroupCreate, GroupResponse, GroupUpdate
-from app.services.group_service import CannotDeleteDefaultGroupError, delete_group
+from backend.dependencies import get_db
+from backend.models.group import DEFAULT_GROUP_ID, Group
+from backend.schemas.group import GroupCreate, GroupResponse, GroupUpdate
+from backend.services.group_service import CannotDeleteDefaultGroupError, delete_group
 
 router = APIRouter(prefix="/groups", tags=["groups"])
 

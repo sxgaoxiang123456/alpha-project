@@ -12,7 +12,7 @@ from sqlalchemy.schema import CreateTable
 
 def load_stock_model():
     try:
-        from app.models.stock import Stock
+        from backend.models.stock import Stock
     except ModuleNotFoundError as exc:
         pytest.fail(f"Stock model is not implemented: {exc}", pytrace=False)
     return Stock
@@ -20,7 +20,7 @@ def load_stock_model():
 
 def load_group_model():
     try:
-        from app.models.group import Group
+        from backend.models.group import Group
     except ModuleNotFoundError as exc:
         pytest.fail(f"Group model is not implemented: {exc}", pytrace=False)
     return Group
@@ -28,7 +28,7 @@ def load_group_model():
 
 def load_watchlist_model():
     try:
-        from app.models.watchlist import WatchlistItem
+        from backend.models.watchlist import WatchlistItem
     except ModuleNotFoundError as exc:
         pytest.fail(f"WatchlistItem model is not implemented: {exc}", pytrace=False)
     return WatchlistItem
@@ -36,21 +36,21 @@ def load_watchlist_model():
 
 def import_fresh_database():
     for module_name in (
-        "app.main",
-        "app.models.watchlist",
-        "app.models.stock",
-        "app.models.group",
-        "app.models",
-        "app.database",
-        "app.config",
+        "backend.main",
+        "backend.models.watchlist",
+        "backend.models.stock",
+        "backend.models.group",
+        "backend.models",
+        "backend.database",
+        "backend.config",
     ):
         sys.modules.pop(module_name, None)
-    return importlib.import_module("app.database")
+    return importlib.import_module("backend.database")
 
 
 def import_fresh_app_main():
     import_fresh_database()
-    return importlib.import_module("app.main")
+    return importlib.import_module("backend.main")
 
 
 def test_app_lifespan_initializes_stock_table_via_init_db(monkeypatch, tmp_path):
@@ -70,7 +70,7 @@ def test_app_lifespan_initializes_stock_table_via_init_db(monkeypatch, tmp_path)
 
         assert "stocks" in table_names
     finally:
-        database = sys.modules.get("app.database")
+        database = sys.modules.get("backend.database")
         if database is not None:
             database.engine.dispose()
 
@@ -92,7 +92,7 @@ def test_app_lifespan_initializes_watchlist_table_via_init_db(monkeypatch, tmp_p
 
         assert "watchlist_items" in table_names
     finally:
-        database = sys.modules.get("app.database")
+        database = sys.modules.get("backend.database")
         if database is not None:
             database.engine.dispose()
 
@@ -106,7 +106,7 @@ def test_app_lifespan_initializes_default_group_idempotently(monkeypatch, tmp_pa
         with TestClient(main.app) as client:
             assert client.get("/health").status_code == 200
 
-        database = sys.modules["app.database"]
+        database = sys.modules["backend.database"]
         database.init_db()
 
         inspection_engine = create_engine(f"sqlite:///{database_path}")
@@ -126,7 +126,7 @@ def test_app_lifespan_initializes_default_group_idempotently(monkeypatch, tmp_pa
         assert default_group["name"] == "默认分组"
         assert bool(default_group["is_default"]) is True
     finally:
-        database = sys.modules.get("app.database")
+        database = sys.modules.get("backend.database")
         if database is not None:
             database.engine.dispose()
 
@@ -288,7 +288,7 @@ def test_watchlist_foreign_keys_reference_stock_code_and_group_id():
 
 
 def test_watchlist_stock_code_is_unique_and_duplicate_insert_raises_integrity_error():
-    from app.database import Base
+    from backend.database import Base
 
     Group = load_group_model()
     Stock = load_stock_model()
@@ -324,7 +324,7 @@ def test_watchlist_sqlite_init_db_rejects_missing_stock_and_group_foreign_keys(
 
     try:
         database.init_db()
-        from app.models.watchlist import WatchlistItem
+        from backend.models.watchlist import WatchlistItem
 
         with database.SessionLocal() as session:
             session.add(WatchlistItem(stock_code="999999", group_id=999))
@@ -338,7 +338,7 @@ def test_watchlist_sqlite_init_db_rejects_missing_stock_and_group_foreign_keys(
 def test_watchlist_round_trips_stock_group_and_optional_holding_fields():
     from decimal import Decimal
 
-    from app.database import Base
+    from backend.database import Base
 
     Group = load_group_model()
     Stock = load_stock_model()

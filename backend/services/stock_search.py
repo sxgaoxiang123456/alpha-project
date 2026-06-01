@@ -3,7 +3,7 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from app.schemas.stock import StockSearchResult, validate_stock_code
+from backend.schemas.stock import StockSearchResult, validate_stock_code
 
 StockProviderLookup = Callable[[str], Any]
 

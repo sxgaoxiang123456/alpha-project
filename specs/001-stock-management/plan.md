@@ -54,12 +54,13 @@ specs/001-stock-management/
 
 ```text
 AlphaProject/
-├── app/
+├── backend/                    # 后端代码（FastAPI + SQLAlchemy + Pydantic）
 │   ├── __init__.py
 │   ├── main.py                 # FastAPI 应用入口，注册路由和中间件
 │   ├── config.py               # 配置加载（环境变量、路径、上限常量）
 │   ├── database.py             # SQLAlchemy 引擎、SessionLocal、表创建
 │   ├── dependencies.py         # 依赖注入（DB session、配置等）
+│   ├── requirements.txt        # Python 依赖
 │   ├── models/
 │   │   ├── __init__.py
 │   │   ├── base.py             # 声明式基类 + 公共字段混入
@@ -77,37 +78,42 @@ AlphaProject/
 │   │   ├── csv_import.py       # CSV 导入服务：解析、校验、部分成功处理
 │   │   ├── csv_export.py       # CSV 导出服务：数据查询、CSV 生成
 │   │   └── group_service.py    # 分组业务服务：删除时股票归属处理
-│   ├── schemas/
-│   │   ├── __init__.py
-│   │   ├── watchlist.py        # Pydantic 模型：请求/响应/校验规则
-│   │   ├── group.py            # Pydantic 模型：分组请求/响应
-│   │   └── stock.py            # Pydantic 模型：股票信息/搜索结果
-│   ├── static/
-│   │   ├── css/
-│   │   │   └── watchlist.css   # 自选股页面专用样式（响应式、hover 效果）
-│   │   └── js/
-│   │       └── watchlist.js    # 批量选择、分组切换、行内编辑交互
-│   └── templates/
-│       ├── base.html           # 基础布局模板：HTML5 骨架 + Tailwind CDN + Google Fonts + Material Symbols
-│       ├── watchlist/
-│       │   ├── list.html       # 自选股列表主页面：SideNavBar + TopNavBar + FilterSidebar + StockDataTable + EmptyState
-│       │   ├── add_modal.html  # 添加股票弹窗（CommandBar 搜索 + 分组选择）
-│       │   └── edit_modal.html # 编辑持仓信息弹窗（成本/股数编辑）
-│       ├── groups/
-│       │   └── manage.html     # 分组管理页面（CRUD + 删除确认弹窗）
-│       └── components/
-│           ├── side_nav.html        # SideNavBar 组件（导航菜单 + AI 简报按钮）
-│           ├── top_nav.html         # TopNavBar 组件（CommandBar 搜索框 + 通知 + 用户头像）
-│           ├── filter_sidebar.html  # FilterSidebar 组件（分组列表 + 新建分组）
-│           ├── stock_table.html     # StockDataTable 组件（表头控制 + 数据表格 + 批量操作）
-│           ├── stock_table_row.html # StockDataTable 行组件（代码/名称 + 分组标签 + 价格/成本/盈亏 + 迷你趋势图 + 操作按钮）
-│           ├── empty_state.html     # EmptyState 组件（空自选股引导页）
-│           ├── alert_badge.html     # AlertBadge 组件（触及目标/预警标签）
-│           └── metric_tag.html      # MetricCard(Tag) 组件（分组标签样式）
+│   └── schemas/
+│       ├── __init__.py
+│       ├── watchlist.py        # Pydantic 模型：请求/响应/校验规则
+│       ├── group.py            # Pydantic 模型：分组请求/响应
+│       └── stock.py            # Pydantic 模型：股票信息/搜索结果
+├── frontend/                   # 前端代码（Jinja2 模板 + 静态资源）
+│   ├── templates/
+│   │   ├── base.html           # 基础布局模板：HTML5 骨架 + Tailwind CDN + Google Fonts + Material Symbols
+│   │   ├── watchlist/
+│   │   │   ├── list.html       # 自选股列表主页面：SideNavBar + TopNavBar + FilterSidebar + StockDataTable + EmptyState
+│   │   │   ├── add_modal.html  # 添加股票弹窗（CommandBar 搜索 + 分组选择）
+│   │   │   └── edit_modal.html # 编辑持仓信息弹窗（成本/股数编辑）
+│   │   ├── groups/
+│   │   │   └── manage.html     # 分组管理页面（CRUD + 删除确认弹窗）
+│   │   └── components/
+│   │       ├── side_nav.html        # SideNavBar 组件（导航菜单 + AI 简报按钮）
+│   │       ├── top_nav.html         # TopNavBar 组件（CommandBar 搜索框 + 通知 + 用户头像）
+│   │       ├── filter_sidebar.html  # FilterSidebar 组件（分组列表 + 新建分组）
+│   │       ├── stock_table.html     # StockDataTable 组件（表头控制 + 数据表格 + 批量操作）
+│   │       ├── stock_table_row.html # StockDataTable 行组件（代码/名称 + 分组标签 + 价格/成本/盈亏 + 迷你趋势图 + 操作按钮）
+│   │       ├── empty_state.html     # EmptyState 组件（空自选股引导页）
+│   │       ├── alert_badge.html     # AlertBadge 组件（触及目标/预警标签）
+│   │       └── metric_tag.html      # MetricCard(Tag) 组件（分组标签样式）
+│   └── static/
+│       ├── css/
+│       │   └── watchlist.css   # 自选股页面专用样式（响应式、hover 效果）
+│       └── js/
+│           └── watchlist.js    # 批量选择、分组切换、行内编辑交互
+├── infrastructure/             # Docker、数据库等基础设施配置
+│   ├── Dockerfile              # 应用容器镜像
+│   ├── docker-compose.yml      # 开发环境编排
+│   └── .env.example            # 环境变量模板
 ├── data/
 │   └── watchlist.db            # SQLite 数据库文件（gitignored）
 ├── tests/
-│   ├── conftest.py             # pytest  fixtures：测试客户端、内存数据库
+│   ├── conftest.py             # pytest fixtures：测试客户端、内存数据库
 │   ├── unit/
 │   │   ├── test_models.py      # 模型层单元测试
 │   │   ├── test_schemas.py     # Pydantic 校验测试
@@ -117,10 +123,6 @@ AlphaProject/
 │       ├── test_watchlist_api.py   # 自选股 API 端到端测试
 │       ├── test_groups_api.py      # 分组 API 端到端测试
 │       └── test_import_export.py   # 导入导出 API 端到端测试
-├── docker-compose.yml          # 开发环境编排
-├── Dockerfile                  # 应用容器镜像
-├── requirements.txt            # Python 依赖
-├── .env.example                # 环境变量模板
 └── alembic/                    # 数据库迁移（预留，MVP 初期可用手动建表）
     └── versions/
 ```

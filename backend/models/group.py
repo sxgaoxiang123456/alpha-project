@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 from sqlalchemy import Boolean, DateTime, Identity, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.database import Base
+from backend.database import Base
 
 DEFAULT_GROUP_ID = 1
 DEFAULT_GROUP_NAME = "默认分组"

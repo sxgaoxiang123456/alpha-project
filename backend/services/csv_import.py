@@ -108,7 +108,7 @@ def import_watchlist_from_csv(
         }
     """
     if search_stock_func is None:
-        from app.services.stock_search import search_stock
+        from backend.services.stock_search import search_stock
 
         search_stock_func = search_stock
 
@@ -243,7 +243,7 @@ def import_watchlist_from_csv(
 
 def _default_find_or_create_group(name: str) -> dict:
     """默认分组查找/创建（占位实现，实际应由 group_service 提供）。"""
-    from app.models.group import DEFAULT_GROUP_ID, DEFAULT_GROUP_NAME
+    from backend.models.group import DEFAULT_GROUP_ID, DEFAULT_GROUP_NAME
 
     if name == DEFAULT_GROUP_NAME:
         return {"id": DEFAULT_GROUP_ID, "name": name}

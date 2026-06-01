@@ -2,10 +2,10 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from app.database import Base
-from app.models.group import DEFAULT_GROUP_ID, DEFAULT_GROUP_NAME, Group
-from app.models.stock import Stock
-from app.models.watchlist import WatchlistItem
+from backend.database import Base
+from backend.models.group import DEFAULT_GROUP_ID, DEFAULT_GROUP_NAME, Group
+from backend.models.stock import Stock
+from backend.models.watchlist import WatchlistItem
 
 
 def _make_db():
@@ -44,7 +44,7 @@ def _add_watchlist(db, code: str, group_id: int):
 
 class TestDeleteGroup:
     def test_delete_group_move_to_default_moves_stocks(self):
-        from app.services.group_service import delete_group
+        from backend.services.group_service import delete_group
 
         db = _make_db()
         _add_default_group(db)
@@ -73,7 +73,7 @@ class TestDeleteGroup:
         assert db.get(Group, group_id) is None
 
     def test_delete_group_delete_all_removes_stocks(self):
-        from app.services.group_service import delete_group
+        from backend.services.group_service import delete_group
 
         db = _make_db()
         _add_default_group(db)
@@ -98,7 +98,7 @@ class TestDeleteGroup:
         assert db.get(Group, group_id) is None
 
     def test_delete_default_group_raises_error(self):
-        from app.services.group_service import CannotDeleteDefaultGroupError, delete_group
+        from backend.services.group_service import CannotDeleteDefaultGroupError, delete_group
 
         db = _make_db()
         _add_default_group(db)
@@ -107,7 +107,7 @@ class TestDeleteGroup:
             delete_group(db, DEFAULT_GROUP_ID, strategy="move_to_default")
 
     def test_delete_nonexistent_group_returns_none(self):
-        from app.services.group_service import delete_group
+        from backend.services.group_service import delete_group
 
         db = _make_db()
         _add_default_group(db)
@@ -116,7 +116,7 @@ class TestDeleteGroup:
         assert result is None
 
     def test_delete_empty_group_succeeds(self):
-        from app.services.group_service import delete_group
+        from backend.services.group_service import delete_group
 
         db = _make_db()
         _add_default_group(db)
@@ -132,7 +132,7 @@ class TestDeleteGroup:
 
 class TestFindOrCreateGroup:
     def test_find_existing_group_returns_it(self):
-        from app.services.group_service import find_or_create_group
+        from backend.services.group_service import find_or_create_group
 
         db = _make_db()
         _add_default_group(db)
@@ -143,7 +143,7 @@ class TestFindOrCreateGroup:
         assert result["name"] == "持仓"
 
     def test_create_new_group_when_not_exists(self):
-        from app.services.group_service import find_or_create_group
+        from backend.services.group_service import find_or_create_group
 
         db = _make_db()
         _add_default_group(db)
@@ -157,7 +157,7 @@ class TestFindOrCreateGroup:
         assert group is not None
 
     def test_find_default_group_by_name(self):
-        from app.services.group_service import find_or_create_group
+        from backend.services.group_service import find_or_create_group
 
         db = _make_db()
         _add_default_group(db)

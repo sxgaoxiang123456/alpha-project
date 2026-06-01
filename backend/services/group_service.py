@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 
-from app.models.group import DEFAULT_GROUP_ID, DEFAULT_GROUP_NAME, Group
-from app.models.watchlist import WatchlistItem
+from backend.models.group import DEFAULT_GROUP_ID, DEFAULT_GROUP_NAME, Group
+from backend.models.watchlist import WatchlistItem
 
 
 class CannotDeleteDefaultGroupError(ValueError):

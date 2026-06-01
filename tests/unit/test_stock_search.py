@@ -5,7 +5,7 @@ import pytest
 
 
 def test_search_stock_by_code_returns_akshare_match():
-    from app.services.stock_search import search_stock
+    from backend.services.stock_search import search_stock
 
     def akshare_lookup(query: str):
         assert query == "600519"
@@ -35,7 +35,7 @@ def test_search_stock_by_code_returns_akshare_match():
 
 
 def test_search_stock_falls_back_to_baostock_when_akshare_fails():
-    from app.services.stock_search import search_stock
+    from backend.services.stock_search import search_stock
 
     def akshare_lookup(query: str):
         raise RuntimeError("akshare unavailable")
@@ -62,7 +62,7 @@ def test_search_stock_falls_back_to_baostock_when_akshare_fails():
 
 
 def test_search_stock_returns_none_when_no_provider_finds_code():
-    from app.services.stock_search import search_stock
+    from backend.services.stock_search import search_stock
 
     calls = []
 
@@ -85,7 +85,7 @@ def test_search_stock_returns_none_when_no_provider_finds_code():
 
 
 def test_search_stock_rejects_invalid_code_format_without_querying_providers():
-    from app.services.stock_search import StockCodeFormatError, search_stock
+    from backend.services.stock_search import StockCodeFormatError, search_stock
 
     def fail_lookup(query: str):
         raise AssertionError("格式错误时不应调用数据源")
@@ -99,7 +99,7 @@ def test_search_stock_rejects_invalid_code_format_without_querying_providers():
 
 
 def test_search_stocks_by_name_returns_candidates_from_akshare():
-    from app.services.stock_search import search_stocks
+    from backend.services.stock_search import search_stocks
 
     def akshare_lookup(query: str):
         assert query == "茅台"
@@ -122,7 +122,7 @@ def test_search_stocks_by_name_returns_candidates_from_akshare():
 
 
 def test_search_stock_returns_unverified_manual_stock_when_all_providers_fail():
-    from app.services.stock_search import search_stock
+    from backend.services.stock_search import search_stock
 
     def fail_lookup(query: str):
         raise RuntimeError("provider unavailable")
@@ -142,7 +142,7 @@ def test_search_stock_returns_unverified_manual_stock_when_all_providers_fail():
 
 
 def test_search_stock_raises_source_unavailable_without_manual_name():
-    from app.services.stock_search import StockDataSourceUnavailableError, search_stock
+    from backend.services.stock_search import StockDataSourceUnavailableError, search_stock
 
     def fail_lookup(query: str):
         raise RuntimeError("provider unavailable")
@@ -156,7 +156,7 @@ def test_search_stock_raises_source_unavailable_without_manual_name():
 
 
 def test_search_stocks_falls_back_to_baostock_for_code_query_when_akshare_fails():
-    from app.services.stock_search import search_stocks
+    from backend.services.stock_search import search_stocks
 
     def akshare_lookup(query: str):
         raise RuntimeError("akshare unavailable")
@@ -181,7 +181,7 @@ def test_search_stocks_falls_back_to_baostock_for_code_query_when_akshare_fails(
 
 
 def test_search_stocks_rejects_code_like_invalid_query_without_querying_providers():
-    from app.services.stock_search import StockCodeFormatError, search_stocks
+    from backend.services.stock_search import StockCodeFormatError, search_stocks
 
     def fail_lookup(query: str):
         raise AssertionError("格式错误时不应调用数据源")
@@ -195,7 +195,7 @@ def test_search_stocks_rejects_code_like_invalid_query_without_querying_provider
 
 
 def test_search_stock_treats_default_provider_errors_as_source_unavailable(monkeypatch):
-    from app.services.stock_search import search_stock
+    from backend.services.stock_search import search_stock
 
     class BadAkshareFrame:
         columns = ["unexpected"]
@@ -223,7 +223,7 @@ def test_search_stock_treats_default_provider_errors_as_source_unavailable(monke
 
 
 def test_search_stock_treats_baostock_query_error_as_source_unavailable(monkeypatch):
-    from app.services.stock_search import search_stock
+    from backend.services.stock_search import search_stock
 
     monkeypatch.setitem(
         sys.modules,
@@ -249,7 +249,7 @@ def test_search_stock_treats_baostock_query_error_as_source_unavailable(monkeypa
 
 
 def test_search_stock_uses_fallback_when_primary_returns_different_code():
-    from app.services.stock_search import search_stock
+    from backend.services.stock_search import search_stock
 
     def akshare_lookup(query: str):
         return {"code": "600000", "name": "浦发银行", "market": "沪"}
@@ -269,7 +269,7 @@ def test_search_stock_uses_fallback_when_primary_returns_different_code():
 
 
 def test_search_stock_treats_malformed_matching_result_as_source_unavailable():
-    from app.services.stock_search import search_stock
+    from backend.services.stock_search import search_stock
 
     def malformed_lookup(query: str):
         return {"code": "600519"}
@@ -288,7 +288,7 @@ def test_search_stock_treats_malformed_matching_result_as_source_unavailable():
 
 
 def test_search_stocks_by_name_raises_when_akshare_unavailable():
-    from app.services.stock_search import StockDataSourceUnavailableError, search_stocks
+    from backend.services.stock_search import StockDataSourceUnavailableError, search_stocks
 
     def akshare_lookup(query: str):
         raise RuntimeError("akshare unavailable")
@@ -298,7 +298,7 @@ def test_search_stocks_by_name_raises_when_akshare_unavailable():
 
 
 def test_search_stocks_by_name_raises_when_provider_result_is_malformed():
-    from app.services.stock_search import StockDataSourceUnavailableError, search_stocks
+    from backend.services.stock_search import StockDataSourceUnavailableError, search_stocks
 
     def akshare_lookup(query: str):
         return [{"code": "600519"}]
@@ -308,7 +308,7 @@ def test_search_stocks_by_name_raises_when_provider_result_is_malformed():
 
 
 def test_search_functions_reject_none_query_without_querying_providers():
-    from app.services.stock_search import StockCodeFormatError, search_stock, search_stocks
+    from backend.services.stock_search import StockCodeFormatError, search_stock, search_stocks
 
     def fail_lookup(query: str):
         raise AssertionError("格式错误时不应调用数据源")

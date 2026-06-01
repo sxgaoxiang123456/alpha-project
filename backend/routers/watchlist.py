@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session, joinedload
 
-from app.dependencies import get_db
-from app.models.stock import Stock
-from app.models.watchlist import WatchlistItem
-from app.schemas.stock import StockSearchResult
-from app.schemas.watchlist import BatchDeleteRequest, WatchlistItemCreate, WatchlistItemResponse, WatchlistItemUpdate
-import app.services.stock_search as stock_search
+from backend.dependencies import get_db
+from backend.models.stock import Stock
+from backend.models.watchlist import WatchlistItem
+from backend.schemas.stock import StockSearchResult
+from backend.schemas.watchlist import BatchDeleteRequest, WatchlistItemCreate, WatchlistItemResponse, WatchlistItemUpdate
+import backend.services.stock_search as stock_search
 
 router = APIRouter(prefix="/watchlist", tags=["watchlist"])
 

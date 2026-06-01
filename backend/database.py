@@ -4,7 +4,7 @@ from sqlalchemy import create_engine, event
 from sqlalchemy.engine import make_url
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
-from app.config import get_settings
+from backend.config import get_settings
 
 
 class Base(DeclarativeBase):
@@ -50,8 +50,8 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 def init_db() -> None:
     """按当前已注册的 SQLAlchemy metadata 建表，并初始化系统默认数据。"""
 
-    import app.models  # noqa: F401
-    from app.models.group import DEFAULT_GROUP_ID, DEFAULT_GROUP_NAME, Group
+    import backend.models  # noqa: F401
+    from backend.models.group import DEFAULT_GROUP_ID, DEFAULT_GROUP_NAME, Group
 
     Base.metadata.create_all(bind=engine)
 

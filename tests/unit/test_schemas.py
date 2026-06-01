@@ -6,15 +6,15 @@ from pydantic import ValidationError
 
 
 def test_watchlist_create_rejects_invalid_cost_price_string():
-    from app.schemas.watchlist import WatchlistItemCreate
+    from backend.schemas.watchlist import WatchlistItemCreate
 
     with pytest.raises(ValidationError):
         WatchlistItemCreate(stock_code="600519", cost_price="abc")
 
 
 def test_stock_and_watchlist_reject_non_six_digit_codes():
-    from app.schemas.stock import StockBase
-    from app.schemas.watchlist import WatchlistCsvRow, WatchlistItemCreate
+    from backend.schemas.stock import StockBase
+    from backend.schemas.watchlist import WatchlistCsvRow, WatchlistItemCreate
 
     with pytest.raises(ValidationError):
         StockBase(code="60051A", name="贵州茅台", market="沪")
@@ -33,7 +33,7 @@ def test_stock_and_watchlist_reject_non_six_digit_codes():
 
 
 def test_watchlist_rejects_negative_cost_price_and_shares():
-    from app.schemas.watchlist import WatchlistItemCreate, WatchlistItemUpdate
+    from backend.schemas.watchlist import WatchlistItemCreate, WatchlistItemUpdate
 
     with pytest.raises(ValidationError):
         WatchlistItemCreate(stock_code="600519", cost_price=Decimal("-0.01"))
@@ -43,7 +43,7 @@ def test_watchlist_rejects_negative_cost_price_and_shares():
 
 
 def test_watchlist_create_and_update_accept_valid_holding_payloads():
-    from app.schemas.watchlist import WatchlistItemCreate, WatchlistItemUpdate
+    from backend.schemas.watchlist import WatchlistItemCreate, WatchlistItemUpdate
 
     created = WatchlistItemCreate(
         stock_code="600519",
@@ -65,14 +65,14 @@ def test_watchlist_create_and_update_accept_valid_holding_payloads():
 
 
 def test_group_create_rejects_blank_name():
-    from app.schemas.group import GroupCreate
+    from backend.schemas.group import GroupCreate
 
     with pytest.raises(ValidationError):
         GroupCreate(name="   ")
 
 
 def test_watchlist_csv_row_validates_csv_contract():
-    from app.schemas.watchlist import WatchlistCsvRow
+    from backend.schemas.watchlist import WatchlistCsvRow
 
     row = WatchlistCsvRow(
         code="600519",
@@ -104,8 +104,8 @@ def test_watchlist_csv_row_validates_csv_contract():
 
 
 def test_group_response_supports_model_validate_from_sqlalchemy_model():
-    from app.models.group import Group
-    from app.schemas.group import GroupResponse
+    from backend.models.group import Group
+    from backend.schemas.group import GroupResponse
 
     created_at = datetime(2026, 5, 31, 10, 0, tzinfo=UTC)
     group = Group(id=1, name="默认分组", created_at=created_at, is_default=True)
@@ -119,10 +119,10 @@ def test_group_response_supports_model_validate_from_sqlalchemy_model():
 
 
 def test_response_schemas_support_model_validate_from_attributes():
-    from app.models.group import Group
-    from app.models.stock import Stock
-    from app.models.watchlist import WatchlistItem
-    from app.schemas import GroupResponse, StockResponse, WatchlistItemResponse
+    from backend.models.group import Group
+    from backend.models.stock import Stock
+    from backend.models.watchlist import WatchlistItem
+    from backend.schemas import GroupResponse, StockResponse, WatchlistItemResponse
 
     added_at = datetime(2026, 5, 31, 10, 30, tzinfo=UTC)
     group = Group(id=1, name="默认分组", created_at=added_at, is_default=True)
@@ -159,8 +159,8 @@ def test_response_schemas_support_model_validate_from_attributes():
 
 
 def test_watchlist_response_rejects_negative_cost_price_from_attributes():
-    from app.models.watchlist import WatchlistItem
-    from app.schemas import WatchlistItemResponse
+    from backend.models.watchlist import WatchlistItem
+    from backend.schemas import WatchlistItemResponse
 
     item = WatchlistItem(
         id=8,

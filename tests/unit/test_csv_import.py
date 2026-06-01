@@ -41,7 +41,7 @@ def make_n_valid_rows(n: int) -> list[dict]:
 # ---------------------------------------------------------------------------
 
 def test_parse_csv_rows_returns_20_valid_rows():
-    from app.services.csv_import import parse_csv_rows
+    from backend.services.csv_import import parse_csv_rows
 
     rows = make_n_valid_rows(20)
     content = make_csv_content(rows)
@@ -53,7 +53,7 @@ def test_parse_csv_rows_returns_20_valid_rows():
 
 
 def test_parse_csv_rows_rejects_over_100_rows():
-    from app.services.csv_import import CsvRowCountExceededError, parse_csv_rows
+    from backend.services.csv_import import CsvRowCountExceededError, parse_csv_rows
 
     rows = make_n_valid_rows(101)
     content = make_csv_content(rows)
@@ -65,7 +65,7 @@ def test_parse_csv_rows_rejects_over_100_rows():
 
 
 def test_parse_csv_rows_rejects_malformed_csv():
-    from app.services.csv_import import CsvParseError, parse_csv_rows
+    from backend.services.csv_import import CsvParseError, parse_csv_rows
 
     content = b"not,a,csv\n1,2"
 
@@ -78,7 +78,7 @@ def test_parse_csv_rows_rejects_malformed_csv():
 # ---------------------------------------------------------------------------
 
 def test_import_20_valid_rows_returns_success_count_20():
-    from app.services.csv_import import import_watchlist_from_csv
+    from backend.services.csv_import import import_watchlist_from_csv
 
     csv_rows = make_n_valid_rows(20)
 
@@ -94,7 +94,7 @@ def test_import_20_valid_rows_returns_success_count_20():
 
 
 def test_import_with_2_invalid_rows_returns_partial_success():
-    from app.services.csv_import import import_watchlist_from_csv
+    from backend.services.csv_import import import_watchlist_from_csv
 
     csv_rows = [
         {"code": "600000", "name": "股票1"},
@@ -117,7 +117,7 @@ def test_import_with_2_invalid_rows_returns_partial_success():
 
 
 def test_import_skips_duplicate_stock_code():
-    from app.services.csv_import import import_watchlist_from_csv
+    from backend.services.csv_import import import_watchlist_from_csv
 
     csv_rows = [
         {"code": "600000", "name": "股票1"},
@@ -135,7 +135,7 @@ def test_import_skips_duplicate_stock_code():
 
 
 def test_import_with_existing_watchlist_item_skips_duplicate():
-    from app.services.csv_import import import_watchlist_from_csv
+    from backend.services.csv_import import import_watchlist_from_csv
 
     csv_rows = [{"code": "600000", "name": "股票1"}]
 
@@ -157,7 +157,7 @@ def test_import_with_existing_watchlist_item_skips_duplicate():
 
 
 def test_import_stock_not_found_returns_failure():
-    from app.services.csv_import import import_watchlist_from_csv
+    from backend.services.csv_import import import_watchlist_from_csv
 
     csv_rows = [{"code": "999999", "name": "不存在"}]
 
@@ -172,7 +172,7 @@ def test_import_stock_not_found_returns_failure():
 
 
 def test_import_reaches_watchlist_limit_returns_failure():
-    from app.services.csv_import import import_watchlist_from_csv
+    from backend.services.csv_import import import_watchlist_from_csv
 
     csv_rows = [{"code": "600000", "name": "股票1"}]
 
@@ -192,7 +192,7 @@ def test_import_reaches_watchlist_limit_returns_failure():
 
 
 def test_import_preserve_cost_price_and_shares():
-    from app.services.csv_import import import_watchlist_from_csv
+    from backend.services.csv_import import import_watchlist_from_csv
 
     csv_rows = [{"code": "600000", "name": "股票1", "cost_price": "1500.50", "shares": "100"}]
 
@@ -208,7 +208,7 @@ def test_import_preserve_cost_price_and_shares():
 
 
 def test_import_with_group_name_creates_or_finds_group():
-    from app.services.csv_import import import_watchlist_from_csv
+    from backend.services.csv_import import import_watchlist_from_csv
 
     csv_rows = [{"code": "600000", "name": "股票1", "group": "持仓"}]
 
@@ -229,7 +229,7 @@ def test_import_with_group_name_creates_or_finds_group():
 
 
 def test_import_invalid_cost_price_returns_single_failure():
-    from app.services.csv_import import import_watchlist_from_csv
+    from backend.services.csv_import import import_watchlist_from_csv
 
     csv_rows = [{"code": "600000", "name": "股票1", "cost_price": "abc"}]
 
@@ -244,7 +244,7 @@ def test_import_invalid_cost_price_returns_single_failure():
 
 
 def test_import_invalid_shares_returns_single_failure():
-    from app.services.csv_import import import_watchlist_from_csv
+    from backend.services.csv_import import import_watchlist_from_csv
 
     csv_rows = [{"code": "600000", "name": "股票1", "shares": "xyz"}]
 

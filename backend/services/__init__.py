@@ -1,4 +1,4 @@
-from app.services.stock_search import (
+from backend.services.stock_search import (
     StockCodeFormatError,
     StockDataSourceUnavailableError,
     search_stock,

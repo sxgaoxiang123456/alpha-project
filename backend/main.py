@@ -6,13 +6,13 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import joinedload
 
-from app.config import get_settings
-from app.database import SessionLocal, init_db
-from app.models.group import Group
-from app.models.watchlist import WatchlistItem
-from app.routers.groups import router as groups_router
-from app.routers.import_export import router as import_export_router
-from app.routers.watchlist import router as watchlist_router
+from backend.config import get_settings
+from backend.database import SessionLocal, init_db
+from backend.models.group import Group
+from backend.models.watchlist import WatchlistItem
+from backend.routers.groups import router as groups_router
+from backend.routers.import_export import router as import_export_router
+from backend.routers.watchlist import router as watchlist_router
 
 settings = get_settings()
 
@@ -30,8 +30,8 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
-templates = Jinja2Templates(directory="app/templates")
+app.mount("/static", StaticFiles(directory="frontend/static"), name="static")
+templates = Jinja2Templates(directory="frontend/templates")
 
 app.include_router(watchlist_router)
 app.include_router(import_export_router)

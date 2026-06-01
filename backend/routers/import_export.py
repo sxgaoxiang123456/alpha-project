@@ -1,19 +1,19 @@
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
-from app.database import SessionLocal
-from app.dependencies import get_db
-from app.models.group import DEFAULT_GROUP_ID, DEFAULT_GROUP_NAME, Group
-from app.models.stock import Stock
-from app.models.watchlist import WatchlistItem
-from app.schemas.watchlist import WatchlistItemResponse
-from app.services.csv_export import export_watchlist_to_csv
-from app.services.csv_import import (
+from backend.database import SessionLocal
+from backend.dependencies import get_db
+from backend.models.group import DEFAULT_GROUP_ID, DEFAULT_GROUP_NAME, Group
+from backend.models.stock import Stock
+from backend.models.watchlist import WatchlistItem
+from backend.schemas.watchlist import WatchlistItemResponse
+from backend.services.csv_export import export_watchlist_to_csv
+from backend.services.csv_import import (
     CsvRowCountExceededError,
     import_watchlist_from_csv,
     parse_csv_rows,
 )
-import app.services.stock_search as stock_search
+import backend.services.stock_search as stock_search
 
 router = APIRouter(prefix="/watchlist", tags=["import-export"])
 

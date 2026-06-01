@@ -1,7 +1,7 @@
 import csv
 import io
 
-from app.models.group import DEFAULT_GROUP_NAME
+from backend.models.group import DEFAULT_GROUP_NAME
 
 
 def export_watchlist_to_csv(items: list[dict]) -> bytes:
