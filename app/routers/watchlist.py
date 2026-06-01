@@ -5,7 +5,7 @@ from app.dependencies import get_db
 from app.models.stock import Stock
 from app.models.watchlist import WatchlistItem
 from app.schemas.stock import StockSearchResult
-from app.schemas.watchlist import WatchlistItemCreate, WatchlistItemResponse
+from app.schemas.watchlist import WatchlistItemCreate, WatchlistItemResponse, WatchlistItemUpdate
 import app.services.stock_search as stock_search
 
 router = APIRouter(prefix="/watchlist", tags=["watchlist"])
@@ -80,3 +80,76 @@ def list_watchlist_items(
         .all()
     )
     return items
+
+
+@router.put("/{code}", response_model=WatchlistItemResponse)
+def update_watchlist_item(
+    code: str,
+    data: WatchlistItemUpdate,
+    db: Session = Depends(get_db),
+) -> WatchlistItem:
+    item = db.query(WatchlistItem).filter_by(stock_code=code).first()
+    if item is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"股票 {code} 不在自选股列表中",
+        )
+
+    if data.group_id is not None:
+        item.group_id = data.group_id
+    if data.cost_price is not None:
+        item.cost_price = data.cost_price
+    if data.shares is not None:
+        item.shares = data.shares
+
+    db.commit()
+    db.refresh(item)
+    return item
+
+
+@router.delete("/{code}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_watchlist_item(
+    code: str,
+    db: Session = Depends(get_db),
+) -> None:
+    item = db.query(WatchlistItem).filter_by(stock_code=code).first()
+    if item is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"股票 {code} 不在自选股列表中",
+        )
+
+    db.delete(item)
+    db.commit()
+    return None
+
+
+class BatchDeleteRequest:
+    def __init__(self, codes: list[str]):
+        self.codes = codes
+
+
+@router.post("/batch-delete")
+def batch_delete_watchlist_items(
+    request: dict,
+    db: Session = Depends(get_db),
+) -> dict:
+    codes = request.get("codes", [])
+    if not codes:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="请选择要删除的股票",
+        )
+
+    deleted = 0
+    for code in codes:
+        item = db.query(WatchlistItem).filter_by(stock_code=code).first()
+        if item is not None:
+            db.delete(item)
+            deleted += 1
+
+    db.commit()
+    return {
+        "deleted_count": deleted,
+        "message": f"已删除 {deleted} 只股票",
+    }
