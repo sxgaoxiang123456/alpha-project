@@ -4,6 +4,7 @@ from fastapi import FastAPI
 
 from app.config import get_settings
 from app.database import init_db
+from app.routers.watchlist import router as watchlist_router
 
 settings = get_settings()
 
@@ -20,6 +21,8 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
+
+app.include_router(watchlist_router)
 
 
 @app.get("/health")

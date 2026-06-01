@@ -1,7 +1,7 @@
 # 实施进度 · 自选股管理
 
 ## 当前任务
-T7 已完成，Phase 3 User Story 1 可继续推进 T8。
+T8 已完成，Phase 3 User Story 1 结束。可继续推进 Phase 4 User Story 2（T9 CSV 导入服务）。
 
 ## 已完成
 - [X] T01 · 创建项目骨架：requirements.txt + Dockerfile + docker-compose.yml + .env.example
