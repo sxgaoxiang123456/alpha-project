@@ -39,6 +39,7 @@ def delete_group(
         moved_count = 0
         deleted_count = len(items)
 
+    db.flush()
     db.delete(group)
     db.commit()
 
