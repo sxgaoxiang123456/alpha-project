@@ -1,0 +1,28 @@
+services:
+  stock-mgt:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: stock-mgt:latest
+    container_name: stock-mgt
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-sqlite:///./data/watchlist.db}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      FEISHU_APP_ID: ${FEISHU_APP_ID:-}
+      FEISHU_APP_SECRET: ${FEISHU_APP_SECRET:-}
+      FEISHU_BRAND: ${FEISHU_BRAND:-}
+      FEISHU_CHAT_ID: ${FEISHU_CHAT_ID:-}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_PROXY: ${TELEGRAM_PROXY:-}
+      SETTINGS_ENCRYPTION_KEY: ${SETTINGS_ENCRYPTION_KEY:-}
+      DATASOURCE_PRIMARY_TIMEOUT: ${DATASOURCE_PRIMARY_TIMEOUT:-10}
+      DATASOURCE_FALLBACK_TIMEOUT: ${DATASOURCE_FALLBACK_TIMEOUT:-15}
+      DATASOURCE_RETRY_COUNT: ${DATASOURCE_RETRY_COUNT:-2}
+      HEALTH_CHECK_INTERVAL: ${HEALTH_CHECK_INTERVAL:-300}
+      QUOTE_REFRESH_INTERVAL: ${QUOTE_REFRESH_INTERVAL:-180}
+      QUOTE_CACHE_TTL: ${QUOTE_CACHE_TTL:-300}
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped

@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 14 · 四大 Skill 深度拆解与全流程实战</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* Skill Colors */
+      --kickoff: #3B82F6;
+      --kickoff-light: #DBEAFE;
+      --adversarial: #EF4444;
+      --adversarial-light: #FEE2E2;
+      --prd: #10B981;
+      --prd-light: #D1FAE5;
+      --design: #F59E0B;
+      --design-light: #FEF3C7;
+      --superpowers: #8B5CF6;
+      --superpowers-light: #EDE9FE;
+      --speckit: #06B6D4;
+      --speckit-light: #CFFAFE;
+      --human: #F59E0B;
+      --human-light: #FEF3C7;
+
+      /* Neutral */
+      --bg: #0F172A;
+      --bg-card: #1E293B;
+      --bg-code: #0B1120;
+      --text: #F1F5F9;
+      --text-muted: #94A3B8;
+      --border: #334155;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    /* ===== Scrollbar ===== */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    /* ===== Hero ===== */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 20% 40%, rgba(59,130,246,0.15) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 60%, rgba(139,92,246,0.12) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 30% at 50% 80%, rgba(6,182,212,0.1) 0%, transparent 50%);
+      animation: heroPulse 8s ease-in-out infinite;
+    }
+
+    @keyframes heroPulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.8; transform: scale(1.05); }
+    }
+
+    .hero-content { position: relative; z-index: 1; padding: 2rem; }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      border-radius: 9999px;
+      background: rgba(59,130,246,0.15);
+      border: 1px solid rgba(59,130,246,0.3);
+      color: var(--kickoff);
+      font-size: 0.875rem;
+      font-weight: 500;
+      margin-bottom: 1.5rem;
+      animation: fadeInUp 0.8s ease-out;
+    }
+
+    .hero h1 {
+      font-size: clamp(2.5rem, 5vw, 4.5rem);
+      font-weight: 700;
+      line-height: 1.1;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, #F1F5F9 0%, #94A3B8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: fadeInUp 0.8s ease-out 0.1s both;
+    }
+
+    .hero-subtitle {
+      font-size: 1.25rem;
+      color: var(--text-muted);
+      max-width: 600px;
+      margin: 0 auto 2rem;
+      animation: fadeInUp 0.8s ease-out 0.2s both;
+    }
+
+    .hero-skills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      justify-content: center;
+      margin-top: 2rem;
+      animation: fadeInUp 0.8s ease-out 0.3s both;
+    }
+
+    .skill-pill {
+      padding: 0.5rem 1rem;
+      border-radius: 9999px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      border: 1px solid;
+      transition: all 0.3s ease;
+      cursor: default;
+    }
+
+    .skill-pill:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+
+    .pill-kickoff { background: rgba(59,130,246,0.15); border-color: var(--kickoff); color: var(--kickoff); }
+    .pill-adversarial { background: rgba(239,68,68,0.15); border-color: var(--adversarial); color: var(--adversarial); }
+    .pill-prd { background: rgba(16,185,129,0.15); border-color: var(--prd); color: var(--prd); }
+    .pill-design { background: rgba(245,158,11,0.15); border-color: var(--design); color: var(--design); }
+    .pill-superpowers { background: rgba(139,92,246,0.15); border-color: var(--superpowers); color: var(--superpowers); }
+    .pill-speckit { background: rgba(6,182,212,0.15); border-color: var(--speckit); color: var(--speckit); }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ===== Navigation ===== */
+    .nav-bar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      background: rgba(15,23,42,0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      z-index: 1000;
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-brand { font-weight: 700; color: var(--text); }
+    .nav-links { display: flex; gap: 1.5rem; }
+    .nav-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--text); }
+
+    /* ===== Sections ===== */
+    .section { padding: 5rem 2rem; max-width: 1200px; margin: 0 auto; }
+    .section-title {
+      font-size: 2.25rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .section-subtitle { color: var(--text-muted); font-size: 1.125rem; margin-bottom: 3rem; }
+
+    /* ===== Skill Cards ===== */
+    .skill-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; }
+
+    .skill-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .skill-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: var(--card-accent);
+    }
+
+    .skill-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--card-accent);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    }
+
+    .skill-card-icon {
+      width: 48px; height: 48px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .skill-card h3 { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem; }
+    .skill-card p { color: var(--text-muted); font-size: 0.9375rem; }
+    .skill-card-meta { margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+    .meta-tag {
+      padding: 0.25rem 0.625rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    /* ===== Flow Diagram ===== */
+    .flow-container {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 3rem 2rem;
+      margin: 2rem 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .flow-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      position: relative;
+    }
+
+    .flow-step {
+      display: flex;
+      align-items: stretch;
+      gap: 1.5rem;
+      position: relative;
+      padding: 1rem 0;
+    }
+
+    .flow-step:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      left: 28px;
+      top: 64px;
+      bottom: -1rem;
+      width: 2px;
+      background: var(--border);
+    }
+
+    .flow-step.human::after { background: var(--human); }
+    .flow-step.kickoff::after { background: var(--kickoff); }
+    .flow-step.adversarial::after { background: var(--adversarial); }
+    .flow-step.prd::after { background: var(--prd); }
+    .flow-step.design::after { background: var(--design); }
+    .flow-step.speckit::after { background: var(--speckit); }
+    .flow-step.superpowers::after { background: var(--superpowers); }
+
+    .step-number {
+      width: 56px; height: 56px;
+      min-width: 56px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.125rem;
+      color: white;
+      position: relative;
+      z-index: 1;
+      animation: stepAppear 0.6s ease-out both;
+    }
+
+    .step-number.human { background: var(--human); box-shadow: 0 0 20px rgba(245,158,11,0.3); }
+    .step-number.kickoff { background: var(--kickoff); box-shadow: 0 0 20px rgba(59,130,246,0.3); }
+    .step-number.adversarial { background: var(--adversarial); box-shadow: 0 0 20px rgba(239,68,68,0.3); }
+    .step-number.prd { background: var(--prd); box-shadow: 0 0 20px rgba(16,185,129,0.3); }
+    .step-number.superpowers { background: var(--superpowers); box-shadow: 0 0 20px rgba(139,92,246,0.3); }
+    .step-number.speckit { background: var(--speckit); box-shadow: 0 0 20px rgba(6,182,212,0.3); }
+    .step-number.design { background: var(--design); box-shadow: 0 0 20px rgba(245,158,11,0.3); }
+
+    @keyframes stepAppear {
+      from { opacity: 0; transform: scale(0.5) rotate(-10deg); }
+      to { opacity: 1; transform: scale(1) rotate(0deg); }
+    }
+
+    .step-content {
+      flex: 1;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      transition: all 0.3s ease;
+    }
+
+    .step-content:hover {
+      background: rgba(255,255,255,0.04);
+      border-color: rgba(255,255,255,0.1);
+    }
+
+    .step-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .step-title { font-size: 1.125rem; font-weight: 600; }
+    .step-time {
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    .step-desc { color: var(--text-muted); font-size: 0.9375rem; margin-bottom: 1rem; }
+
+    .step-outputs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .output-badge {
+      padding: 0.375rem 0.75rem;
+      border-radius: 8px;
+      font-size: 0.8125rem;
+      font-family: 'JetBrains Mono', monospace;
+      border: 1px dashed var(--border);
+      color: var(--text-muted);
+    }
+
+    .output-badge.kickoff { border-color: var(--kickoff); color: var(--kickoff); background: rgba(59,130,246,0.08); }
+    .output-badge.adversarial { border-color: var(--adversarial); color: var(--adversarial); background: rgba(239,68,68,0.08); }
+    .output-badge.prd { border-color: var(--prd); color: var(--prd); background: rgba(16,185,129,0.08); }
+    .output-badge.design { border-color: var(--design); color: var(--design); background: rgba(245,158,11,0.08); }
+    .output-badge.speckit { border-color: var(--speckit); color: var(--speckit); background: rgba(6,182,212,0.08); }
+
+    /* ===== Data Flow Animation ===== */
+    .data-flow-diagram {
+      position: relative;
+      padding: 2rem;
+      background: var(--bg-code);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      margin: 2rem 0;
+      overflow: hidden;
+    }
+
+    .flow-nodes {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 1rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .flow-node {
+      background: var(--bg-card);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem;
+      text-align: center;
+      font-size: 0.875rem;
+      font-weight: 500;
+      position: relative;
+      transition: all 0.3s ease;
+    }
+
+    .flow-node:hover { transform: translateY(-2px); }
+    .flow-node.kickoff { border-color: var(--kickoff); }
+    .flow-node.adversarial { border-color: var(--adversarial); }
+    .flow-node.prd { border-color: var(--prd); }
+    .flow-node.design { border-color: var(--design); }
+    .flow-node.speckit { border-color: var(--speckit); }
+    .flow-node.superpowers { border-color: var(--superpowers); }
+    .flow-node.human { border-color: var(--human); }
+
+    .flow-node-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 0.25rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .particle {
+      position: absolute;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      pointer-events: none;
+      animation: particleMove 3s ease-in-out infinite;
+    }
+
+    @keyframes particleMove {
+      0% { opacity: 0; transform: scale(0); }
+      20% { opacity: 1; transform: scale(1); }
+      80% { opacity: 1; transform: scale(1); }
+      100% { opacity: 0; transform: scale(0); }
+    }
+
+    /* ===== Tables ===== */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.5rem 0;
+      font-size: 0.9375rem;
+    }
+
+    .data-table th {
+      text-align: left;
+      padding: 0.875rem 1rem;
+      background: var(--bg-code);
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.8125rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .data-table td {
+      padding: 0.875rem 1rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    .data-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+    .data-table code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8125rem;
+      padding: 0.125rem 0.375rem;
+      border-radius: 4px;
+      background: var(--bg-code);
+    }
+
+    /* ===== Code Blocks ===== */
+    .code-block {
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+      overflow-x: auto;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.875rem;
+      line-height: 1.6;
+    }
+
+    .code-block .comment { color: #64748B; }
+    .code-block .string { color: #A5F3FC; }
+    .code-block .keyword { color: #C4B5FD; }
+    .code-block .func { color: #6EE7B7; }
+
+    /* ===== Human Decision Points ===== */
+    .decision-callout {
+      background: rgba(245,158,11,0.08);
+      border: 1px solid rgba(245,158,11,0.3);
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      margin: 1.5rem 0;
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+
+    .decision-callout::before {
+      content: '👤';
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+
+    .decision-callout h4 { color: var(--human); margin-bottom: 0.25rem; }
+    .decision-callout p { color: var(--text-muted); font-size: 0.9375rem; }
+
+    /* ===== Comparison Cards ===== */
+    .compare-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin: 2rem 0;
+    }
+
+    .compare-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem;
+    }
+
+    .compare-card.wrong { border-left: 4px solid var(--adversarial); }
+    .compare-card.right { border-left: 4px solid var(--prd); }
+
+    .compare-card h4 { margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+
+    /* ===== Timeline ===== */
+    .timeline-bar {
+      background: var(--bg-card);
+      border-radius: 16px;
+      padding: 2rem;
+      margin: 2rem 0;
+    }
+
+    .timeline-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .timeline-track {
+      height: 8px;
+      background: var(--bg-code);
+      border-radius: 9999px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .timeline-fill {
+      height: 100%;
+      border-radius: 9999px;
+      background: linear-gradient(90deg, var(--kickoff), var(--superpowers), var(--speckit));
+      animation: timelineGrow 2s ease-out;
+      width: 100%;
+    }
+
+    @keyframes timelineGrow {
+      from { width: 0; }
+      to { width: 100%; }
+    }
+
+    .timeline-markers {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 0.75rem;
+    }
+
+    .timeline-marker { text-align: center; font-size: 0.75rem; color: var(--text-muted); }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 768px) {
+      .compare-grid { grid-template-columns: 1fr; }
+      .nav-links { display: none; }
+      .section { padding: 3rem 1rem; }
+    }
+
+    /* ===== Scroll reveal ===== */
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: all 0.6s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ===== Section accent borders ===== */
+    .accent-kickoff { --card-accent: var(--kickoff); }
+    .accent-adversarial { --card-accent: var(--adversarial); }
+    .accent-prd { --card-accent: var(--prd); }
+    .accent-design { --card-accent: var(--design); }
+    .accent-superpowers { --card-accent: var(--superpowers); }
+    .accent-speckit { --card-accent: var(--speckit); }
+
+    /* ===== Connection arrows ===== */
+    .connector {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.5rem 0;
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+
+    .connector-arrow {
+      animation: bounceDown 1.5s ease-in-out infinite;
+    }
+
+    @keyframes bounceDown {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(4px); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="nav-bar">
+    <div class="nav-brand">Lesson 14 · Skills Deep Dive</div>
+    <div class="nav-links">
+      <a href="#overview">总览</a>
+      <a href="#kickoff">Kickoff</a>
+      <a href="#adversarial">对抗</a>
+      <a href="#prd">PRD</a>
+      <a href="#design">设计注入</a>
+      <a href="#flow">全流程</a>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-content">
+      <div class="hero-badge">
+        <span>Stage 8 · AlphaProject Applied</span>
+      </div>
+      <h1>四大 Skill 深度拆解<br>与全流程实战</h1>
+      <p class="hero-subtitle">
+        从想法到上线：product-research-kickoff → adversarial-architecture-selection → prd-writer → speckit-design-injection
+      </p>
+      <div class="hero-skills">
+        <span class="skill-pill pill-kickoff">product-research-kickoff</span>
+        <span class="skill-pill pill-adversarial">adversarial-architecture-selection</span>
+        <span class="skill-pill pill-prd">prd-writer</span>
+        <span class="skill-pill pill-design">speckit-design-injection</span>
+        <span class="skill-pill pill-superpowers">Superpowers</span>
+        <span class="skill-pill pill-speckit">Spec-Kit</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Overview -->
+  <section class="section" id="overview">
+    <h2 class="section-title">
+      <span style="color: var(--text)">01</span>
+      全流程总览
+    </h2>
+    <p class="section-subtitle">9 步开发流程 + 4 个 Skill 的条件触发关系</p>
+
+    <div class="flow-container">
+      <div class="flow-steps">
+        <!-- Step 1 -->
+        <div class="flow-step human">
+          <div class="step-number human">1</div>
+          <div class="step-content">
+            <div class="step-header">
+              <span class="step-title">想法</span>
+              <span class="step-time" style="background: rgba(245,158,11,0.15); color: var(--human);">5 min</span>
+            </div>
+            <p class="step-desc">用户提出粗想法，尚未做任何调研或设计。</p>
+            <div class="step-outputs">
+              <span class="output-badge">一句话定义</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="connector"><span class="connector-arrow">↓</span></div>
+
+        <!-- Step 2 -->
+        <div class="flow-step kickoff">
+          <div class="step-number kickoff">2</div>
+          <div class="step-content">
+            <div class="step-header">
+              <span class="step-title">立项调研 · product-research-kickoff</span>
+              <span class="step-time" style="background: rgba(59,130,246,0.15); color: var(--kickoff);">30-45 min</span>
+            </div>
+            <p class="step-desc">4 路并行调研 + 双路交叉验证。苏格拉底 Q&A 抽取 6 骨架变量，4 个 sub-agent 同时跑。</p>
+            <div class="step-outputs">
+              <span class="output-badge kickoff">01-产品形态.md</span>
+              <span class="output-badge kickoff">02-数据来源.md</span>
+              <span class="output-badge kickoff">03-开源项目.md</span>
+              <span class="output-badge kickoff">04-实现方案.md</span>
+              <span class="output-badge kickoff">05-决策汇总.md</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="connector"><span class="connector-arrow">↓</span></div>
+
+        <!-- Decision Point -->
+        <div class="decision-callout">
+          <div>
+            <h4>人工决策点：多候选？</h4>
+            <p>03-开源项目.md 中候选数 N ≥ 2 时，强烈建议进入对抗调研。N ≤ 1 时跳过。</p>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="flow-step adversarial">
+          <div class="step-number adversarial">3</div>
+          <div class="step-content">
+            <div class="step-header">
+              <span class="step-title">对抗调研 · adversarial-architecture-selection</span>
+              <span class="step-time" style="background: rgba(239,68,68,0.15); color: var(--adversarial);">60-90 min</span>
+            </div>
+            <p class="step-desc">5 角色法庭辩论：3 代言人 + 1 红队 + 1 集成评估师。7 维度深挖 + 6 条反偏见硬约束。</p>
+            <div class="step-outputs">
+              <span class="output-badge adversarial">06-架构基线决策.md</span>
+              <span class="output-badge adversarial">05-决策汇总.md (v2)</span>
+              <span class="output-badge adversarial">debate-transcript.md</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="connector"><span class="connector-arrow">↓</span></div>
+
+        <!-- Step 4 -->
+        <div class="flow-step superpowers">
+          <div class="step-number superpowers">4</div>
+          <div class="step-content">
+            <div class="step-header">
+              <span class="step-title">Brainstorming · Superpowers</span>
+              <span class="step-time" style="background: rgba(139,92,246,0.15); color: var(--superpowers);">30-45 min</span>
+            </div>
+            <p class="step-desc">读取全部调研产物（06 为不可变基线），11 问收敛 MVP 方向。</p>
+            <div class="step-outputs">
+              <span class="output-badge" style="border-color: var(--superpowers); color: var(--superpowers); background: rgba(139,92,246,0.08);">brainstorming-design.md</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="connector"><span class="connector-arrow">↓</span></div>
+
+        <!-- Step 5 -->
+        <div class="flow-step prd">
+          <div class="step-number prd">5</div>
+          <div class="step-content">
+            <div class="step-header">
+              <span class="step-title">PRD · prd-writer</span>
+              <span class="step-time" style="background: rgba(16,185,129,0.15); color: var(--prd);">20-30 min</span>
+            </div>
+            <p class="step-desc">14 章结构化 PRD。What/How 严格边界，Given/When/Then 验收标准。</p>
+            <div class="step-outputs">
+              <span class="output-badge prd">specs/prd.md</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="connector"><span class="connector-arrow">↓</span></div>
+
+        <!-- Step 6 -->
+        <div class="flow-step speckit">
+          <div class="step-number speckit">6</div>
+          <div class="step-content">
+            <div class="step-header">
+              <span class="step-title">Spec-Kit · specify / clarify / plan / tasks</span>
+              <span class="step-time" style="background: rgba(6,182,212,0.15); color: var(--speckit);">45-60 min</span>
+            </div>
+            <p class="step-desc">按 Must-have（P0）拆条跑。禁止整份 PRD 喂给 specify。</p>
+            <div class="step-outputs">
+              <span class="output-badge speckit">specs/001-*/spec.md</span>
+              <span class="output-badge speckit">specs/001-*/plan.md</span>
+              <span class="output-badge speckit">specs/001-*/tasks.md</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="connector"><span class="connector-arrow">↓</span></div>
+
+        <!-- Decision Point -->
+        <div class="decision-callout">
+          <div>
+            <h4>人工决策点：有设计系统？</h4>
+            <p>如果通过 Stitch/Figma/Claude Design 生成了 DESIGN.md，进入设计注入。否则直接实现。</p>
+          </div>
+        </div>
+
+        <!-- Step 7 -->
+        <div class="flow-step design">
+          <div class="step-number design">7</div>
+          <div class="step-content">
+            <div class="step-header">
+              <span class="step-title">设计注入 · speckit-design-injection</span>
+              <span class="step-time" style="background: rgba(245,158,11,0.15); color: var(--design);">30-60 min</span>
+            </div>
+            <p class="step-desc">Constitution Injection + Selective Re-run。不动 spec/clarify，只更新 plan/tasks 的前端区。</p>
+            <div class="step-outputs">
+              <span class="output-badge design">DESIGN.md</span>
+              <span class="output-badge design">design-reference/</span>
+              <span class="output-badge design">constitution.md (updated)</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="connector"><span class="connector-arrow">↓</span></div>
+
+        <!-- Step 8 -->
+        <div class="flow-step superpowers">
+          <div class="step-number superpowers">8</div>
+          <div class="step-content">
+            <div class="step-header">
+              <span class="step-title">实现 · Superpowers SDA + TDD</span>
+              <span class="step-time" style="background: rgba(139,92,246,0.15); color: var(--superpowers);">2-4 h</span>
+            </div>
+            <p class="step-desc">Git worktree 隔离 → Subagent 并行 → TDD → Code Review → 合并。</p>
+            <div class="step-outputs">
+              <span class="output-badge" style="border-color: var(--superpowers); color: var(--superpowers); background: rgba(139,92,246,0.08);">src/</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="connector"><span class="connector-arrow">↓</span></div>
+
+        <!-- Step 9 -->
+        <div class="flow-step human">
+          <div class="step-number human">9</div>
+          <div class="step-content">
+            <div class="step-header">
+              <span class="step-title">部署上线</span>
+              <span class="step-time" style="background: rgba(245,158,11,0.15); color: var(--human);">15 min</span>
+            </div>
+            <p class="step-desc">生产环境部署 + 监控配置。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Timeline -->
+    <div class="timeline-bar">
+      <div class="timeline-header">
+        <span style="font-weight: 600;">总时间线</span>
+        <span style="color: var(--text-muted);">约 5-8 小时（含 AI 辅助）</span>
+      </div>
+      <div class="timeline-track">
+        <div class="timeline-fill"></div>
+      </div>
+      <div class="timeline-markers">
+        <span class="timeline-marker">T+0<br>想法</span>
+        <span class="timeline-marker">T+45min<br>调研完成</span>
+        <span class="timeline-marker">T+2h<br>对抗完成</span>
+        <span class="timeline-marker">T+3h<br>PRD完成</span>
+        <span class="timeline-marker">T+4.5h<br>Spec完成</span>
+        <span class="timeline-marker">T+5.5h<br>设计注入</span>
+        <span class="timeline-marker">T+9h<br>上线</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Data Flow -->
+  <section class="section" id="data-flow">
+    <h2 class="section-title">
+      <span style="color: var(--text)">02</span>
+      数据流向与信息继承
+    </h2>
+    <p class="section-subtitle">前序产物如何通过 PRD 统一消费，避免信息散落</p>
+
+    <div class="data-flow-diagram">
+      <div class="flow-nodes">
+        <div class="flow-node kickoff">
+          <div class="flow-node-label">Stage 2</div>
+          <div>立项调研</div>
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">01-05.md</div>
+        </div>
+        <div class="flow-node adversarial">
+          <div class="flow-node-label">Stage 3</div>
+          <div>对抗调研</div>
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">06-架构基线</div>
+        </div>
+        <div class="flow-node superpowers">
+          <div class="flow-node-label">Stage 4</div>
+          <div>Brainstorming</div>
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">11问收敛</div>
+        </div>
+        <div class="flow-node prd" style="grid-column: span 2;">
+          <div class="flow-node-label">统一契约</div>
+          <div>PRD · 14 章结构化文档</div>
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">specs/prd.md —— 调研 + 脑暴 + 架构基线全部沉淀于此</div>
+        </div>
+        <div class="flow-node speckit">
+          <div class="flow-node-label">Stage 6</div>
+          <div>Spec-Kit</div>
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">plan + tasks</div>
+        </div>
+        <div class="flow-node design">
+          <div class="flow-node-label">Stage 8</div>
+          <div>设计注入</div>
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">constitution</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="code-block">
+      <span class="comment">// 关键设计：design-injection 不直接读取调研文件</span>
+      <span class="comment">// 而是消费 PRD 这个「统一契约」</span>
+
+      specs/research/01<span class="keyword">~</span>06.md  <span class="comment">// 调研产物（已锁定）</span>
+           <span class="keyword">↓</span>
+      brainstorming<span class="func">-design.md</span>   <span class="comment">// 脑暴收敛（已锁定）</span>
+           <span class="keyword">↓</span>
+      specs/prd.md              <span class="comment">// ⭐ 统一契约（prd-writer 生成）</span>
+           <span class="keyword">↓</span>
+      speckit<span class="func">-design-injection</span>  <span class="comment">// 只读 prd.md，不读上游</span>
+           <span class="keyword">↓</span>
+      .specify/memory/constitution.md  <span class="comment">// 追加设计原则</span>
+    </div>
+  </section>
+
+  <!-- Skill 1: Kickoff -->
+  <section class="section" id="kickoff">
+    <h2 class="section-title">
+      <span style="color: var(--kickoff)">03</span>
+      product-research-kickoff
+    </h2>
+    <p class="section-subtitle">4 路并行 + 双引擎验证 + 1 路收敛</p>
+
+    <div class="skill-grid">
+      <div class="skill-card accent-kickoff">
+        <div class="skill-card-icon" style="background: var(--kickoff-light); color: var(--kickoff);">🔍</div>
+        <h3>苏格拉底 Q&A</h3>
+        <p>3 轮提问抽取 6 骨架变量：项目定义、目标市场、对标竞品、关键资源、开源意图、6 模块清单。</p>
+        <div class="skill-card-meta">
+          <span class="meta-tag" style="background: var(--kickoff-light); color: var(--kickoff);">一次只问 2-3 个</span>
+          <span class="meta-tag" style="background: var(--kickoff-light); color: var(--kickoff);">A/B/C 优先</span>
+        </div>
+      </div>
+
+      <div class="skill-card accent-kickoff">
+        <div class="skill-card-icon" style="background: var(--kickoff-light); color: var(--kickoff);">⚡</div>
+        <h3>4 路并行调研</h3>
+        <p>产品形态、关键资源、开源生态、实现方案。4 个 sub-agent 真并行，互不依赖。</p>
+        <div class="skill-card-meta">
+          <span class="meta-tag" style="background: var(--kickoff-light); color: var(--kickoff);">WebSearch</span>
+          <span class="meta-tag" style="background: var(--kickoff-light); color: var(--kickoff);">muyu-search</span>
+        </div>
+      </div>
+
+      <div class="skill-card accent-kickoff">
+        <div class="skill-card-icon" style="background: var(--kickoff-light); color: var(--kickoff);">✅</div>
+        <h3>双路交叉验证</h3>
+        <p>路 A（英文/GitHub）+ 路 B（中文/国内）。冲突标 [冲突⚠️]，不替用户裁决。</p>
+        <div class="skill-card-meta">
+          <span class="meta-tag" style="background: var(--kickoff-light); color: var(--kickoff);">[双路 ✅]</span>
+          <span class="meta-tag" style="background: var(--kickoff-light); color: var(--kickoff);">[单源 ⚠️]</span>
+        </div>
+      </div>
+    </div>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>主题</th>
+          <th>调研深度</th>
+          <th>产出文件</th>
+          <th>关键硬指标</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span style="color: var(--kickoff)">产品形态</span></td>
+          <td>至少 10 个同类产品</td>
+          <td><code>01-产品形态.md</code></td>
+          <td>信息架构 + 交互模式 + AI 化案例</td>
+        </tr>
+        <tr>
+          <td><span style="color: var(--kickoff)">关键资源</span></td>
+          <td>全渠道盘点</td>
+          <td><code>02-数据来源.md</code></td>
+          <td>覆盖/频率/限频/价格/合规</td>
+        </tr>
+        <tr>
+          <td><span style="color: var(--kickoff)">开源生态</span></td>
+          <td>至少 10 个 GitHub 项目</td>
+          <td><code>03-开源项目.md</code></td>
+          <td>Star/Commit/License/复用矩阵</td>
+        </tr>
+        <tr>
+          <td><span style="color: var(--kickoff)">实现方案</span></td>
+          <td>6 模块 × 2-3 方案对比</td>
+          <td><code>04-实现方案.md</code></td>
+          <td>推荐技术栈 + 工作量估算</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Skill 2: Adversarial -->
+  <section class="section" id="adversarial">
+    <h2 class="section-title">
+      <span style="color: var(--adversarial)">04</span>
+      adversarial-architecture-selection
+    </h2>
+    <p class="section-subtitle">5 角色法庭辩论 + 6 条反偏见硬约束</p>
+
+    <div class="skill-grid">
+      <div class="skill-card accent-adversarial">
+        <div class="skill-card-icon" style="background: var(--adversarial-light); color: var(--adversarial);">⚖️</div>
+        <h3>3 代言人</h3>
+        <p>为各自 owns 的项目写强势辩护书（position paper），按 7 维度深挖，含强制致命缺陷自述。</p>
+      </div>
+
+      <div class="skill-card accent-adversarial">
+        <div class="skill-card-icon" style="background: var(--adversarial-light); color: var(--adversarial);">🔥</div>
+        <h3>1 红队</h3>
+        <p>魔鬼代言人，反对所有候选，主张全自建。对每份 paper 发 3 条带证据的质疑。</p>
+      </div>
+
+      <div class="skill-card accent-adversarial">
+        <div class="skill-card-icon" style="background: var(--adversarial-light); color: var(--adversarial);">📊</div>
+        <h3>1 集成评估师</h3>
+        <p>中立评估多项目复合的工程可行性。产出组合评分表 + Top 3 推荐。</p>
+      </div>
+    </div>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>反偏见约束</th>
+          <th>反什么偏见</th>
+          <th>实现方式</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span style="color: var(--adversarial)">致命缺陷自述</span></td>
+          <td>代言人偏见（self-advocacy）</td>
+          <td>每份 paper 强制报 3 个缺陷，带证据</td>
+        </tr>
+        <tr>
+          <td><span style="color: var(--adversarial)">随机打乱顺序</span></td>
+          <td>位置偏见（positional）</td>
+          <td>Phase 2 papers 伪随机打乱</td>
+        </tr>
+        <tr>
+          <td><span style="color: var(--adversarial)">回应 ≤ 200 字</span></td>
+          <td>长度偏见（length）</td>
+          <td>硬上限，超限视为违规</td>
+        </tr>
+        <tr>
+          <td><span style="color: var(--adversarial)">Lead 禁言</span></td>
+          <td>权威偏见（authority）</td>
+          <td>Phase 2 只协调不评价</td>
+        </tr>
+        <tr>
+          <td><span style="color: var(--adversarial)">Phase 1 静默</span></td>
+          <td>锚定偏见（anchoring）</td>
+          <td>严禁 teammate 通信</td>
+        </tr>
+        <tr>
+          <td><span style="color: var(--adversarial)">立场锁定</span></td>
+          <td>从众偏见（conformity）</td>
+          <td>红队/代言人不可倒戈</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="compare-grid">
+      <div class="compare-card wrong">
+        <h4><span style="color: var(--adversarial)">❌</span> 普通多 Agent 讨论</h4>
+        <ul style="color: var(--text-muted); padding-left: 1.25rem;">
+          <li>无固定立场，自由讨论</li>
+          <li>温和协商，求同存异</li>
+          <li>无系统反偏见机制</li>
+          <li>产出：一段综合结论</li>
+        </ul>
+      </div>
+      <div class="compare-card right">
+        <h4><span style="color: var(--prd)">✅</span> 5 角色法庭辩论</h4>
+        <ul style="color: var(--text-muted); padding-left: 1.25rem;">
+          <li>角色立场锁定（辩护/反方/中立）</li>
+          <li>对抗是目的，质疑必带证据</li>
+          <li>6 条反偏见硬约束</li>
+          <li>产出：7 维文档 + 辩论记录 + 复用矩阵</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Skill 3: PRD -->
+  <section class="section" id="prd">
+    <h2 class="section-title">
+      <span style="color: var(--prd)">05</span>
+      prd-writer
+    </h2>
+    <p class="section-subtitle">14 章结构化 PRD · What/How 严格边界</p>
+
+    <div class="skill-grid">
+      <div class="skill-card accent-prd">
+        <div class="skill-card-icon" style="background: var(--prd-light); color: var(--prd);">📝</div>
+        <h3>6 核心信息提取</h3>
+        <p>苏格拉底 Q&A 补齐：项目定义、目标用户、MVP 范围、成功指标、NFR、Open Questions。</p>
+      </div>
+
+      <div class="skill-card accent-prd">
+        <div class="skill-card-icon" style="background: var(--prd-light); color: var(--prd);">📐</div>
+        <h3>14 章模板浇筑</h3>
+        <p>每章有目的 + 模板片段 + 反模式。不是自由发挥，是按模具浇筑。</p>
+      </div>
+
+      <div class="skill-card accent-prd">
+        <div class="skill-card-icon" style="background: var(--prd-light); color: var(--prd);">🤖</div>
+        <h3>AI 友好精度</h3>
+        <p>"Specs are the new code"：边界条件、异常处理、验收标准都明确，AI 不需要猜。</p>
+      </div>
+    </div>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>章节</th>
+          <th>必/推/可</th>
+          <th>核心目的</th>
+          <th>反模式</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>1. 文档信息</td><td>★</td><td>版本可追溯</td><td>无版本号 / 永远是 Draft</td></tr>
+        <tr><td>2. 背景与目标</td><td>★</td><td>Why + Non-Goals</td><td>写成 KPI 罗列</td></tr>
+        <tr><td>3. 目标用户</td><td>★</td><td>画像 + 反画像</td><td>"所有用户"</td></tr>
+        <tr><td>4. 用户故事</td><td>★</td><td>INVEST 格式</td><td>成功能列表</td></tr>
+        <tr><td>5. 功能范围</td><td>★</td><td>In-Scope + Out-of-Scope</td><td>没有 Out-of-Scope</td></tr>
+        <tr><td>6. 详细描述</td><td>★</td><td>触发/输入/流程/输出/边界</td><td>只写功能名</td></tr>
+        <tr><td>7. 非功能需求</td><td>★</td><td>性能/安全/合规（数字）</td><td>"系统应该快"</td></tr>
+        <tr><td>8. UI/交互</td><td>☆</td><td>信息架构 + 关键页面</td><td>写成设计稿评审</td></tr>
+        <tr><td>9. 验收标准</td><td>★</td><td>Given/When/Then</td><td>"功能跑通即可"</td></tr>
+        <tr><td>10. 优先级</td><td>★</td><td>MoSCoW / RICE</td><td>全是 P0</td></tr>
+        <tr><td>11. 度量指标</td><td>★</td><td>北极星 + 反指标</td><td>只看 DAU</td></tr>
+        <tr><td>12. 依赖约束</td><td>☆</td><td>卡在哪 / 等谁</td><td>缺就绪时间</td></tr>
+        <tr><td>13. 风险与 OQ</td><td>★</td><td>诚实标记不确定</td><td>假装一切清楚</td></tr>
+        <tr><td>14. 里程碑</td><td>☆</td><td>时间 + buffer</td><td>太死没 buffer</td></tr>
+      </tbody>
+    </table>
+
+    <div class="decision-callout">
+      <div>
+        <h4>What / How 一刀切判断法</h4>
+        <p>工程师能换一种实现仍满足该条 → <strong style="color: var(--prd)">留在 PRD</strong></p>
+        <p>工程师不能换实现 → <strong style="color: var(--adversarial)">搬去 TRD</strong></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Skill 4: Design Injection -->
+  <section class="section" id="design">
+    <h2 class="section-title">
+      <span style="color: var(--design)">06</span>
+      speckit-design-injection
+    </h2>
+    <p class="section-subtitle">Constitution Injection + Selective Re-run</p>
+
+    <div class="skill-grid">
+      <div class="skill-card accent-design">
+        <div class="skill-card-icon" style="background: var(--design-light); color: var(--design);">📦</div>
+        <h3>Step 1: Material Placement</h3>
+        <p>把 Stitch/Figma/Claude Design 产出标准化放置。DESIGN.md 放根目录，页面样本放 design-reference/。</p>
+      </div>
+
+      <div class="skill-card accent-design">
+        <div class="skill-card-icon" style="background: var(--design-light); color: var(--design);">⚙️</div>
+        <h3>Step 2: Constitution Injection</h3>
+        <p>调用 /speckit.constitution 追加"Frontend Design System"章节。只写方向，不写 hex 值。</p>
+      </div>
+
+      <div class="skill-card accent-design">
+        <div class="skill-card-icon" style="background: var(--design-light); color: var(--design);">🎯</div>
+        <h3>Step 3: Impact Identification</h3>
+        <p>扫描所有 feature，标记含前端 UI 的。纯后端 feature 不动，避免无效重跑。</p>
+      </div>
+
+      <div class="skill-card accent-design">
+        <div class="skill-card-icon" style="background: var(--design-light); color: var(--design);">🔄</div>
+        <h3>Step 4: Selective Re-run</h3>
+        <p>逐个 feature 重跑 /plan + /tasks。不动 spec/clarify，后端原文保留。每次停下来确认。</p>
+      </div>
+    </div>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>错误做法</th>
+          <th>为什么错</th>
+          <th>正确做法</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="color: var(--adversarial)">推倒全部重来</td>
+          <td>浪费 6-8 小时，丢失架构决策</td>
+          <td style="color: var(--prd)">只重跑 plan + tasks</td>
+        </tr>
+        <tr>
+          <td style="color: var(--adversarial)">重跑 /specify</td>
+          <td>业务需求没变</td>
+          <td style="color: var(--prd)">spec.md / clarify.md 不动</td>
+        </tr>
+        <tr>
+          <td style="color: var(--adversarial)">所有 feature 重跑</td>
+          <td>纯后端浪费 token，可能回归</td>
+          <td style="color: var(--prd)">只标记含前端的</td>
+        </tr>
+        <tr>
+          <td style="color: var(--adversarial)">hex 值写入 constitution</td>
+          <td>设计迭代时 constitution 失效</td>
+          <td style="color: var(--prd)">constitution 引用 DESIGN.md</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="code-block">
+      <span class="comment">// Constitution 是长期契约，DESIGN.md 是当前快照</span>
+
+      constitution.md:        <span class="comment">// 持久，跨迭代</span>
+        <span class="string">"视觉规范来源是 DESIGN.md"</span>   <span class="comment">// ✅ 方向</span>
+        <span class="string">"主色是 #adc6ff"</span>              <span class="comment">// ❌ 值 —— 设计迭代会改</span>
+
+      DESIGN.md:              <span class="comment">// 快照，可迭代</span>
+        <span class="string">"Primary: #adc6ff"</span>            <span class="comment">// ✅ 值写在这里</span>
+    </div>
+  </section>
+
+  <!-- Full Flow -->
+  <section class="section" id="flow">
+    <h2 class="section-title">
+      <span style="color: var(--superpowers)">07</span>
+      完整案例：AlphaTerminal
+    </h2>
+    <p class="section-subtitle">A股 AI 盯盘助手 · 从 0 到 1 全流程</p>
+
+    <div class="code-block">
+      <span class="comment"># 项目定义</span>
+      <span class="string">"AlphaTerminal 是给国内散户/兼职炒股的程序员用的 7×24 AI 盯盘工具：</span>
+      <span class="string"> 自选股 Dashboard + 自然语言选股 + 早盘简报 + 异动预警"</span>
+    </div>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>阶段</th>
+          <th>耗时</th>
+          <th>核心产出</th>
+          <th>Skill/工具</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>① 想法</td>
+          <td>5 min</td>
+          <td>一句话定义</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><span style="color: var(--kickoff)">② 立项调研</span></td>
+          <td>30-45 min</td>
+          <td>01-05.md（5 份调研）</td>
+          <td><code>product-research-kickoff</code></td>
+        </tr>
+        <tr>
+          <td><span style="color: var(--adversarial)">③ 对抗调研</span></td>
+          <td>60-90 min</td>
+          <td>06-架构基线 + debate/</td>
+          <td><code>adversarial-architecture-selection</code></td>
+        </tr>
+        <tr>
+          <td><span style="color: var(--superpowers)">④ Brainstorming</span></td>
+          <td>30-45 min</td>
+          <td>11 问收敛结论</td>
+          <td><code>Superpowers brainstorming</code></td>
+        </tr>
+        <tr>
+          <td><span style="color: var(--prd)">⑤ PRD</span></td>
+          <td>20-30 min</td>
+          <td>14 章 PRD</td>
+          <td><code>prd-writer</code></td>
+        </tr>
+        <tr>
+          <td><span style="color: var(--speckit)">⑥ Spec-Kit</span></td>
+          <td>45-60 min</td>
+          <td>spec/clarify/plan/tasks</td>
+          <td><code>GitHub Spec-Kit</code></td>
+        </tr>
+        <tr>
+          <td><span style="color: var(--design)">⑦ 设计注入</span></td>
+          <td>30-60 min</td>
+          <td>更新 plan/tasks + constitution</td>
+          <td><code>speckit-design-injection</code></td>
+        </tr>
+        <tr>
+          <td><span style="color: var(--superpowers)">⑧ 实现</span></td>
+          <td>2-4 h</td>
+          <td>可运行代码</td>
+          <td><code>Superpowers SDA + TDD</code></td>
+        </tr>
+        <tr>
+          <td>⑨ 部署</td>
+          <td>15 min</td>
+          <td>生产环境</td>
+          <td>—</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="decision-callout">
+      <div>
+        <h4>关键效率提升</h4>
+        <p>传统方式 2-4 周 → <strong style="color: var(--prd)">Vibe Coding 5-8 小时</strong>（含 AI 辅助）</p>
+        <p>设计注入选择性重跑 vs 推倒重来：<strong style="color: var(--prd)">6-8 倍效率提升</strong></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer style="text-align: center; padding: 3rem 2rem; color: var(--text-muted); border-top: 1px solid var(--border);">
+    <p>FuFan VibeCoding Course · Stage 8 · Lesson 14</p>
+    <p style="margin-top: 0.5rem; font-size: 0.875rem;">四大 Skill 深度拆解 · AlphaProject 综合实战</p>
+  </footer>
+
+  <script>
+    // Scroll reveal
+    const revealElements = document.querySelectorAll('.reveal, .flow-step, .skill-card, .data-table');
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1 });
+
+    revealElements.forEach(el => revealObserver.observe(el));
+
+    // Smooth scroll for nav links
+    document.querySelectorAll('.nav-links a').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const target = document.querySelector(link.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+
+    // Add visible class to elements on load
+    document.querySelectorAll('.flow-step').forEach((el, i) => {
+      el.style.animationDelay = `${i * 0.1}s`;
+    });
+  </script>
+</body>
+</html>

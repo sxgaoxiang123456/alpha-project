@@ -1,0 +1,423 @@
+<!DOCTYPE html><html class="dark" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>A-Share AI Monitor - Alert Rules</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@600;700&amp;family=Inter:wght@400;700&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<style>
+        .material-symbols-outlined {
+            font-family: 'Material Symbols Outlined';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 20px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            -webkit-font-smoothing: antialiased;
+        }
+    </style>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary-container": "#0052ff",
+                    "surface-raised": "#1E293B",
+                    "surface-container-low": "#191b25",
+                    "surface-bright": "#373943",
+                    "on-tertiary-fixed-variant": "#891e00",
+                    "inverse-on-surface": "#2e303a",
+                    "on-error-container": "#ffdad6",
+                    "on-primary": "#002682",
+                    "on-primary-fixed-variant": "#0038b6",
+                    "market-warning": "#F59E0B",
+                    "primary-fixed": "#dde1ff",
+                    "secondary": "#b7c8e1",
+                    "on-secondary-fixed": "#0b1c30",
+                    "outline": "#8d90a2",
+                    "secondary-fixed": "#d3e4fe",
+                    "surface-tint": "#b7c4ff",
+                    "on-tertiary": "#611300",
+                    "surface-variant": "#32343f",
+                    "error-container": "#93000a",
+                    "tertiary": "#ffb4a1",
+                    "surface-base": "#0F172A",
+                    "tertiary-container": "#bf3003",
+                    "tertiary-fixed": "#ffdbd2",
+                    "on-tertiary-fixed": "#3c0800",
+                    "surface-dim": "#11131c",
+                    "secondary-container": "#3a4a5f",
+                    "surface": "#11131c",
+                    "background": "#11131c",
+                    "on-secondary": "#213145",
+                    "market-up": "#F43F5E",
+                    "outline-variant": "#434656",
+                    "inverse-primary": "#004ced",
+                    "surface-lowest": "#020617",
+                    "primary": "#b7c4ff",
+                    "surface-container-lowest": "#0c0e17",
+                    "on-background": "#e1e1ef",
+                    "surface-container-highest": "#32343f",
+                    "on-tertiary-container": "#ffddd5",
+                    "inverse-surface": "#e1e1ef",
+                    "error": "#ffb4ab",
+                    "surface-container-high": "#282934",
+                    "on-primary-fixed": "#001452",
+                    "surface-container": "#1d1f29",
+                    "on-surface": "#e1e1ef",
+                    "secondary-fixed-dim": "#b7c8e1",
+                    "on-secondary-container": "#a9bad3",
+                    "on-primary-container": "#dfe3ff",
+                    "tertiary-fixed-dim": "#ffb4a1",
+                    "on-secondary-fixed-variant": "#38485d",
+                    "primary-fixed-dim": "#b7c4ff",
+                    "market-down": "#10B981",
+                    "on-error": "#690005",
+                    "on-surface-variant": "#c3c5d9"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "stack-tight": "4px",
+                    "container-gap": "24px",
+                    "card-padding": "16px",
+                    "table-row-height": "40px",
+                    "stack-md": "12px"
+            },
+            "fontFamily": {
+                    "headline-md": ["Hanken Grotesk"],
+                    "data-table": ["JetBrains Mono"],
+                    "display-price": ["JetBrains Mono"],
+                    "headline-lg": ["Hanken Grotesk"],
+                    "label-caps": ["Inter"],
+                    "body-md": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-md": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                    "data-table": ["13px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "display-price": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-lg": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "label-caps": ["11px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+            }
+          }
+        }
+      }
+    </script>
+</head>
+<body class="bg-surface-lowest text-on-surface antialiased min-h-screen">
+<!-- SideNavBar -->
+<nav class="w-64 h-screen fixed left-0 top-0 border-r border-outline-variant bg-surface-container-lowest flex flex-col py-6 z-40">
+<div class="px-6 mb-8">
+<h1 class="font-headline-lg text-headline-lg font-bold text-primary">A耑 AI 癃瘘刐扄</h1>
+<p class="font-label-caps text-label-caps text-on-surface-variant mt-stack-tight">朳构瀗</p>
+</div>
+<ul class="flex-1 px-4 space-y-2">
+<li class="">
+<a class="flex items-center gap-3 px-4 py-3 rounded text-on-surface-variant hover:bg-surface-variant transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-body-md text-body-md">挑制面杳</span>
+</a>
+</li>
+<li class="">
+<a class="flex items-center gap-3 px-4 py-3 rounded text-on-surface-variant hover:bg-surface-variant transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="monitoring">monitoring</span>
+<span class="font-body-md text-body-md">脤选耑</span>
+</a>
+</li>
+<li class="">
+<a class="flex items-center gap-3 px-4 py-3 rounded text-primary border-r-2 border-primary-container font-bold bg-surface-container-high transition-transform scale-[0.99]" href="#">
+<span class="material-symbols-outlined" data-icon="notifications_active">notifications_active</span>
+<span class="font-body-md text-body-md">预艦褴则</span>
+</a>
+</li>
+<li class="">
+<a class="flex items-center gap-3 px-4 py-3 rounded text-on-surface-variant hover:bg-surface-variant transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-body-md text-body-md">舰灣</span>
+</a>
+</li>
+</ul>
+<div class="px-6 mt-auto">
+<button class="w-full py-2 bg-primary-container text-on-primary-container font-label-caps text-label-caps rounded hover:bg-primary-container/90 transition-colors">AI Briefing</button>
+</div>
+</nav>
+<!-- TopNavBar -->
+<header class="docked full-width top-0 sticky z-50 ml-64 flex justify-between items-center px-8 h-16 w-[calc(100%-16rem)] border-b border-outline-variant bg-surface/80 backdrop-blur-md">
+<div class="flex items-center w-96 bg-surface-raised rounded border border-outline-variant px-3 py-1.5 focus-within:border-primary transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="search">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-on-surface font-data-table text-data-table w-full ml-2 placeholder-on-surface-variant" placeholder="搑瀢代码或名称..." type="text">
+</div>
+<div class="flex items-center gap-4">
+<span class="font-body-md text-body-md text-on-surface-variant">A-Share AI Monitor</span>
+<button class="text-on-surface-variant hover:text-primary transition-colors duration-200"><span class="material-symbols-outlined" data-icon="sync">sync</span></button>
+<button class="text-on-surface-variant hover:text-primary transition-colors duration-200"><span class="material-symbols-outlined" data-icon="account_balance_wallet">account_balance_wallet</span></button>
+<button class="text-on-surface-variant hover:text-primary transition-colors duration-200"><span class="material-symbols-outlined" data-icon="notifications">notifications</span></button>
+<img alt="User Avatar" class="w-8 h-8 rounded-full border border-outline-variant ml-2" data-alt="A tightly cropped headshot of a professional individual in a corporate setting, looking directly at the camera. The lighting is studio quality, emphasizing crisp details. The overall mood is serious and professional, fitting an institutional finance environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDG4adwC5YuA_UBftcB6IqUVbtfKditJhqCnvyUbwT6uSxJWLAWO4xGzmBAMKq5t04VKiIhY10Hc0J4atgvWhiIvDAQdC3tJ10rK3MZNpF7yB8pVoZzNBUUGaJ6ww2Y4mAfSCEPafF2c_dEMqHBfdtyUjMqCNBiCKd4C-L0CNDzYHEjiGm1yenxB_NWVt1wNcf_D2Pcu46rq3Z29jV_yk72KzCzIKSY-LgxHz4XoQkEdBKCdaSkZfr0f0PmCA5vPbBJSnV_eZVfc_g">
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-64 p-[40px] max-w-[1280px] mx-auto">
+<div class="flex justify-between items-end mb-8">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">癃控智能</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">配置算法阈值和告警逻辑。</p>
+</div>
+<button class="flex items-center gap-2 bg-primary-container text-on-primary-container px-4 py-2 rounded font-label-caps text-label-caps hover:bg-primary-container/80 transition-colors" id="addRuleBtn"><span class="material-symbols-outlined text-[16px]" data-icon="add">add</span>新建规则</button>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-container-gap">
+<!-- Left Column: Active Rules Table -->
+<div class="lg:col-span-8 flex flex-col gap-container-gap">
+<div class="bg-surface-base border border-surface-raised rounded flex-1">
+<div class="p-card-padding border-b border-surface-raised flex justify-between items-center">
+<h3 class="font-headline-md text-headline-md">生效中的逻辑规则</h3>
+<span class="font-data-table text-data-table text-on-surface-variant">4 个生效</span>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-surface-raised bg-surface-container-low/50">
+<th class="py-2 px-4 font-label-caps text-label-caps text-on-surface-variant font-normal">股票</th>
+<th class="py-2 px-4 font-label-caps text-label-caps text-on-surface-variant font-normal">条件</th>
+<th class="py-2 px-4 font-label-caps text-label-caps text-on-surface-variant font-normal text-right">目标</th>
+<th class="py-2 px-4 font-label-caps text-label-caps text-on-surface-variant font-normal text-center">级别</th>
+<th class="py-2 px-4 font-label-caps text-label-caps text-on-surface-variant font-normal text-center">冷却时间</th>
+<th class="py-2 px-4 font-label-caps text-label-caps text-on-surface-variant font-normal text-center">状态</th>
+<th class="py-2 px-4 font-label-caps text-label-caps text-on-surface-variant font-normal text-right">操作</th>
+</tr>
+</thead>
+<tbody class="font-data-table text-data-table">
+<tr class="h-table-row-height border-b border-surface-raised hover:bg-surface-container-low transition-colors">
+<td class="px-4"><span class="text-secondary">600519</span> 贵州茅台</td>
+<td class="px-4 text-on-surface-variant">价格下跌 &lt;</td>
+<td class="px-4 text-right text-market-down">-3.00%</td>
+<td class="px-4 text-center">
+<span class="inline-block px-2 py-0.5 rounded border border-market-warning text-market-warning text-[10px] uppercase tracking-wider">Warning</span>
+</td>
+<td class="px-4 text-center text-on-surface-variant">5m</td>
+<td class="px-4 text-center">
+<button aria-pressed="true" class="toggle-btn w-8 h-4 rounded-full bg-primary-container relative transition-colors duration-200">
+<span class="absolute right-1 top-0.5 w-3 h-3 rounded-full bg-on-primary-container transition-transform"></span>
+</button>
+</td>
+<td class="px-4 text-right">
+<button class="text-outline hover:text-primary transition-colors"><span class="material-symbols-outlined text-[18px]" data-icon="more_horiz">more_horiz</span></button>
+</td>
+</tr>
+<tr class="h-table-row-height border-b border-surface-raised hover:bg-surface-container-low transition-colors">
+<td class="px-4"><span class="text-secondary">000001</span> 中国平安</td>
+<td class="px-4 text-on-surface-variant">成交量激增 &gt;</td>
+<td class="px-4 text-right text-market-up">250%</td>
+<td class="px-4 text-center">
+<span class="inline-block px-2 py-0.5 rounded border border-market-up bg-market-up/10 text-market-up text-[10px] uppercase tracking-wider animate-pulse">Critical</span>
+</td>
+<td class="px-4 text-center text-on-surface-variant">15m</td>
+<td class="px-4 text-center">
+<button aria-pressed="true" class="toggle-btn w-8 h-4 rounded-full bg-primary-container relative transition-colors duration-200">
+<span class="absolute right-1 top-0.5 w-3 h-3 rounded-full bg-on-primary-container transition-transform"></span>
+</button>
+</td>
+<td class="px-4 text-right">
+<button class="text-outline hover:text-primary transition-colors"><span class="material-symbols-outlined text-[18px]" data-icon="more_horiz">more_horiz</span></button>
+</td>
+</tr>
+<tr class="h-table-row-height border-b border-surface-raised hover:bg-surface-container-low transition-colors">
+<td class="px-4"><span class="text-secondary">300750</span> CATL</td>
+<td class="px-4 text-on-surface-variant">价格突破 &gt;</td>
+<td class="px-4 text-right">¥210.00</td>
+<td class="px-4 text-center">
+<span class="inline-block px-2 py-0.5 rounded border border-primary text-primary text-[10px] uppercase tracking-wider">Normal</span>
+</td>
+<td class="px-4 text-center text-on-surface-variant">None</td>
+<td class="px-4 text-center">
+<button aria-pressed="false" class="toggle-btn w-8 h-4 rounded-full bg-surface-raised relative transition-colors duration-200">
+<span class="absolute left-1 top-0.5 w-3 h-3 rounded-full bg-outline transition-transform"></span>
+</button>
+</td>
+<td class="px-4 text-right">
+<button class="text-outline hover:text-primary transition-colors"><span class="material-symbols-outlined text-[18px]" data-icon="more_horiz">more_horiz</span></button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<!-- Right Column: Alert History -->
+<div class="lg:col-span-4">
+<div class="bg-surface-base border border-surface-raised rounded h-full flex flex-col">
+<div class="p-card-padding border-b border-surface-raised">
+<h3 class="font-headline-md text-headline-md">执行日志</h3>
+</div>
+<div class="p-card-padding flex-1 overflow-y-auto space-y-4">
+<!-- Log Item -->
+<div class="flex gap-3 relative before:absolute before:left-[11px] before:top-6 before:bottom-[-16px] before:w-[1px] before:bg-surface-raised last:before:hidden">
+<div class="w-6 h-6 rounded-full bg-market-up/20 border border-market-up flex items-center justify-center shrink-0 z-10">
+<span class="material-symbols-outlined text-[12px] text-market-up" data-icon="priority_high" data-weight="fill">priority_high</span>
+</div>
+<div>
+<div class="flex justify-between items-baseline mb-1">
+<span class="font-data-table text-data-table font-bold text-on-surface">中国平安 (000001)</span>
+<span class="font-data-table text-data-table text-[11px] text-on-surface-variant">09:41:22</span>
+</div>
+<p class="font-body-md text-body-md text-[13px] text-on-surface-variant leading-tight">成交量較5日均线激增280%。</p>
+</div>
+</div>
+<!-- Log Item -->
+<div class="flex gap-3 relative before:absolute before:left-[11px] before:top-6 before:bottom-[-16px] before:w-[1px] before:bg-surface-raised last:before:hidden">
+<div class="w-6 h-6 rounded-full bg-primary/20 border border-primary flex items-center justify-center shrink-0 z-10">
+<span class="material-symbols-outlined text-[12px] text-primary" data-icon="info" data-weight="fill">info</span>
+</div>
+<div>
+<div class="flex justify-between items-baseline mb-1">
+<span class="font-data-table text-data-table font-bold text-on-surface">CATL (300750)</span>
+<span class="font-data-table text-data-table text-[11px] text-on-surface-variant">Yesterday</span>
+</div>
+<p class="font-body-md text-body-md text-[13px] text-on-surface-variant leading-tight">价格突破 210.00 元阻力位。</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Modal Overlay -->
+<div class="fixed inset-0 bg-surface-lowest/80 backdrop-blur-sm z-[100] hidden flex items-center justify-center opacity-0 transition-opacity duration-200" id="ruleModal">
+<div class="bg-surface-base border border-surface-raised rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.4)] w-full max-w-lg scale-95 transition-transform duration-200" id="modalContent">
+<div class="p-card-padding border-b border-surface-raised flex justify-between items-center">
+<h3 class="font-headline-md text-headline-md">Define Logic Rule</h3>
+<button class="text-on-surface-variant hover:text-on-surface transition-colors" id="closeModalBtn">
+<span class="material-symbols-outlined" data-icon="close">close</span>
+</button>
+</div>
+<div class="p-card-padding space-y-container-gap">
+<div class="grid grid-cols-2 gap-4">
+<div>
+<label class="block font-label-caps text-label-caps text-on-surface-variant mb-1">Target Asset</label>
+<input class="w-full bg-surface-container-low border border-surface-raised rounded px-3 py-2 font-data-table text-data-table text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none" placeholder="Code or Name" type="text">
+</div>
+<div>
+<label class="block font-label-caps text-label-caps text-on-surface-variant mb-1">Metric</label>
+<select class="w-full bg-surface-container-low border border-surface-raised rounded px-3 py-2 font-body-md text-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none appearance-none">
+<option>Last Price</option>
+<option>Intraday Volatility</option>
+<option>Volume Ratio</option>
+</select>
+</div>
+</div>
+<div class="grid grid-cols-3 gap-4 items-end">
+<div class="col-span-1">
+<label class="block font-label-caps text-label-caps text-on-surface-variant mb-1">Condition</label>
+<select class="w-full bg-surface-container-low border border-surface-raised rounded px-3 py-2 font-data-table text-data-table text-on-surface outline-none appearance-none">
+<option>&gt; (Greater)</option>
+<option>&lt; (Less)</option>
+<option>X (Cross)</option>
+</select>
+</div>
+<div class="col-span-2">
+<label class="block font-label-caps text-label-caps text-on-surface-variant mb-1">Threshold</label>
+<input class="w-full bg-surface-container-low border border-surface-raised rounded px-3 py-2 font-data-table text-data-table text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none" placeholder="Value or %" type="text">
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div>
+<label class="block font-label-caps text-label-caps text-on-surface-variant mb-1">Urgency Level</label>
+<div class="flex gap-2">
+<label class="flex-1 flex items-center justify-center gap-2 border border-surface-raised bg-surface-container-low rounded py-2 cursor-pointer hover:border-primary transition-colors">
+<input checked="" class="hidden" name="level" type="radio">
+<span class="w-3 h-3 rounded bg-primary"></span>
+<span class="font-label-caps text-label-caps">Normal</span>
+</label>
+<label class="flex-1 flex items-center justify-center gap-2 border border-surface-raised bg-surface-container-low rounded py-2 cursor-pointer hover:border-market-warning transition-colors">
+<input class="hidden" name="level" type="radio">
+<span class="w-3 h-3 rounded bg-market-warning"></span>
+<span class="font-label-caps text-label-caps">Warn</span>
+</label>
+</div>
+</div>
+<div>
+<label class="block font-label-caps text-label-caps text-on-surface-variant mb-1">Cooldown</label>
+<select class="w-full bg-surface-container-low border border-surface-raised rounded px-3 py-2 font-body-md text-body-md text-on-surface outline-none appearance-none">
+<option>None</option>
+<option>5 Minutes</option>
+<option>1 Hour</option>
+<option>End of Day</option>
+</select>
+</div>
+</div>
+</div>
+<div class="p-card-padding border-t border-surface-raised flex justify-end gap-3 bg-surface-container-lowest rounded-b-xl">
+<button class="px-4 py-2 font-label-caps text-label-caps text-on-surface-variant hover:text-on-surface transition-colors" id="cancelModalBtn">Cancel</button>
+<button class="px-4 py-2 bg-primary-container text-on-primary-container rounded font-label-caps text-label-caps hover:bg-primary-container/80 transition-colors">Commit Logic</button>
+</div>
+</div>
+</div>
+<script>
+        // Toggle Buttons Logic
+        document.querySelectorAll('.toggle-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const isPressed = this.getAttribute('aria-pressed') === 'true';
+                this.setAttribute('aria-pressed', !isPressed);
+                
+                const span = this.querySelector('span');
+                if (!isPressed) {
+                    this.classList.replace('bg-surface-raised', 'bg-primary-container');
+                    span.classList.replace('left-1', 'right-1');
+                    span.classList.replace('bg-outline', 'bg-on-primary-container');
+                } else {
+                    this.classList.replace('bg-primary-container', 'bg-surface-raised');
+                    span.classList.replace('right-1', 'left-1');
+                    span.classList.replace('bg-on-primary-container', 'bg-outline');
+                }
+            });
+        });
+
+        // Modal Logic
+        const modal = document.getElementById('ruleModal');
+        const modalContent = document.getElementById('modalContent');
+        const addBtn = document.getElementById('addRuleBtn');
+        const closeBtns = [document.getElementById('closeModalBtn'), document.getElementById('cancelModalBtn')];
+
+        function openModal() {
+            modal.classList.remove('hidden');
+            // Small delay to allow display block to apply before transition
+            requestAnimationFrame(() => {
+                modal.classList.remove('opacity-0');
+                modalContent.classList.remove('scale-95');
+                modalContent.classList.add('scale-100');
+            });
+        }
+
+        function closeModal() {
+            modal.classList.add('opacity-0');
+            modalContent.classList.remove('scale-100');
+            modalContent.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 200); // match duration-200
+        }
+
+        addBtn.addEventListener('click', openModal);
+        closeBtns.forEach(btn => btn.addEventListener('click', closeModal));
+        
+        // Close on backdrop click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+    </script>
+
+
+</body></html>
