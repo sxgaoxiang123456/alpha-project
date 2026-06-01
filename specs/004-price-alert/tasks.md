@@ -9,16 +9,16 @@
 
 **Purpose**: 定义预警规则、触发记录、冷却期跟踪的数据结构
 
-- [ ] **T1 [BE]** 创建 AlertRule 数据模型：`backend/models/alert_rule.py`（规则 ID、股票代码、条件类型、阈值、冷却时间、触达级别、状态、last_evaluated_result，含股票代码索引）
+- [ ] **T1 [BE]** 创建 AlertRule 数据模型：`backend/app/models/alert_rule.py`（规则 ID、股票代码、条件类型、阈值、冷却时间、触达级别、状态、last_evaluated_result，含股票代码索引）
   - [FR-004, FR-005, FR-009] [依赖: F1 基础设施就绪] [出参验证: `AlertRule.__table__.create()` 成功，表含 10 字段 + 索引]
 
-- [ ] **T2 [BE]** [P] 创建 AlertTrigger 数据模型：`backend/models/alert_trigger.py`（触发 ID、规则 ID、股票代码、触发条件、触发值、触发时间、触达级别、推送状态、合并规则列表）
+- [ ] **T2 [BE]** [P] 创建 AlertTrigger 数据模型：`backend/app/models/alert_trigger.py`（触发 ID、规则 ID、股票代码、触发条件、触发值、触发时间、触达级别、推送状态、合并规则列表）
   - [FR-012] [依赖: T1] [出参验证: 表创建成功，可写入触发记录并关联 AlertRule]
 
-- [ ] **T3 [BE]** [P] 创建 CooldownTracker 数据模型：`backend/models/cooldown_tracker.py`（规则 ID、最近触发时间、冷却时长，含规则 ID 唯一索引）
+- [ ] **T3 [BE]** [P] 创建 CooldownTracker 数据模型：`backend/app/models/cooldown_tracker.py`（规则 ID、最近触发时间、冷却时长，含规则 ID 唯一索引）
   - [FR-007] [依赖: T1] [出参验证: 表创建成功，支持按规则 ID 快速查询]
 
-- [ ] **T4 [BE]** [P] 创建 Alert Pydantic schemas：`backend/schemas/alert.py`（AlertRuleRequest, AlertRuleResponse, AlertTriggerResponse, CooldownStatus）
+- [ ] **T4 [BE]** [P] 创建 Alert Pydantic schemas：`backend/app/schemas/alert.py`（AlertRuleRequest, AlertRuleResponse, AlertTriggerResponse, CooldownStatus）
   - [FR-004] [依赖: T1, T2, T3] [出参验证: 无效条件类型/触达级别触发 pydantic.ValidationError]
 
 ---
@@ -27,10 +27,10 @@
 
 **Purpose**: 预警规则的 CRUD 和状态管理
 
-- [ ] **T5 [BE]** [P] 实现规则 CRUD 路由：`backend/routers/alerts.py`（GET /alerts 列表, POST /alerts 创建, PUT /alerts/{id} 修改, DELETE /alerts/{id} 删除，含 50 条上限校验）
+- [ ] **T5 [BE]** [P] 实现规则 CRUD 路由：`backend/app/routers/alerts.py`（GET /alerts 列表, POST /alerts 创建, PUT /alerts/{id} 修改, DELETE /alerts/{id} 删除，含 50 条上限校验）
   - [FR-004, FR-009] [依赖: T4] [出参验证: API 测试 — 创建规则 → 查询列表 → 修改 → 删除 → 验证 50 条上限拒绝]
 
-- [ ] **T6 [BE]** [P] 实现规则状态管理：`backend/routers/alerts.py`（PATCH /alerts/{id}/toggle 启用/暂停切换）+ 扩展 `alert_service.py`（股票移除监听 → 自动暂停关联规则）
+- [ ] **T6 [BE]** [P] 实现规则状态管理：`backend/app/routers/alerts.py`（PATCH /alerts/{id}/toggle 启用/暂停切换）+ 扩展 `alert_service.py`（股票移除监听 → 自动暂停关联规则）
   - [FR-005, FR-014] [依赖: T5] [出参验证: 单元测试 — 暂停后检测跳过；mock 股票移除事件 → 规则自动 paused]
 
 ---
@@ -39,7 +39,7 @@
 
 **Purpose**: 行情匹配、条件评估、触发判定
 
-- [ ] **T7 [BE]** 实现检测引擎核心：`backend/services/alert_service.py`（读取 active 规则 → 获取最新行情 → 逐条评估 → 返回候选触发列表）
+- [ ] **T7 [BE]** 实现检测引擎核心：`backend/app/services/alert_service.py`（读取 active 规则 → 获取最新行情 → 逐条评估 → 返回候选触发列表）
   - [FR-001~FR-003, FR-006] [依赖: T1, T4] [出参验证: 单元测试 — mock 2 条规则 + mock 行情 → 正确返回触发/未触发结果]
 
 - [ ] **T8 [BE]** [P] 实现条件评估器：扩展 `alert_service.py`（price_above/below, change_pct_above/below, volume_above 的评估逻辑）
@@ -69,10 +69,10 @@
 
 **Purpose**: 与 F3 行情刷新集成，注册路由和配置
 
-- [ ] **T13 [BE]** 与 F3 行情刷新集成：更新 `backend/core/quote_scheduler.py`（行情刷新完成后调用 `alert_service.evaluate()`）
+- [ ] **T13 [BE]** 与 F3 行情刷新集成：更新 `backend/app/core/quote_scheduler.py`（行情刷新完成后调用 `alert_service.evaluate()`）
   - [FR-006] [依赖: T7, T10, T11] [出参验证: 集成测试 — mock 行情刷新 → 触发 alert_service → 验证检测执行并生成触发记录]
 
-- [ ] **T14 [BE]** 更新配置与路由注册：更新 `backend/config.py`（新增规则数上限 50、默认冷却期 30 分钟配置）+ 更新 `backend/main.py`（注册 alerts 路由）
+- [ ] **T14 [BE]** 更新配置与路由注册：更新 `backend/app/config.py`（新增规则数上限 50、默认冷却期 30 分钟配置）+ 更新 `backend/app/main.py`（注册 alerts 路由）
   - [A-003, A-005] [依赖: T5, T13] [出参验证: `uvicorn app.main:app` 启动后路由和配置正常加载]
 
 ---
@@ -81,16 +81,16 @@
 
 **Purpose**: 全量测试覆盖
 
-- [ ] **T15 [INT]** [P] 单元测试 — 检测引擎：`backend/test/unit/test_alert_service.py`（条件评估、触发逻辑、合并推送、已满足不触发）
+- [ ] **T15 [INT]** [P] 单元测试 — 检测引擎：`backend/tests/unit/test_alert_service.py`（条件评估、触发逻辑、合并推送、已满足不触发）
   - [FR-001~FR-011] [依赖: T7~T11] [出参验证: pytest 全部通过]
 
-- [ ] **T16 [INT]** [P] 单元测试 — 冷却期：`backend/test/unit/test_cooldown.py`（冷却期计算、跨交易日重置、修改后重置、持久化验证）
+- [ ] **T16 [INT]** [P] 单元测试 — 冷却期：`backend/tests/unit/test_cooldown.py`（冷却期计算、跨交易日重置、修改后重置、持久化验证）
   - [FR-007] [依赖: T10, T12] [出参验证: pytest 全部通过（使用 freezegun 冻结时间）]
 
-- [ ] **T17 [INT]** [P] 单元测试 — 规则 CRUD：`backend/test/unit/test_alert_rules.py`（创建、查询、修改、删除、暂停、上限校验、股票移除自动暂停）
+- [ ] **T17 [INT]** [P] 单元测试 — 规则 CRUD：`backend/tests/unit/test_alert_rules.py`（创建、查询、修改、删除、暂停、上限校验、股票移除自动暂停）
   - [FR-004, FR-005, FR-009, FR-014] [依赖: T5, T6] [出参验证: pytest 全部通过]
 
-- [ ] **T18 [INT]** 集成测试 — 端到端：`backend/test/integration/test_alerts_api.py`（创建规则 → 模拟行情 → 触发 → 冷却期 → 再触发 → 合并推送 → 跨交易日重置）
+- [ ] **T18 [INT]** 集成测试 — 端到端：`backend/tests/integration/test_alerts_api.py`（创建规则 → 模拟行情 → 触发 → 冷却期 → 再触发 → 合并推送 → 跨交易日重置）
   - [FR-001~FR-014] [依赖: T13, T14] [出参验证: pytest 全部通过，覆盖 US-1~US-4 全部 AC]
 
 ---

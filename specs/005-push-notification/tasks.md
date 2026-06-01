@@ -9,13 +9,13 @@
 
 **Purpose**: 定义推送日志和通道状态的数据结构
 
-- [ ] **T1 [BE]** 创建 PushLog 数据模型：`backend/models/push_log.py`（日志 ID、消息 ID、消息类型、通道、状态、失败原因、耗时、创建时间，含时间索引）
+- [ ] **T1 [BE]** 创建 PushLog 数据模型：`backend/app/models/push_log.py`（日志 ID、消息 ID、消息类型、通道、状态、失败原因、耗时、创建时间，含时间索引）
   - [FR-009, FR-010] [依赖: F1 基础设施就绪] [出参验证: `PushLog.__table__.create()` 成功，表含 7 字段 + 时间索引]
 
-- [ ] **T2 [BE]** [P] 创建 PushChannel 数据模型：`backend/models/push_channel.py`（通道名、状态、配置参数、连续失败次数、限流状态、更新时间）
+- [ ] **T2 [BE]** [P] 创建 PushChannel 数据模型：`backend/app/models/push_channel.py`（通道名、状态、配置参数、连续失败次数、限流状态、更新时间）
   - [FR-012] [依赖: F1 基础设施就绪] [出参验证: 表创建成功，可读写通道状态]
 
-- [ ] **T3 [BE]** [P] 创建 Push Pydantic schemas：`backend/schemas/push.py`（PushMessageRequest, PushLogResponse, PushChannelStatus）
+- [ ] **T3 [BE]** [P] 创建 Push Pydantic schemas：`backend/app/schemas/push.py`（PushMessageRequest, PushLogResponse, PushChannelStatus）
   - [FR-005, FR-010] [依赖: T1, T2] [出参验证: 无效消息类型/状态触发 pydantic.ValidationError]
 
 ---
@@ -24,10 +24,10 @@
 
 **Purpose**: 飞书和 Telegram 的 HTTP 客户端
 
-- [ ] **T4 [BE]** [P] 实现飞书客户端：`backend/services/feishu_client.py`（lark-cli 卡片发送 + subprocess 调用 + 限流/错误识别）
+- [ ] **T4 [BE]** [P] 实现飞书客户端：`backend/app/services/feishu_client.py`（lark-cli 卡片发送 + subprocess 调用 + 限流/错误识别）
   - [FR-001, FR-012] [依赖: T3] [出参验证: 单元测试 — mock lark-cli 成功/失败/限流响应 → 正确返回状态]
 
-- [ ] **T5 [BE]** [P] 实现 Telegram 客户端：`backend/services/telegram_client.py`（Bot API 文本发送 + 可选代理 + Token 过期检测）
+- [ ] **T5 [BE]** [P] 实现 Telegram 客户端：`backend/app/services/telegram_client.py`（Bot API 文本发送 + 可选代理 + Token 过期检测）
   - [FR-002] [依赖: T3] [出参验证: 单元测试 — mock Bot API 成功/失败响应 → 正确返回状态]
 
 ---
@@ -36,7 +36,7 @@
 
 **Purpose**: 格式化渲染、通道降级、异步发送、日志记录
 
-- [ ] **T6 [BE]** 实现 PushService 核心：`backend/services/push_service.py`（通道状态检查 → 主通道尝试 → 重试 → 降级 → 异步发送 → 日志记录）
+- [ ] **T6 [BE]** 实现 PushService 核心：`backend/app/services/push_service.py`（通道状态检查 → 主通道尝试 → 重试 → 降级 → 异步发送 → 日志记录）
   - [FR-003~FR-006, FR-011] [依赖: T3, T4, T5] [出参验证: 单元测试 — mock 双通道 → 验证降级逻辑、重试次数、日志写入]
 
 - [ ] **T7 [BE]** [P] 实现预警卡片格式化：扩展 `push_service.py`（预警数据 → 飞书卡片 JSON / Telegram 文本）
@@ -54,7 +54,7 @@
 
 **Purpose**: Dashboard 查询推送历史
 
-- [ ] **T10 [BE]** 实现推送历史查询路由：`backend/routers/push.py`（GET /push/logs，支持按时间范围、消息类型、状态过滤）
+- [ ] **T10 [BE]** 实现推送历史查询路由：`backend/app/routers/push.py`（GET /push/logs，支持按时间范围、消息类型、状态过滤）
   - [FR-010] [依赖: T1] [出参验证: API 测试 — 写入 10 条日志 → 查询返回正确过滤结果]
 
 ---
@@ -63,10 +63,10 @@
 
 **Purpose**: 简报定时触发、配置更新、路由注册
 
-- [ ] **T11 [BE]** 实现简报定时触发：更新 `backend/core/quote_scheduler.py`（交易日 9:00 获取行情 → 渲染简报模板 → 调用 push_service）
+- [ ] **T11 [BE]** 实现简报定时触发：更新 `backend/app/core/quote_scheduler.py`（交易日 9:00 获取行情 → 渲染简报模板 → 调用 push_service）
   - [FR-007, A-005] [依赖: T8] [出参验证: 单元测试 — mock 交易日 → 简报任务执行；mock 非交易日 → 跳过]
 
-- [ ] **T12 [BE]** 路由注册与配置读取：更新 `backend/main.py`（注册 push 路由）；推送通道配置从 `settings_service.get_settings()` 读取（飞书 app_id/app_secret/brand/chat_id、Telegram Token、代理配置）
+- [ ] **T12 [BE]** 路由注册与配置读取：更新 `backend/app/main.py`（注册 push 路由）；推送通道配置从 `settings_service.get_settings()` 读取（飞书 app_id/app_secret/brand/chat_id、Telegram Token、代理配置）
   - [A-001~A-004] [依赖: T10] [出参验证: `uvicorn app.main:app` 启动后配置加载正确，路由可用]
 
 ---
@@ -75,13 +75,13 @@
 
 **Purpose**: 全量测试覆盖
 
-- [ ] **T13 [INT]** [P] 单元测试 — PushService：`backend/test/unit/test_push_service.py`（降级逻辑、重试、异步发送、日志记录）
+- [ ] **T13 [INT]** [P] 单元测试 — PushService：`backend/tests/unit/test_push_service.py`（降级逻辑、重试、异步发送、日志记录）
   - [FR-003~FR-012] [依赖: T6~T9] [出参验证: pytest 全部通过]
 
-- [ ] **T14 [INT]** [P] 单元测试 — 客户端：`backend/test/unit/test_feishu_client.py` + `backend/test/unit/test_telegram_client.py`（mock subprocess 执行、错误处理、限流检测）
+- [ ] **T14 [INT]** [P] 单元测试 — 客户端：`backend/tests/unit/test_feishu_client.py` + `backend/tests/unit/test_telegram_client.py`（mock subprocess 执行、错误处理、限流检测）
   - [FR-001, FR-002, FR-012] [依赖: T4, T5] [出参验证: pytest 全部通过]
 
-- [ ] **T15 [INT]** 集成测试 — 端到端：`backend/test/integration/test_push_api.py`（发送预警 → 降级 → 查询历史 → 简报定时触发）
+- [ ] **T15 [INT]** 集成测试 — 端到端：`backend/tests/integration/test_push_api.py`（发送预警 → 降级 → 查询历史 → 简报定时触发）
   - [FR-001~FR-012] [依赖: T11, T12] [出参验证: pytest 全部通过，覆盖 US-1~US-4 全部 AC]
 
 ---

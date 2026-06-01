@@ -51,41 +51,41 @@ specs/004-price-alert/
 
 ```text
 # 复用已有模块（不修改，仅依赖调用）
-backend/config.py                 # 复用 — 新增预警规则数上限配置
-backend/database.py               # 复用 — 新增 AlertRule/AlertTrigger/CooldownTracker 表
-backend/main.py                   # 复用 — 注册 alerts 路由
-backend/models/
+backend/app/config.py                 # 复用 — 新增预警规则数上限配置
+backend/app/database.py               # 复用 — 新增 AlertRule/AlertTrigger/CooldownTracker 表
+backend/app/main.py                   # 复用 — 注册 alerts 路由
+backend/app/models/
 │   ├── base.py               # 复用 F1
 │   ├── stock.py              # 复用 F1
 │   ├── watchlist.py          # 复用 F1
 │   └── historical_quote.py   # 复用 F3
 │
-backend/services/
+backend/app/services/
 │   ├── data_source_facade.py # 复用 F2
 │   ├── cache_service.py      # 复用 F2
 │   └── quote_service.py      # 复用 F3
 │
-backend/schemas/
+backend/app/schemas/
 │   ├── __init__.py           # 复用 F1
 │   └── quote.py              # 复用 F3
 │
 # 本 feature 新建模块
-backend/models/
+backend/app/models/
 │   ├── alert_rule.py         # 新建：AlertRule 模型（规则定义）
 │   ├── alert_trigger.py      # 新建：AlertTrigger 模型（触发记录）
 │   └── cooldown_tracker.py   # 新建：CooldownTracker 模型（冷却期状态）
 │
-backend/schemas/
+backend/app/schemas/
 │   └── alert.py              # 新建：AlertRuleRequest/AlertRuleResponse/AlertTriggerResponse Pydantic 模型
 │
-backend/services/
+backend/app/services/
 │   └── alert_service.py      # 新建：核心预警引擎（规则加载 → 行情匹配 → 冷却期检查 → 触发记录 → 合并推送）
 │
-backend/routers/
+backend/app/routers/
 │   └── alerts.py             # 新建：预警规则 CRUD 路由 + 触发历史查询
 │
 # 测试（新增）
-backend/test/
+backend/tests/
 │   ├── conftest.py           # 复用 F1 fixtures
 │   ├── unit/
 │   │   ├── test_alert_service.py    # 预警检测引擎测试（mock 行情数据）
@@ -93,7 +93,7 @@ backend/test/
 │   │   └── test_cooldown.py         # 冷却期逻辑测试（freezegun 冻结时间）
 │   └── integration/
 │       └── test_alerts_api.py       # 端到端 API 测试：创建规则 → 模拟行情 → 触发 → 冷却期 → 再触发
-frontend/__test__/            # 前端测试占位
+frontend/src/__tests__/            # 前端测试占位
 │   └── .gitkeep
 ```
 

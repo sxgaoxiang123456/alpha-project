@@ -9,10 +9,10 @@
 
 **Purpose**: 定义历史数据和行情响应的数据结构
 
-- [ ] **T1 [BE]** 创建 HistoricalQuote 数据模型：`backend/models/historical_quote.py`（stock_code, date, open, close, high, low, volume, turnover，含日期+代码复合索引）
+- [ ] **T1 [BE]** 创建 HistoricalQuote 数据模型：`backend/app/models/historical_quote.py`（stock_code, date, open, close, high, low, volume, turnover，含日期+代码复合索引）
   - [FR-007] [依赖: F1 基础设施就绪] [出参验证: `HistoricalQuote.__table__.create()` 成功，表含 8 字段 + 复合索引]
 
-- [ ] **T2 [BE]** 创建 Quote Pydantic schemas：`backend/schemas/quote.py`（Quote, MarketIndex, HistoricalQuote 请求/响应模型）
+- [ ] **T2 [BE]** 创建 Quote Pydantic schemas：`backend/app/schemas/quote.py`（Quote, MarketIndex, HistoricalQuote 请求/响应模型）
   - [FR-001, FR-003, FR-010] [依赖: T1] [出参验证: 无效价格/涨跌幅触发 pydantic.ValidationError]
 
 ---
@@ -21,13 +21,13 @@
 
 **Purpose**: 数据清洗、大盘指数、行情获取三个独立服务
 
-- [ ] **T3 [BE] [P]** 实现数据清洗服务：`backend/services/data_cleaner.py`（异常值检测：价格为负/0、涨跌幅超阈值、停牌识别；返回标准化 Quote）
+- [ ] **T3 [BE] [P]** 实现数据清洗服务：`backend/app/services/data_cleaner.py`（异常值检测：价格为负/0、涨跌幅超阈值、停牌识别；返回标准化 Quote）
   - [FR-005, FR-008] [依赖: T2] [出参验证: 单元测试 — 价格为-10→标记异常；涨跌幅+25%（非科创）→标记异常；停牌股票→status="suspended"]
 
-- [ ] **T4 [BE] [P]** 实现大盘指数服务：`backend/services/market_index.py`（固定 3 个指数获取 + 缓存 + 返回 MarketIndex）
+- [ ] **T4 [BE] [P]** 实现大盘指数服务：`backend/app/services/market_index.py`（固定 3 个指数获取 + 缓存 + 返回 MarketIndex）
   - [FR-003] [依赖: T2] [出参验证: 单元测试 — mock facade 返回 3 个指数数据，清洗后返回标准化 MarketIndex 列表]
 
-- [ ] **T5 [BE] [P]** 实现行情服务核心逻辑：`backend/services/quote_service.py`（读取 WatchlistItem → 批量调用 facade → 清洗 → 返回 Quote 列表）
+- [ ] **T5 [BE] [P]** 实现行情服务核心逻辑：`backend/app/services/quote_service.py`（读取 WatchlistItem → 批量调用 facade → 清洗 → 返回 Quote 列表）
   - [FR-001, FR-004, FR-005] [依赖: T3] [出参验证: 单元测试 — mock facade + mock 自选股列表 → 返回标准化 Quote 列表]
 
 ---
@@ -48,10 +48,10 @@
 
 **Purpose**: APScheduler 自动刷新 + Dashboard API 查询
 
-- [ ] **T8 [BE]** 实现行情定时任务：`backend/core/quote_scheduler.py`（APScheduler 任务：交易日判断 → 每 3 分钟触发 quote_service 刷新 → 大盘指数刷新）
+- [ ] **T8 [BE]** 实现行情定时任务：`backend/app/core/quote_scheduler.py`（APScheduler 任务：交易日判断 → 每 3 分钟触发 quote_service 刷新 → 大盘指数刷新）
   - [FR-002, A-004, A-008] [依赖: T6, T7] [出参验证: 单元测试 — mock 交易日 → 任务执行刷新；mock 非交易日 → 任务跳过]
 
-- [ ] **T9 [BE]** 实现行情查询路由：`backend/routers/quotes.py`（GET /quotes 返回自选股行情，优先读缓存；GET /quotes/market 返回大盘指数）
+- [ ] **T9 [BE]** 实现行情查询路由：`backend/app/routers/quotes.py`（GET /quotes 返回自选股行情，优先读缓存；GET /quotes/market 返回大盘指数）
   - [FR-001, FR-003, FR-010] [依赖: T6] [出参验证: API 测试 — 缓存命中返回 < 200ms；缓存未命中触发获取后返回]
 
 ---
@@ -60,7 +60,7 @@
 
 **Purpose**: 注册定时任务和配置参数
 
-- [ ] **T10 [BE]** 更新配置与入口：更新 `backend/config.py`（新增行情刷新周期、缓存过期时间、交易日历配置）+ 更新 `backend/main.py`（注册 quote_scheduler APScheduler 任务）
+- [ ] **T10 [BE]** 更新配置与入口：更新 `backend/app/config.py`（新增行情刷新周期、缓存过期时间、交易日历配置）+ 更新 `backend/app/main.py`（注册 quote_scheduler APScheduler 任务）
   - [FR-002, A-004, A-006] [依赖: T8] [出参验证: `uvicorn app.main:app` 启动后定时任务正常运行，日志显示行情刷新执行]
 
 ---
@@ -69,19 +69,19 @@
 
 **Purpose**: 全量测试覆盖
 
-- [ ] **T11 [INT] [P]** 单元测试 — 数据清洗：`backend/test/unit/test_data_cleaner.py`（异常值规则、停牌识别、科创板阈值）
+- [ ] **T11 [INT] [P]** 单元测试 — 数据清洗：`backend/tests/unit/test_data_cleaner.py`（异常值规则、停牌识别、科创板阈值）
   - [FR-005, FR-008] [依赖: T3] [出参验证: pytest 全部通过]
 
-- [ ] **T12 [INT] [P]** 单元测试 — 行情服务：`backend/test/unit/test_quote_service.py` + `backend/test/unit/test_market_index.py`（mock facade、缓存集成、落盘验证）
+- [ ] **T12 [INT] [P]** 单元测试 — 行情服务：`backend/tests/unit/test_quote_service.py` + `backend/tests/unit/test_market_index.py`（mock facade、缓存集成、落盘验证）
   - [FR-001~FR-007] [依赖: T5, T6, T7] [出参验证: pytest 全部通过]
 
-- [ ] **T13 [INT] [P]** 单元测试 — 定时任务：`backend/test/unit/test_quote_scheduler.py`（交易日判断、调度逻辑、非交易时段跳过）
+- [ ] **T13 [INT] [P]** 单元测试 — 定时任务：`backend/tests/unit/test_quote_scheduler.py`（交易日判断、调度逻辑、非交易时段跳过）
   - [FR-002, A-008] [依赖: T8] [出参验证: pytest 全部通过（使用 freezegun 冻结时间）]
 
-- [ ] **T14 [INT]** 集成测试 — 主动查询 API：`backend/test/integration/test_quotes_api.py`（GET /quotes、GET /quotes/market、缓存命中/未命中）
+- [ ] **T14 [INT]** 集成测试 — 主动查询 API：`backend/tests/integration/test_quotes_api.py`（GET /quotes、GET /quotes/market、缓存命中/未命中）
   - [FR-001, FR-003, SC-001, SC-002] [依赖: T9] [出参验证: pytest 全部通过，首屏加载 < 3 秒]
 
-- [ ] **T15 [INT]** 集成测试 — 定时刷新与落盘：`backend/test/integration/test_quote_scheduler.py`（定时触发 → 数据获取 → 清洗 → 缓存更新 → 历史落盘）
+- [ ] **T15 [INT]** 集成测试 — 定时刷新与落盘：`backend/tests/integration/test_quote_scheduler.py`（定时触发 → 数据获取 → 清洗 → 缓存更新 → 历史落盘）
   - [FR-002, FR-005~FR-007] [依赖: T8, T10] [出参验证: pytest 全部通过，覆盖 US-2 全部 AC]
 
 ---
