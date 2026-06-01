@@ -17,6 +17,8 @@ import app.services.stock_search as stock_search
 
 router = APIRouter(prefix="/watchlist", tags=["import-export"])
 
+MAX_UPLOAD_SIZE = 512 * 1024  # 512KB
+
 
 def _find_or_create_group(db: Session, name: str) -> dict:
     """按名称查找分组，不存在则创建。"""
@@ -44,6 +46,12 @@ def import_watchlist(
 ) -> dict:
     """上传 CSV 批量导入自选股。"""
     content = file.file.read()
+
+    if len(content) > MAX_UPLOAD_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+            detail=f"文件大小超过限制（最大 {MAX_UPLOAD_SIZE // 1024}KB）",
+        )
 
     try:
         parsed_rows = parse_csv_rows(content)

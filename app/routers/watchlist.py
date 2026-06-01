@@ -5,7 +5,7 @@ from app.dependencies import get_db
 from app.models.stock import Stock
 from app.models.watchlist import WatchlistItem
 from app.schemas.stock import StockSearchResult
-from app.schemas.watchlist import WatchlistItemCreate, WatchlistItemResponse, WatchlistItemUpdate
+from app.schemas.watchlist import BatchDeleteRequest, WatchlistItemCreate, WatchlistItemResponse, WatchlistItemUpdate
 import app.services.stock_search as stock_search
 
 router = APIRouter(prefix="/watchlist", tags=["watchlist"])
@@ -124,25 +124,13 @@ def delete_watchlist_item(
     return None
 
 
-class BatchDeleteRequest:
-    def __init__(self, codes: list[str]):
-        self.codes = codes
-
-
 @router.post("/batch-delete")
 def batch_delete_watchlist_items(
-    request: dict,
+    request: BatchDeleteRequest,
     db: Session = Depends(get_db),
 ) -> dict:
-    codes = request.get("codes", [])
-    if not codes:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="请选择要删除的股票",
-        )
-
     deleted = 0
-    for code in codes:
+    for code in request.codes:
         item = db.query(WatchlistItem).filter_by(stock_code=code).first()
         if item is not None:
             db.delete(item)

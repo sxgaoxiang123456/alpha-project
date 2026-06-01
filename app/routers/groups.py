@@ -1,3 +1,5 @@
+from typing import Literal
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
@@ -64,7 +66,7 @@ def update_group(
 @router.delete("/{group_id}")
 def remove_group(
     group_id: int,
-    strategy: str = Query(default="move_to_default"),
+    strategy: Literal["move_to_default", "delete_all"] = Query(default="move_to_default"),
     db: Session = Depends(get_db),
 ) -> dict:
     try:

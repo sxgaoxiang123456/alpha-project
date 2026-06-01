@@ -179,3 +179,11 @@ class TestDeleteGroups:
             response = client.delete("/groups/999")
 
         assert response.status_code == 404
+
+    def test_delete_group_with_invalid_strategy_returns_422(self, monkeypatch, tmp_path):
+        app, db_path = _fresh_app(monkeypatch, tmp_path)
+
+        with TestClient(app) as client:
+            response = client.delete("/groups/2?strategy=invalid_strategy")
+
+        assert response.status_code == 422

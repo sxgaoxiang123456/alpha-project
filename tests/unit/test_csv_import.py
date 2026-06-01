@@ -226,3 +226,33 @@ def test_import_with_group_name_creates_or_finds_group():
 
     assert result["success_count"] == 1
     assert result["successes"][0]["group_id"] == 2
+
+
+def test_import_invalid_cost_price_returns_single_failure():
+    from app.services.csv_import import import_watchlist_from_csv
+
+    csv_rows = [{"code": "600000", "name": "股票1", "cost_price": "abc"}]
+
+    def fake_search(code: str):
+        return {"code": code, "name": f"股票{code}", "market": "沪", "sector": None, "status": "正常"}
+
+    result = import_watchlist_from_csv(csv_rows, search_stock_func=fake_search)
+
+    assert result["success_count"] == 0
+    assert result["failure_count"] == 1
+    assert "成本价" in result["failures"][0]["reason"] or "格式" in result["failures"][0]["reason"]
+
+
+def test_import_invalid_shares_returns_single_failure():
+    from app.services.csv_import import import_watchlist_from_csv
+
+    csv_rows = [{"code": "600000", "name": "股票1", "shares": "xyz"}]
+
+    def fake_search(code: str):
+        return {"code": code, "name": f"股票{code}", "market": "沪", "sector": None, "status": "正常"}
+
+    result = import_watchlist_from_csv(csv_rows, search_stock_func=fake_search)
+
+    assert result["success_count"] == 0
+    assert result["failure_count"] == 1
+    assert "持股数" in result["failures"][0]["reason"] or "格式" in result["failures"][0]["reason"]

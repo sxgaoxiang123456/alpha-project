@@ -44,6 +44,17 @@ class WatchlistItemResponse(BaseModel):
         return validate_stock_code(value)
 
 
+class BatchDeleteRequest(BaseModel):
+    codes: list[str] = Field(..., min_length=1)
+
+    @field_validator("codes")
+    @classmethod
+    def validate_codes(cls, value: list[str]) -> list[str]:
+        if not value:
+            raise ValueError("请选择要删除的股票")
+        return value
+
+
 class WatchlistCsvRow(BaseModel):
     code: str = Field(..., min_length=6, max_length=6)
     name: str = Field(..., min_length=1, max_length=64)

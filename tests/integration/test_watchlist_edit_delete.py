@@ -167,3 +167,11 @@ class TestBatchDeleteWatchlist:
         assert response.status_code == 200
         data = response.json()
         assert data["deleted_count"] == 2
+
+    def test_batch_delete_empty_codes_returns_422(self, monkeypatch, tmp_path):
+        app, db_path = _fresh_app(monkeypatch, tmp_path)
+
+        with TestClient(app) as client:
+            response = client.post("/watchlist/batch-delete", json={"codes": []})
+
+        assert response.status_code == 422

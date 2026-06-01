@@ -116,6 +116,25 @@ class TestImportWatchlist:
         assert response.status_code == 400
         assert "100" in response.json()["detail"] or "上限" in response.json()["detail"]
 
+    def test_import_oversized_file_returns_413(self, monkeypatch, tmp_path):
+        app, db_path = _fresh_app(monkeypatch, tmp_path)
+
+        # 100 行但每行很长，总大小超过 512KB（行数不超 100，但文件大小超限）
+        long_name = "x" * 6000
+        lines = ["code,name,group"]
+        for i in range(99):
+            lines.append(f"{600000 + i:06d},{long_name},default")
+        large_content = "\n".join(lines).encode("utf-8")
+        assert len(large_content) > 512 * 1024
+
+        with TestClient(app) as client:
+            response = client.post(
+                "/watchlist/import",
+                files={"file": ("huge.csv", io.BytesIO(large_content), "text/csv")},
+            )
+
+        assert response.status_code == 413
+
 
 class TestExportWatchlist:
     def test_export_returns_csv_file(self, monkeypatch, tmp_path):

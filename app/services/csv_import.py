@@ -204,10 +204,32 @@ def import_watchlist_from_csv(
             "group_name": group_name,
         }
 
+        # 成本价/持股数转换（非数字字符串视为单条失败）
         if cost_price is not None and cost_price != "":
-            item["cost_price"] = Decimal(str(cost_price))
+            try:
+                item["cost_price"] = Decimal(str(cost_price))
+            except Exception:
+                failures.append(
+                    {
+                        "line": line,
+                        "code": code,
+                        "reason": f"成本价格式错误: {cost_price}",
+                    }
+                )
+                continue
+
         if shares is not None and shares != "":
-            item["shares"] = int(shares)
+            try:
+                item["shares"] = int(shares)
+            except Exception:
+                failures.append(
+                    {
+                        "line": line,
+                        "code": code,
+                        "reason": f"持股数格式错误: {shares}",
+                    }
+                )
+                continue
 
         successes.append(item)
 
