@@ -56,52 +56,71 @@ specs/001-stock-management/
 AlphaProject/
 ├── backend/                    # 后端代码（FastAPI + SQLAlchemy + Pydantic）
 │   ├── __init__.py
-│   ├── main.py                 # FastAPI 应用入口，注册路由和中间件
-│   ├── config.py               # 配置加载（环境变量、路径、上限常量）
-│   ├── database.py             # SQLAlchemy 引擎、SessionLocal、表创建
-│   ├── dependencies.py         # 依赖注入（DB session、配置等）
+│   ├── app/
+│   │   ├── __init__.py
+│   │   ├── main.py             # FastAPI 应用入口，注册路由和中间件
+│   │   ├── config.py           # 配置加载（环境变量、路径、上限常量）
+│   │   ├── database.py         # SQLAlchemy 引擎、SessionLocal、建表、声明式基类
+│   │   ├── dependencies.py     # 依赖注入（DB session、配置等）
+│   │   ├── models/
+│   │   │   ├── __init__.py
+│   │   │   ├── stock.py        # Stock 模型：代码、名称、市场、板块、状态
+│   │   │   ├── watchlist.py    # WatchlistItem 模型：分组关联、成本、股数、添加时间
+│   │   │   └── group.py        # Group 模型：分组名称、创建时间、默认分组标记
+│   │   ├── routers/
+│   │   │   ├── __init__.py
+│   │   │   ├── watchlist.py    # 自选股 CRUD 路由：添加、列表、删除、编辑、搜索
+│   │   │   ├── groups.py       # 分组管理路由：创建、重命名、删除、列表
+│   │   │   └── import_export.py # CSV 导入/导出路由：上传解析、下载生成
+│   │   ├── services/
+│   │   │   ├── __init__.py
+│   │   │   ├── stock_search.py # 股票搜索服务：AkShare 查询、代码验证、名称模糊匹配
+│   │   │   ├── csv_import.py   # CSV 导入服务：解析、校验、部分成功处理
+│   │   │   ├── csv_export.py   # CSV 导出服务：数据查询、CSV 生成
+│   │   │   └── group_service.py # 分组业务服务：删除时股票归属处理
+│   │   └── schemas/
+│   │       ├── __init__.py
+│   │       ├── watchlist.py    # Pydantic 模型：请求/响应/校验规则
+│   │       ├── group.py        # Pydantic 模型：分组请求/响应
+│   │       └── stock.py        # Pydantic 模型：股票信息/搜索结果
 │   ├── requirements.txt        # Python 依赖
-│   ├── models/
-│   │   ├── __init__.py
-│   │   ├── base.py             # 声明式基类 + 公共字段混入
-│   │   ├── stock.py            # Stock 模型：代码、名称、市场、板块、状态
-│   │   ├── watchlist.py        # WatchlistItem 模型：分组关联、成本、股数、添加时间
-│   │   └── group.py            # Group 模型：分组名称、创建时间、默认分组标记
-│   ├── routers/
-│   │   ├── __init__.py
-│   │   ├── watchlist.py        # 自选股 CRUD 路由：添加、列表、删除、编辑、搜索
-│   │   ├── groups.py           # 分组管理路由：创建、重命名、删除、列表
-│   │   └── import_export.py    # CSV 导入/导出路由：上传解析、下载生成
-│   ├── services/
-│   │   ├── __init__.py
-│   │   ├── stock_search.py     # 股票搜索服务：AkShare 查询、代码验证、名称模糊匹配
-│   │   ├── csv_import.py       # CSV 导入服务：解析、校验、部分成功处理
-│   │   ├── csv_export.py       # CSV 导出服务：数据查询、CSV 生成
-│   │   └── group_service.py    # 分组业务服务：删除时股票归属处理
-│   └── schemas/
-│       ├── __init__.py
-│       ├── watchlist.py        # Pydantic 模型：请求/响应/校验规则
-│       ├── group.py            # Pydantic 模型：分组请求/响应
-│       └── stock.py            # Pydantic 模型：股票信息/搜索结果
+│   └── tests/                  # 后端测试（pytest）
+│       ├── conftest.py         # pytest fixtures：测试客户端、内存数据库
+│       ├── unit/
+│       │   ├── test_models.py  # 模型层单元测试
+│       │   ├── test_schemas.py # Pydantic 校验测试
+│       │   ├── test_stock_search.py # 股票搜索服务单元测试
+│       │   ├── test_csv_import.py # CSV 解析/校验测试
+│       │   ├── test_csv_export.py # CSV 生成测试
+│       │   ├── test_group_service.py # 分组服务单元测试
+│       │   └── test_config_database_main.py # 配置/数据库/主入口测试
+│       └── integration/
+│           ├── test_watchlist_api.py   # 自选股 API 端到端测试
+│           ├── test_watchlist_edit_delete.py # 编辑删除 API 测试
+│           ├── test_groups_api.py      # 分组 API 端到端测试
+│           └── test_import_export.py   # 导入导出 API 端到端测试
 ├── frontend/                   # 前端代码（Jinja2 模板 + 静态资源）
-│   ├── templates/
-│   │   ├── base.html           # 基础布局模板：HTML5 骨架 + Tailwind CDN + Google Fonts + Material Symbols
-│   │   ├── watchlist/
-│   │   │   ├── list.html       # 自选股列表主页面：SideNavBar + TopNavBar + FilterSidebar + StockDataTable + EmptyState
-│   │   │   ├── add_modal.html  # 添加股票弹窗（CommandBar 搜索 + 分组选择）
-│   │   │   └── edit_modal.html # 编辑持仓信息弹窗（成本/股数编辑）
-│   │   ├── groups/
-│   │   │   └── manage.html     # 分组管理页面（CRUD + 删除确认弹窗）
-│   │   └── components/
-│   │       ├── side_nav.html        # SideNavBar 组件（导航菜单 + AI 简报按钮）
-│   │       ├── top_nav.html         # TopNavBar 组件（CommandBar 搜索框 + 通知 + 用户头像）
-│   │       ├── filter_sidebar.html  # FilterSidebar 组件（分组列表 + 新建分组）
-│   │       ├── stock_table.html     # StockDataTable 组件（表头控制 + 数据表格 + 批量操作）
-│   │       ├── stock_table_row.html # StockDataTable 行组件（代码/名称 + 分组标签 + 价格/成本/盈亏 + 迷你趋势图 + 操作按钮）
-│   │       ├── empty_state.html     # EmptyState 组件（空自选股引导页）
-│   │       ├── alert_badge.html     # AlertBadge 组件（触及目标/预警标签）
-│   │       └── metric_tag.html      # MetricCard(Tag) 组件（分组标签样式）
-│   └── static/
+│   ├── src/
+│   │   ├── templates/
+│   │   │   ├── base.html       # 基础布局模板：HTML5 骨架 + Tailwind CDN + Google Fonts + Material Symbols
+│   │   │   ├── watchlist/
+│   │   │   │   ├── list.html   # 自选股列表主页面：SideNavBar + TopNavBar + FilterSidebar + StockDataTable + EmptyState
+│   │   │   │   ├── add_modal.html  # 添加股票弹窗（CommandBar 搜索 + 分组选择）
+│   │   │   │   └── edit_modal.html # 编辑持仓信息弹窗（成本/股数编辑）
+│   │   │   ├── groups/
+│   │   │   │   └── manage.html # 分组管理页面（CRUD + 删除确认弹窗）
+│   │   │   └── components/
+│   │   │       ├── side_nav.html        # SideNavBar 组件（导航菜单 + AI 简报按钮）
+│   │   │       ├── top_nav.html         # TopNavBar 组件（CommandBar 搜索框 + 通知 + 用户头像）
+│   │   │       ├── filter_sidebar.html  # FilterSidebar 组件（分组列表 + 新建分组）
+│   │   │       ├── stock_table.html     # StockDataTable 组件（表头控制 + 数据表格 + 批量操作）
+│   │   │       ├── stock_table_row.html # StockDataTable 行组件（代码/名称 + 分组标签 + 价格/成本/盈亏 + 迷你趋势图 + 操作按钮）
+│   │   │       ├── empty_state.html     # EmptyState 组件（空自选股引导页）
+│   │   │       ├── alert_badge.html     # AlertBadge 组件（触及目标/预警标签）
+│   │   │       └── metric_tag.html      # MetricCard(Tag) 组件（分组标签样式）
+│   │   └── __tests__/
+│   │       └── .gitkeep        # 前端测试占位（Jinja2 + JS，暂无测试框架）
+│   └── public/
 │       ├── css/
 │       │   └── watchlist.css   # 自选股页面专用样式（响应式、hover 效果）
 │       └── js/
@@ -112,19 +131,6 @@ AlphaProject/
 │   └── .env.example            # 环境变量模板
 ├── data/
 │   └── watchlist.db            # SQLite 数据库文件（gitignored）
-├── backend/test/               # 后端测试（pytest）
-│   ├── conftest.py             # pytest fixtures：测试客户端、内存数据库
-│   ├── unit/
-│   │   ├── test_models.py      # 模型层单元测试
-│   │   ├── test_schemas.py     # Pydantic 校验测试
-│   │   ├── test_csv_import.py  # CSV 解析/校验测试
-│   │   └── test_csv_export.py  # CSV 生成测试
-│   └── integration/
-│       ├── test_watchlist_api.py   # 自选股 API 端到端测试
-│       ├── test_groups_api.py      # 分组 API 端到端测试
-│       └── test_import_export.py   # 导入导出 API 端到端测试
-├── frontend/__test__/          # 前端测试占位（Jinja2 + JS，暂无测试框架）
-│   └── .gitkeep
 └── alembic/                    # 数据库迁移（预留，MVP 初期可用手动建表）
     └── versions/
 ```
@@ -342,11 +348,11 @@ graph TD
 
 | 本 feature 新建模块 | 复用方 | 复用方式 |
 |--------------------|--------|---------|
-| `models/watchlist.py` (WatchlistItem) | F2 实时行情、F3 价格预警、F5 Dashboard | 直接读取自选股列表作为监控目标 |
-| `models/group.py` (Group) | F5 Dashboard | 按分组筛选展示自选股 |
-| `models/stock.py` (Stock) | F2 实时行情、F6 数据容灾 | 行情模块复用股票基础信息 |
-| `services/stock_search.py` | F8 自然语言预警 | 解析自然语言中的股票名称时复用模糊匹配逻辑 |
-| `routers/watchlist.py` (列表查询) | F5 Dashboard | Dashboard 首页调用 API 获取自选股列表 |
+| `backend/app/models/watchlist.py` (WatchlistItem) | F2 实时行情、F3 价格预警、F5 Dashboard | 直接读取自选股列表作为监控目标 |
+| `backend/app/models/group.py` (Group) | F5 Dashboard | 按分组筛选展示自选股 |
+| `backend/app/models/stock.py` (Stock) | F2 实时行情、F6 数据容灾 | 行情模块复用股票基础信息 |
+| `backend/app/services/stock_search.py` | F8 自然语言预警 | 解析自然语言中的股票名称时复用模糊匹配逻辑 |
+| `backend/app/routers/watchlist.py` (列表查询) | F5 Dashboard | Dashboard 首页调用 API 获取自选股列表 |
 
 ### 与外部服务的集成点
 
