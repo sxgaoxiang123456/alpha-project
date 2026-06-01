@@ -4,6 +4,7 @@ from fastapi import FastAPI
 
 from app.config import get_settings
 from app.database import init_db
+from app.routers.import_export import router as import_export_router
 from app.routers.watchlist import router as watchlist_router
 
 settings = get_settings()
@@ -23,6 +24,7 @@ app = FastAPI(
 )
 
 app.include_router(watchlist_router)
+app.include_router(import_export_router)
 
 
 @app.get("/health")

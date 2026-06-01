@@ -2,8 +2,6 @@ import csv
 import io
 from decimal import Decimal
 
-from app.schemas.watchlist import WatchlistCsvRow
-
 MAX_CSV_ROWS = 100
 
 
@@ -15,9 +13,10 @@ class CsvParseError(ValueError):
     """CSV 解析失败。"""
 
 
-def parse_csv_rows(content: bytes) -> list[WatchlistCsvRow]:
-    """将 UTF-8 CSV 字节流解析为 WatchlistCsvRow 列表。
+def parse_csv_rows(content: bytes) -> list[dict]:
+    """将 UTF-8 CSV 字节流解析为原始字典列表。
 
+    不执行业务校验，仅做格式解析和行数检查。
     行数超过 ``MAX_CSV_ROWS`` 时抛出 ``CsvRowCountExceededError``。
     """
     try:
@@ -41,18 +40,52 @@ def parse_csv_rows(content: bytes) -> list[WatchlistCsvRow]:
             f"单次最多导入 {MAX_CSV_ROWS} 行，当前 {len(rows)} 行，请分批处理"
         )
 
-    result: list[WatchlistCsvRow] = []
+    result: list[dict] = []
     for row in rows:
-        row_data = {
-            "code": row.get("code", ""),
-            "name": row.get("name", ""),
-            "group": row.get("group", "默认分组"),
-            "cost_price": row.get("cost_price", ""),
-            "shares": row.get("shares", ""),
-        }
-        result.append(WatchlistCsvRow.model_validate(row_data))
+        result.append(
+            {
+                "code": row.get("code", ""),
+                "name": row.get("name", ""),
+                "group": row.get("group", "默认分组"),
+                "cost_price": row.get("cost_price", ""),
+                "shares": row.get("shares", ""),
+            }
+        )
 
     return result
+
+
+def _stock_name(stock, fallback: str) -> str:
+    """从 search_stock 返回值中提取名称，兼容 dict 和 Pydantic 模型。"""
+    if stock is None:
+        return fallback
+    if isinstance(stock, dict):
+        return stock.get("name", fallback)
+    return getattr(stock, "name", fallback)
+
+
+def _stock_market(stock) -> str:
+    if stock is None:
+        return ""
+    if isinstance(stock, dict):
+        return stock.get("market", "")
+    return getattr(stock, "market", "")
+
+
+def _stock_sector(stock):
+    if stock is None:
+        return None
+    if isinstance(stock, dict):
+        return stock.get("sector")
+    return getattr(stock, "sector", None)
+
+
+def _stock_status(stock) -> str:
+    if stock is None:
+        return "正常"
+    if isinstance(stock, dict):
+        return stock.get("status", "正常")
+    return getattr(stock, "status", "正常")
 
 
 def import_watchlist_from_csv(
@@ -163,10 +196,10 @@ def import_watchlist_from_csv(
         # 构建成功项
         item: dict = {
             "stock_code": code,
-            "name": stock.get("name", name),
-            "market": stock.get("market", ""),
-            "sector": stock.get("sector"),
-            "status": stock.get("status", "正常"),
+            "name": _stock_name(stock, name),
+            "market": _stock_market(stock),
+            "sector": _stock_sector(stock),
+            "status": _stock_status(stock),
             "group_id": group_id,
             "group_name": group_name,
         }

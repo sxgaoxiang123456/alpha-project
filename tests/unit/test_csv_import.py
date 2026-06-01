@@ -48,8 +48,8 @@ def test_parse_csv_rows_returns_20_valid_rows():
     parsed = parse_csv_rows(content)
 
     assert len(parsed) == 20
-    assert parsed[0].code == "600000"
-    assert parsed[0].name == "股票1"
+    assert parsed[0]["code"] == "600000"
+    assert parsed[0]["name"] == "股票1"
 
 
 def test_parse_csv_rows_rejects_over_100_rows():
