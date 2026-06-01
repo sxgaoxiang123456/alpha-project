@@ -52,19 +52,19 @@ specs/002-data-failover/
 
 ```text
 # 复用 F1 基础设施（不修改，仅依赖）
-app/config.py                 # 复用 — 新增数据源配置项
-app/database.py               # 复用 — 新增 cache_entries 表创建
-app/main.py                   # 复用 — 注册 APScheduler 健康检查任务
-app/dependencies.py           # 复用 — 注入 DB session
-app/schemas/                  # 复用目录结构
+backend/config.py             # 复用 — 新增数据源配置项
+backend/database.py           # 复用 — 新增 cache_entries 表创建
+backend/main.py               # 复用 — 注册 APScheduler 健康检查任务
+backend/dependencies.py       # 复用 — 注入 DB session
+backend/schemas/              # 复用目录结构
 
 # 本 feature 新建模块
-app/core/                     # 新增目录：核心基础设施（非业务服务）
+backend/core/                 # 新增目录：核心基础设施（非业务服务）
 │   ├── __init__.py
 │   ├── circuit_breaker.py    # 熔断器：连续失败计数、状态机（closed/open/half-open）
 │   └── health_checker.py     # 定时健康检查：APScheduler 任务，探测数据源可用性
 │
-app/models/
+backend/models/
 │   ├── __init__.py           # 更新：导出 CacheEntry
 │   ├── base.py               # 复用 F1
 │   ├── stock.py              # 复用 F1
@@ -72,20 +72,20 @@ app/models/
 │   ├── watchlist.py          # 复用 F1
 │   └── cache_entry.py        # 新建：CacheEntry 模型（key, content, cached_at, expires_at）
 │
-app/schemas/
+backend/schemas/
 │   ├── __init__.py           # 更新：导出 DataFetch schemas
 │   └── data_fetch.py         # 新建：DataFetchRequest, DataFetchResult Pydantic 模型
 │
-app/services/
+backend/services/
 │   ├── __init__.py           # 更新：导出数据源相关服务
 │   ├── data_source_facade.py # 新建：核心 facade，对外统一接口，内部管理切换/缓存/熔断
 │   ├── data_source.py        # 新建：DataSource 抽象基类 + AkShareDataSource + BaoStockDataSource
 │   └── cache_service.py      # 新建：缓存读写服务（SQLite CRUD + 过期清理）
 │
-app/routers/                  # 本 feature 无新增路由（纯服务层）
+backend/routers/              # 本 feature 无新增路由（纯服务层）
 │
 # 测试（新增）
-tests/
+backend/test/
 │   ├── conftest.py           # 更新：添加数据源 mock fixtures
 │   ├── unit/
 │   │   ├── test_circuit_breaker.py   # 熔断器状态机测试
@@ -94,6 +94,8 @@ tests/
 │   │   └── test_facade.py            # Facade 层切换逻辑测试
 │   └── integration/
 │       └── test_failover.py          # 端到端容灾测试：模拟主源故障→切换→恢复
+frontend/__test__/            # 前端测试占位
+│   └── .gitkeep
 ```
 
 **结构决策说明**:

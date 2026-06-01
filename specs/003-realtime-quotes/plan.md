@@ -51,10 +51,10 @@ specs/003-realtime-quotes/
 
 ```text
 # 复用已有模块（不修改，仅依赖调用）
-app/config.py                 # 复用 — 新增行情刷新周期配置
-app/database.py               # 复用 — 新增 HistoricalQuote 表创建
-app/main.py                   # 复用 — 注册行情定时任务
-app/models/
+backend/config.py             # 复用 — 新增行情刷新周期配置
+backend/database.py           # 复用 — 新增 HistoricalQuote 表创建
+backend/main.py               # 复用 — 注册行情定时任务
+backend/models/
 │   ├── base.py               # 复用 F1
 │   ├── stock.py              # 复用 F1
 │   ├── group.py              # 复用 F1
@@ -62,35 +62,35 @@ app/models/
 │   ├── cache_entry.py        # 复用 F2
 │   └── data_source_status.py # 复用 F2
 │
-app/services/
+backend/services/
 │   ├── data_source_facade.py # 复用 F2
 │   ├── cache_service.py      # 复用 F2
 │   └── __init__.py
 │
-app/schemas/
+backend/schemas/
 │   ├── __init__.py           # 复用 F1
 │   └── data_fetch.py         # 复用 F2
 │
 # 本 feature 新建模块
-app/models/
+backend/models/
 │   └── historical_quote.py   # 新建：HistoricalQuote 模型（股票代码/日期/开收高低/量/额）
 │
-app/schemas/
+backend/schemas/
 │   └── quote.py              # 新建：Quote, MarketIndex, HistoricalQuote Pydantic 模型
 │
-app/services/
+backend/services/
 │   ├── quote_service.py      # 新建：核心行情服务（获取自选股列表 → 批量获取行情 → 返回 Quote 列表）
 │   ├── data_cleaner.py       # 新建：数据清洗服务（异常值检测、停牌识别、格式标准化）
 │   └── market_index.py       # 新建：大盘指数服务（固定 3 个指数的获取和缓存）
 │
-app/core/
+backend/core/
 │   └── quote_scheduler.py    # 新建：APScheduler 行情刷新定时任务（交易时段判断 → 触发刷新 → 异步落盘）
 │
-app/routers/
+backend/routers/
 │   └── quotes.py             # 新建：行情查询路由（GET /quotes 自选股行情, GET /quotes/market 大盘指数）
 │
 # 测试（新增）
-tests/
+backend/test/
 │   ├── conftest.py           # 复用 F1 fixtures
 │   ├── unit/
 │   │   ├── test_quote_service.py    # 行情获取逻辑测试（mock facade）
@@ -99,6 +99,8 @@ tests/
 │   │   └── test_quote_scheduler.py  # 定时任务逻辑测试（mock 时间/交易日历）
 │   └── integration/
 │       └── test_quotes_api.py       # 端到端 API 测试：主动查询 + 定时刷新 + 清洗 + 缓存
+frontend/__test__/            # 前端测试占位
+│   └── .gitkeep
 ```
 
 **结构决策说明**:

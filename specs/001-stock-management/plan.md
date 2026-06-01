@@ -112,7 +112,7 @@ AlphaProject/
 │   └── .env.example            # 环境变量模板
 ├── data/
 │   └── watchlist.db            # SQLite 数据库文件（gitignored）
-├── tests/
+├── backend/test/               # 后端测试（pytest）
 │   ├── conftest.py             # pytest fixtures：测试客户端、内存数据库
 │   ├── unit/
 │   │   ├── test_models.py      # 模型层单元测试
@@ -123,6 +123,8 @@ AlphaProject/
 │       ├── test_watchlist_api.py   # 自选股 API 端到端测试
 │       ├── test_groups_api.py      # 分组 API 端到端测试
 │       └── test_import_export.py   # 导入导出 API 端到端测试
+├── frontend/__test__/          # 前端测试占位（Jinja2 + JS，暂无测试框架）
+│   └── .gitkeep
 └── alembic/                    # 数据库迁移（预留，MVP 初期可用手动建表）
     └── versions/
 ```
