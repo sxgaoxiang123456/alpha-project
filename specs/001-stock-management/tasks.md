@@ -49,7 +49,7 @@
 
 ### Implementation
 
-- [ ] **T7 [BE] [P]** 实现股票搜索服务：`app/services/stock_search.py`（AkShare 查询 + BaoStock 备用降级 + 代码格式校验）
+- [X] **T7 [BE] [P]** 实现股票搜索服务：`app/services/stock_search.py`（AkShare 查询 + BaoStock 备用降级 + 代码格式校验）
   - [FR-001, FR-002, FR-010] [依赖: T6] [出参验证: 单元测试 — 输入"600519"返回贵州茅台对象；输入"999999"返回 None；输入"60051A"返回格式错误]
 
 - [ ] **T8 [BE]** 实现 watchlist 路由（添加/搜索/列表）：`app/routers/watchlist.py`（POST /watchlist, GET /watchlist/search, GET /watchlist）

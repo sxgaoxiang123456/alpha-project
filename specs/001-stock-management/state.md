@@ -1,7 +1,7 @@
 # 实施进度 · 自选股管理
 
 ## 当前任务
-T6 已完成，Foundation 阶段完成；可继续推进 T7。
+T7 已完成，Phase 3 User Story 1 可继续推进 T8。
 
 ## 已完成
 - [X] T01 · 创建项目骨架：requirements.txt + Dockerfile + docker-compose.yml + .env.example
@@ -52,8 +52,22 @@ T6 已完成，Foundation 阶段完成；可继续推进 T7。
   - 审查修复 GREEN：股票代码改为 ASCII 6 位数字校验；CSV 行 schema 将空白成本/股数字段转换为 `None`；`WatchlistItemResponse.cost_price` 增加非负校验。
   - 审查修复验证：2026-05-31 `python -m pytest tests/unit/test_schemas.py` 通过（9 passed）。
 
+- [X] T07 · 实现股票搜索服务：`app/services/stock_search.py` + `app/services/__init__.py`
+  - RED：2026-05-31 `python -m pytest tests/unit/test_stock_search.py` 失败，原因：`app.services` 包不存在，服务层尚未实现。
+  - GREEN：新增 `app/services/__init__.py` 与 `app/services/stock_search.py`；实现 `search_stock()`（AkShare 优先 + BaoStock 备用 + 代码格式校验）和 `search_stocks()`（名称候选搜索），支持依赖注入 `akshare_lookup`/`baostock_lookup` 用于测试；定义 `StockCodeFormatError` 与 `StockDataSourceUnavailableError`。
+  - 验证：2026-05-31 `python -m pytest tests/unit/test_stock_search.py` 通过（5 passed）；`python -m pytest tests/unit/test_stock_search.py tests/unit/test_schemas.py tests/unit/test_models.py tests/unit/test_config_database_main.py` 回归通过（37 passed）。
+  - 审查修复 RED：2026-05-31 规格复审指出 FR-010（数据源不可用降级）未区分"双源不可用"与"未查到"，且 `search_stocks()` 的 6 位代码未走 BaoStock 备用、60051A 未抛异常。
+  - 审查修复 GREEN：补入 `manual_name` 参数支持双源不可用时生成 `status='待验证'`；`search_stocks` 对 6 位代码复用 `search_stock` 的降级路径；对 6 位非法代码格式在调用 provider 前抛 `StockCodeFormatError`。
+  - 审查验证：2026-05-31 `python -m pytest tests/unit/test_stock_search.py` 通过（9 passed）。
+  - 复审修复 RED：2026-05-31 代码质量复审指出默认 provider 的接口错误路径返回 None 导致数据源不可用无法触发降级；`_akshare_lookup()` 结构缺失列返回 None、`_baostock_lookup()` 登录/查询失败返回 None 均被误判为"未查到"。
+  - 复审修复 GREEN：`_akshare_lookup()` 结构异常时抛 `StockDataSourceUnavailableError`；`_baostock_lookup()` 登录失败/查询 error_code != 0 均抛异常；`_lookup_one()` 将抛异常识别为数据源不可用。
+  - 复审验证：2026-05-31 `python -m pytest tests/unit/test_stock_search.py` 通过（11 passed）。
+  - 最终复审修复 RED：2026-05-31 代码质量复审指出 `_lookup_one` 未校验返回结果 code 是否等于查询代码（主源返回不同 code 时不会降级）、provider 返回匹配 code 但缺字段时被误判为未查到、`search_stocks` 名称搜索 AkShare 异常时返回空列表而非数据源不可用、`search_stock(None)` 触发 `AttributeError`。
+  - 最终复审修复 GREEN：`_lookup_one()` 过滤 code 不匹配的结果；`_provider_items()` 与 `_coerce_stock_results()` 分离，非空但不可解析时视为数据源不可用；`search_stocks()` 捕获 AkShare 异常后抛出 `StockDataSourceUnavailableError`；`search_stock(None)` 和 `search_stocks(None)` 被 `_normalize_query()` 转为 `StockCodeFormatError`。
+  - 最终复审验证：2026-05-31 `python -m pytest tests/unit/test_stock_search.py` 通过（16 passed）；`python -m pytest tests/unit/test_stock_search.py tests/unit/test_schemas.py tests/unit/test_models.py tests/unit/test_config_database_main.py` 回归通过（48 passed）。
+
 ## 阻塞项
 （无）
 
 ## 最后更新
-2026-05-31
+2026-06-01
