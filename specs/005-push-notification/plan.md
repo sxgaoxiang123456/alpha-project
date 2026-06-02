@@ -51,43 +51,43 @@ specs/005-push-notification/
 
 ```text
 # 复用已有模块（不修改，仅依赖调用）
-app/config.py                 # 复用 — 基础配置（数据库连接、日志级别等系统级配置）
-app/database.py               # 复用 — 新增 PushLog/PushChannel 表
-app/services/
+backend/app/config.py                 # 复用 — 基础配置（数据库连接、日志级别等系统级配置）
+backend/app/database.py               # 复用 — 新增 PushLog/PushChannel 表
+backend/app/services/
 │   └── settings_service.py   # 复用 — 读取用户配置的飞书 app_id/app_secret/brand/chat_id、Telegram Token、代理配置（敏感字段加密存储）
-app/main.py                   # 复用 — 注册 push 路由
-app/models/
+backend/app/main.py                   # 复用 — 注册 push 路由
+backend/app/models/
 │   ├── base.py               # 复用 F1
 │   └── stock.py              # 复用 F1
 │
-app/services/
+backend/app/services/
 │   ├── data_source_facade.py # 复用 F2
 │   └── quote_service.py      # 复用 F3
 │
-app/schemas/
+backend/app/schemas/
 │   └── __init__.py           # 复用 F1
 │
-app/core/
+backend/app/core/
 │   └── quote_scheduler.py    # 复用 F3 — 新增 9:00 简报触发任务
 │
 # 本 feature 新建模块
-app/models/
+backend/app/models/
 │   ├── push_log.py           # 新建：PushLog 模型（推送记录）
 │   └── push_channel.py       # 新建：PushChannel 模型（通道状态与配置）
 │
-app/schemas/
+backend/app/schemas/
 │   └── push.py               # 新建：PushMessageRequest, PushLogResponse, PushChannelStatus Pydantic 模型
 │
-app/services/
+backend/app/services/
 │   ├── push_service.py       # 新建：核心推送服务（格式化 → 通道选择 → 降级逻辑 → 日志）
 │   ├── feishu_client.py      # 新建：飞书 lark-cli 客户端（卡片渲染 + 调用 lark-cli Open API 发送）
 │   └── telegram_client.py    # 新建：Telegram Bot API 客户端（文本格式化 + HTTP 发送）
 │
-app/routers/
+backend/app/routers/
 │   └── push.py               # 新建：推送历史查询 API（GET /push/logs，支持过滤）
 │
 # 测试（新增）
-tests/
+backend/tests/
 │   ├── conftest.py           # 复用 F1 fixtures
 │   ├── unit/
 │   │   ├── test_push_service.py     # 推送服务测试（通道降级、重试、日志）
@@ -95,6 +95,8 @@ tests/
 │   │   └── test_telegram_client.py  # Telegram 客户端测试（mock Bot API）
 │   └── integration/
 │       └── test_push_api.py         # 端到端 API 测试：发送 → 降级 → 历史查询
+frontend/src/__tests__/            # 前端测试占位
+│   └── .gitkeep
 ```
 
 **结构决策说明**:

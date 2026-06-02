@@ -55,10 +55,10 @@ specs/006-dashboard/
 
 ```text
 # 复用已有模块（不修改，仅依赖调用）
-app/config.py                 # 复用 — Dashboard 配置项（刷新间隔、自选股上限）
-app/database.py               # 复用 — SQLite 连接（读取 PushLog、Stock 等已有表）
-app/main.py                   # 复用 — 注册 dashboard 路由
-app/models/
+backend/app/config.py                 # 复用 — Dashboard 配置项（刷新间隔、自选股上限）
+backend/app/database.py               # 复用 — SQLite 连接（读取 PushLog、Stock 等已有表）
+backend/app/main.py                   # 复用 — 注册 dashboard 路由
+backend/app/models/
 │   ├── base.py               # 复用 F1
 │   ├── stock.py              # 复用 F1 — 自选股数据
 │   ├── alert_rule.py         # 复用 F3 — 预警规则状态
@@ -67,11 +67,11 @@ app/models/
 │   ├── push_channel.py       # 复用 F4 — 通道状态
 │   └── app_setting.py        # 新建：AppSetting 模型（运行时 KV 配置表，key/value/category/is_encrypted）
 │
-app/schemas/
+backend/app/schemas/
 │   ├── __init__.py           # 复用 F1
 │   └── stock.py              # 复用 F1 — 自选股 schema
 │
-app/services/
+backend/app/services/
 │   ├── watchlist_service.py  # 复用 F1 — 自选股列表和分组
 │   ├── data_source_facade.py # 复用 F2 — 数据源健康状态
 │   ├── cache_service.py      # 复用 F2 — 行情缓存读取
@@ -79,28 +79,28 @@ app/services/
 │   ├── alert_service.py      # 复用 F3 — 今日预警触发记录
 │   └── push_service.py       # 复用 F4 — 推送历史和通道状态
 │
-app/routers/
+backend/app/routers/
 │   ├── watchlist.py          # 复用 F1 — 自选股管理 API
 │   ├── push.py               # 复用 F4 — 推送历史查询 API
 │   └── alert.py              # 复用 F3 — 预警相关 API
 │
-app/core/
+backend/app/core/
 │   └── quote_scheduler.py    # 复用 F3 — 定时任务状态（判断简报是否生成）
 │
 # 本 feature 新建模块
-app/routers/
+backend/app/routers/
 │   ├── dashboard.py          # 新建：Dashboard 首页路由（GET /，聚合所有数据）
 │   └── settings.py           # 新建：设置页路由（GET/POST /settings，读写推送通道/数据源/偏好配置）
 │
-app/services/
+backend/app/services/
 │   ├── dashboard_service.py  # 新建：Dashboard 数据聚合服务（协调多个上游服务）
 │   └── settings_service.py   # 新建：配置管理服务（读写 app_settings 表，敏感字段加密/解密）
 │
-app/schemas/
+backend/app/schemas/
 │   ├── dashboard.py          # 新建：DashboardViewResponse Pydantic 模型
 │   └── settings.py           # 新建：SettingRequest, SettingResponse Pydantic 模型
 │
-app/templates/
+frontend/src/templates/
 │   ├── dashboard.html           # 新建：Dashboard 主页面模板（12 列网格布局）
 │   ├── settings.html            # 新建：设置页模板（推送通道/数据源/偏好配置表单）
 │   ├── components/
@@ -116,21 +116,21 @@ app/templates/
 │   │   └── onboarding.html         # 新建：首次使用引导组件（空状态引导页）
 │   └── base.html                # 新建：基础布局模板（Tailwind CDN + Google Fonts + Material Symbols）
 │
-app/static/
+frontend/public/
 │   ├── css/
 │   │   └── dashboard.css     # 新建：Dashboard 专用样式（响应式布局）
 │   └── js/
 │       └── dashboard.js      # 新建：定时刷新逻辑（60 秒轮询）和数据源恢复检测
 │
 # 测试（新增）
-tests/
+backend/tests/
 │   ├── conftest.py           # 复用 F1 fixtures
 │   ├── unit/
 │   │   └── test_dashboard_service.py  # Dashboard 聚合服务测试（mock 上游）
-│   ├── integration/
-│   │   └── test_dashboard.py          # 端到端测试：页面渲染 + 刷新 + 降级
-│   └── e2e/
-│       └── test_responsive.py         # 响应式布局测试（多 viewport）
+│   └── integration/
+│       └── test_dashboard.py          # 端到端测试：页面渲染 + 刷新 + 降级
+frontend/src/__tests__/
+│   └── test_responsive.py             # 响应式布局测试（多 viewport）
 ```
 
 **结构决策说明**:
