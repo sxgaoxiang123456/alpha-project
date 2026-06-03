@@ -69,7 +69,7 @@
 
 **Purpose**: 为 Dashboard 提供数据源状态查询
 
-- [ ] **T11 [BE]** 数据源状态查询 API：新建 `backend/app/routers/system.py` 或扩展现有路由，暴露 GET `/system/data-sources` 返回当前各源健康状态、当前活跃源、最近切换时间
+- [x] **T11 [BE]** 数据源状态查询 API：新建 `backend/app/routers/system.py` 或扩展现有路由，暴露 GET `/system/data-sources` 返回当前各源健康状态、当前活跃源、最近切换时间
   - [FR-009, US-3] [依赖: T8] [出参验证: API 测试 — 返回 JSON 含 akshare/baostock 状态、当前活跃源、切换历史]
 
 ---

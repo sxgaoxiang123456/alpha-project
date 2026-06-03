@@ -61,6 +61,7 @@ class TestDataSourceStatus:
             "name",
             "status",
             "consecutive_failures",
+            "consecutive_successes",
             "last_success_at",
             "last_failure_at",
             "last_error",
