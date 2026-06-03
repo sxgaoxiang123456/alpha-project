@@ -21,6 +21,7 @@ class DataSourceStatus(Base):
         default="closed",
     )
     consecutive_failures: Mapped[int] = mapped_column(default=0, nullable=False)
+    consecutive_successes: Mapped[int] = mapped_column(default=0, nullable=False)
     last_success_at: Mapped[Optional[datetime]] = mapped_column(default=None)
     last_failure_at: Mapped[Optional[datetime]] = mapped_column(default=None)
     last_error: Mapped[Optional[str]] = mapped_column(Text, default=None)

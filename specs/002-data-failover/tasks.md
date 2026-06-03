@@ -9,13 +9,13 @@
 
 **Purpose**: 定义缓存和状态持久化所需的数据结构
 
-- [ ] **T1 [BE]** 创建 CacheEntry 数据模型：`backend/app/models/cache_entry.py`（key, content, cached_at, expires_at，含过期查询索引）
+- [x] **T1 [BE]** 创建 CacheEntry 数据模型：`backend/app/models/cache_entry.py`（key, content, cached_at, expires_at，含过期查询索引）
   - [FR-005] [依赖: F1 基础设施就绪] [出参验证: `CacheEntry.__table__.create()` 成功，表含 4 字段 + expires_at 索引]
 
-- [ ] **T2 [BE]** 创建 DataSourceStatus 数据模型：`backend/app/models/data_source_status.py`（name, status, consecutive_failures, last_success_at, last_failure_at, last_error）
+- [x] **T2 [BE]** 创建 DataSourceStatus 数据模型：`backend/app/models/data_source_status.py`（name, status, consecutive_failures, last_success_at, last_failure_at, last_error）
   - [FR-004, FR-008] [依赖: F1 基础设施就绪] [出参验证: 表创建成功，可读写状态记录]
 
-- [ ] **T3 [BE]** 创建 DataFetch Pydantic schemas：`backend/app/schemas/data_fetch.py`（DataFetchRequest, DataFetchResult）
+- [x] **T3 [BE]** 创建 DataFetch Pydantic schemas：`backend/app/schemas/data_fetch.py`（DataFetchRequest, DataFetchResult）
   - [FR-011] [依赖: T1, T2] [出参验证: 无效 status 值触发 pydantic.ValidationError]
 
 ---
