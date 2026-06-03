@@ -36,10 +36,10 @@
 
 **Purpose**: 封装 AkShare/BaoStock 差异，统一接口
 
-- [ ] **T6 [BE]** 实现 DataSource 抽象基类 + AkShareDataSource：`backend/app/services/data_source.py`（基类定义 `fetch_realtime(codes)` + AkShare 具体实现 + 异常映射）
+- [x] **T6 [BE]** 实现 DataSource 抽象基类 + AkShareDataSource：`backend/app/services/data_source.py`（基类定义 `fetch_realtime(codes)` + AkShare 具体实现 + 异常映射）
   - [FR-001, FR-002] [依赖: T3] [出参验证: 单元测试 — mock AkShare 返回标准化数据；mock 超时/限流异常映射为 DataSourceError]
 
-- [ ] **T7 [BE]** 实现 BaoStockDataSource：扩展 `backend/app/services/data_source.py`（BaoStock 具体实现 + 异常映射）
+- [x] **T7 [BE]** 实现 BaoStockDataSource：扩展 `backend/app/services/data_source.py`（BaoStock 具体实现 + 异常映射）
   - [FR-001, FR-003] [依赖: T6] [出参验证: 单元测试 — mock BaoStock 返回与 AkShare 格式一致的标准化数据]
 
 ---
