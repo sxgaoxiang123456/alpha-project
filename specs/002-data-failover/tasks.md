@@ -57,10 +57,10 @@
 
 **Purpose**: 自动探测数据源可用性，恢复主源
 
-- [ ] **T9 [BE]** 实现 HealthChecker：`backend/app/core/health_checker.py`（APScheduler 任务，每 5 分钟探测 AkShare/BaoStock，更新熔断器状态，输出结构化日志）
+- [x] **T9 [BE]** 实现 HealthChecker：`backend/app/core/health_checker.py`（APScheduler 任务，每 5 分钟探测 AkShare/BaoStock，更新熔断器状态，输出结构化日志）
   - [FR-007, FR-008] [依赖: T4] [出参验证: 单元测试 — mock 数据源成功/失败，验证熔断器状态变化 + 日志输出]
 
-- [ ] **T10 [BE]** 注册定时任务 + 配置更新：更新 `backend/app/main.py`（注册 APScheduler + HealthChecker 任务）+ 更新 `backend/app/config.py`（数据源超时/重试/检查间隔配置）
+- [x] **T10 [BE]** 注册定时任务 + 配置更新：更新 `backend/app/main.py`（注册 APScheduler + HealthChecker 任务）+ 更新 `backend/app/config.py`（数据源超时/重试/检查间隔配置）
   - [FR-007, A-006, A-007] [依赖: T9] [出参验证: `uvicorn app.main:app` 启动后 APScheduler 正常运行，日志显示健康检查执行]
 
 ---

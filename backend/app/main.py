@@ -15,6 +15,7 @@ from backend.app.models.group import Group
 from backend.app.models.watchlist import WatchlistItem
 from backend.app.routers.groups import router as groups_router
 from backend.app.routers.import_export import router as import_export_router
+from backend.app.routers.system import router as system_router
 from backend.app.routers.watchlist import router as watchlist_router
 from backend.app.services.data_source import AkShareDataSource, BaoStockDataSource
 
@@ -62,6 +63,7 @@ templates = Jinja2Templates(directory="frontend/src/templates")
 app.include_router(watchlist_router)
 app.include_router(import_export_router)
 app.include_router(groups_router)
+app.include_router(system_router)
 
 
 @app.get("/", response_class=HTMLResponse)
