@@ -48,7 +48,7 @@
 
 **Purpose**: 对外统一接口，内部管理切换/缓存/熔断
 
-- [ ] **T8 [BE]** 实现 DataSourceFacade：`backend/app/services/data_source_facade.py`（统一接口 `fetch_realtime(codes)`，内部逻辑：检查熔断→尝试主源→失败降级→写入缓存→返回 DataFetchResult）
+- [x] **T8 [BE]** 实现 DataSourceFacade：`backend/app/services/data_source_facade.py`（统一接口 `fetch_realtime(codes)`，内部逻辑：检查熔断→尝试主源→失败降级→写入缓存→返回 DataFetchResult）
   - [FR-002~FR-006, FR-011] [依赖: T4, T5, T6, T7] [出参验证: 单元测试 — 主源正常返回 primary；主源故障→备源返回 fallback；双源故障→缓存返回 cached；无缓存→unavailable]
 
 ---
