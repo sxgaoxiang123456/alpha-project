@@ -17,6 +17,7 @@ from backend.app.routers.groups import router as groups_router
 from backend.app.routers.import_export import router as import_export_router
 from backend.app.routers.system import router as system_router
 from backend.app.routers.watchlist import router as watchlist_router
+from backend.app.services.cache_service import CacheService
 from backend.app.services.data_source import AkShareDataSource, BaoStockDataSource
 
 settings = get_settings()
@@ -40,6 +41,13 @@ async def lifespan(app: FastAPI):
         "interval",
         minutes=settings.health_check_interval_minutes,
         id="health_check",
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        lambda: CacheService(db).cleanup_expired(),
+        "interval",
+        hours=1,
+        id="cache_cleanup",
         replace_existing=True,
     )
     scheduler.start()

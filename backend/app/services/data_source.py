@@ -165,14 +165,21 @@ class BaoStockDataSource(DataSource):
 
                 if data_list:
                     latest = data_list[-1]
+                    close_val = float(latest[6]) if latest[6] else 0.0
+                    preclose_val = float(latest[7]) if latest[7] else 0.0
+                    change_pct = (
+                        round((close_val - preclose_val) / preclose_val * 100, 2)
+                        if preclose_val != 0
+                        else 0.0
+                    )
                     result[code] = {
                         "name": "",  # BaoStock 历史接口不返回名称
-                        "price": float(latest[6]) if latest[6] else 0.0,
-                        "change_pct": 0.0,  # 需计算
+                        "price": close_val,
+                        "change_pct": change_pct,
                         "open": float(latest[3]) if latest[3] else 0.0,
                         "high": float(latest[4]) if latest[4] else 0.0,
                         "low": float(latest[5]) if latest[5] else 0.0,
-                        "pre_close": float(latest[7]) if latest[7] else 0.0,
+                        "pre_close": preclose_val,
                         "volume": int(latest[8]) if latest[8] else 0,
                         "amount": float(latest[9]) if latest[9] else 0.0,
                     }

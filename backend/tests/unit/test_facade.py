@@ -178,6 +178,83 @@ class TestUnavailable:
         assert result.source is None
 
 
+class TestSwitchLogging:
+    """切换日志验证 — FR-009。"""
+
+    def test_primary_success_logs(self, facade: DataSourceFacade, caplog):
+        import logging
+
+        caplog.set_level(logging.INFO)
+
+        with patch.object(
+            facade._primary,
+            "fetch_realtime",
+            return_value={"600519": {"name": "贵州茅台", "price": 1800.0}},
+        ):
+            facade.fetch_realtime(["600519"])
+
+        assert "primary" in caplog.text or "akshare" in caplog.text
+
+    def test_failover_to_fallback_logs(self, facade: DataSourceFacade, caplog):
+        import logging
+
+        caplog.set_level(logging.INFO)
+
+        with patch.object(
+            facade._primary,
+            "fetch_realtime",
+            side_effect=DataSourceError("timeout", "AkShare timeout"),
+        ):
+            with patch.object(
+                facade._fallback,
+                "fetch_realtime",
+                return_value={"600519": {"name": "贵州茅台", "price": 1800.0}},
+            ):
+                facade.fetch_realtime(["600519"])
+
+        assert "fallback" in caplog.text or "failover" in caplog.text
+
+    def test_cache_fallback_logs(self, facade: DataSourceFacade, caplog):
+        import logging
+
+        caplog.set_level(logging.INFO)
+
+        facade._cache.set("realtime_600519", '{"name": "贵州茅台", "price": 1750.0}')
+
+        with patch.object(
+            facade._primary,
+            "fetch_realtime",
+            side_effect=DataSourceError("timeout", "AkShare down"),
+        ):
+            with patch.object(
+                facade._fallback,
+                "fetch_realtime",
+                side_effect=DataSourceError("timeout", "BaoStock down"),
+            ):
+                facade.fetch_realtime(["600519"])
+
+        assert "cached" in caplog.text or "cache" in caplog.text
+
+    def test_unavailable_logs(self, facade: DataSourceFacade, caplog):
+        import logging
+
+        caplog.set_level(logging.INFO)
+
+        with patch.object(
+            facade._primary,
+            "fetch_realtime",
+            side_effect=DataSourceError("timeout", "AkShare down"),
+        ):
+            with patch.object(
+                facade._fallback,
+                "fetch_realtime",
+                side_effect=DataSourceError("timeout", "BaoStock down"),
+            ):
+                facade.fetch_realtime(["600519"])
+
+        assert "unavailable" in caplog.text or "all sources failed" in caplog.text
+
+
 class TestFailureCounting:
     """失败计数与熔断集成。"""
 

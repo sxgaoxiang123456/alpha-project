@@ -4,6 +4,7 @@
 """
 
 import json
+import logging
 from datetime import datetime
 from typing import Any
 
@@ -18,6 +19,8 @@ from backend.app.services.data_source import (
     DataSource,
     DataSourceError,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class DataSourceFacade:
@@ -45,25 +48,77 @@ class DataSourceFacade:
                 data = self._primary.fetch_realtime(codes)
                 self._circuit_breaker.record_success("akshare")
                 self._cache_set(codes, data)
-                return self._build_result("primary", data, "akshare", start_at)
+                result = self._build_result("primary", data, "akshare", start_at)
+                logger.info(
+                    {
+                        "event": "data_fetch",
+                        "status": "primary",
+                        "source": "akshare",
+                        "codes": codes,
+                        "response_time_ms": result.response_time_ms,
+                    }
+                )
+                return result
             except DataSourceError as exc:
                 self._circuit_breaker.record_failure("akshare", error=exc.error_type)
+                logger.warning(
+                    {
+                        "event": "data_fetch_failure",
+                        "source": "akshare",
+                        "error_type": exc.error_type,
+                        "codes": codes,
+                    }
+                )
 
         # 2. 主源失败/熔断，尝试备源
         try:
             data = self._fallback.fetch_realtime(codes)
             self._cache_set(codes, data)
-            return self._build_result("fallback", data, "baostock", start_at)
-        except DataSourceError:
-            pass  # 备源也失败，继续降级到缓存
+            result = self._build_result("fallback", data, "baostock", start_at)
+            logger.warning(
+                {
+                    "event": "data_fetch_failover",
+                    "status": "fallback",
+                    "source": "baostock",
+                    "codes": codes,
+                    "response_time_ms": result.response_time_ms,
+                }
+            )
+            return result
+        except DataSourceError as exc:
+            logger.warning(
+                {
+                    "event": "data_fetch_failure",
+                    "source": "baostock",
+                    "error_type": exc.error_type,
+                    "codes": codes,
+                }
+            )
 
         # 3. 双源故障，查缓存
         cached = self._cache_get(codes)
         if cached is not None:
-            return self._build_result("cached", cached, "cache", start_at)
+            result = self._build_result("cached", cached, "cache", start_at)
+            logger.warning(
+                {
+                    "event": "data_fetch_cache_fallback",
+                    "status": "cached",
+                    "source": "cache",
+                    "codes": codes,
+                }
+            )
+            return result
 
         # 4. 全部不可用
-        return self._build_result("unavailable", None, None, start_at)
+        result = self._build_result("unavailable", None, None, start_at)
+        logger.error(
+            {
+                "event": "data_fetch_unavailable",
+                "status": "unavailable",
+                "codes": codes,
+            }
+        )
+        return result
 
     def _cache_set(self, codes: list[str], data: dict[str, Any]) -> None:
         """将数据写入缓存。"""

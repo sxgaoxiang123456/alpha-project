@@ -78,16 +78,16 @@
 
 **Purpose**: 全量测试覆盖
 
-- [ ] **T12 [INT] [P]** 单元测试 — 熔断器：`backend/tests/unit/test_circuit_breaker.py`（状态转换、持久化恢复、并发安全）
+- [x] **T12 [INT] [P]** 单元测试 — 熔断器：`backend/tests/unit/test_circuit_breaker.py`（状态转换、持久化恢复、并发安全）
   - [FR-004, FR-008] [依赖: T4] [出参验证: pytest 全部通过]
 
-- [ ] **T13 [INT] [P]** 单元测试 — 缓存服务：`backend/tests/unit/test_cache_service.py`（读写、过期、清理、批量操作）
+- [x] **T13 [INT] [P]** 单元测试 — 缓存服务：`backend/tests/unit/test_cache_service.py`（读写、过期、清理、批量操作）
   - [FR-005, FR-006] [依赖: T5] [出参验证: pytest 全部通过]
 
-- [ ] **T14 [INT] [P]** 单元测试 — 适配器 + Facade：`backend/tests/unit/test_data_source.py` + `backend/tests/unit/test_facade.py`（mock 双源切换、缓存命中、异常处理）
+- [x] **T14 [INT] [P]** 单元测试 — 适配器 + Facade：`backend/tests/unit/test_data_source.py` + `backend/tests/unit/test_facade.py`（mock 双源切换、缓存命中、异常处理）
   - [FR-001~FR-006] [依赖: T6, T7, T8] [出参验证: pytest 全部通过]
 
-- [ ] **T15 [INT]** 集成测试 — 容灾端到端：`backend/tests/integration/test_failover.py`（模拟 AkShare 故障→验证切换→模拟恢复→验证切回→模拟双故障→验证缓存）
+- [x] **T15 [INT]** 集成测试 — 容灾端到端：`backend/tests/integration/test_failover.py`（模拟 AkShare 故障→验证切换→模拟恢复→验证切回→模拟双故障→验证缓存）
   - [FR-001~FR-011] [依赖: T8, T10, T11] [出参验证: pytest 全部通过，覆盖 US-1/US-2 全部 AC]
 
 ---

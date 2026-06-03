@@ -8,12 +8,13 @@ from backend.app.core.circuit_breaker import CircuitBreaker, CircuitState
 from backend.app.database import SessionLocal
 from backend.app.dependencies import get_db
 from backend.app.models.data_source_status import DataSourceStatus
+from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/system", tags=["system"])
 
 
 @router.get("/data-sources")
-def get_data_sources(db: SessionLocal = Depends(get_db)) -> dict[str, Any]:
+def get_data_sources(db: Session = Depends(get_db)) -> dict[str, Any]:
     """返回当前各数据源健康状态、当前活跃源。"""
     cb = CircuitBreaker(db)
 
