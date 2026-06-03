@@ -1,4 +1,7 @@
+import threading
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 
 from backend.app.dependencies import get_db
@@ -12,19 +15,17 @@ router = APIRouter(prefix="/watchlist", tags=["watchlist"])
 
 MAX_WATCHLIST_SIZE = 100
 
+# 串行化 add_watchlist_item 中的 count 检查与 INSERT，防止并发突破上限。
+# 单进程内有效；多进程/多实例部署需替换为分布式锁（如 Redis distributed lock）。
+_watchlist_add_lock = threading.Lock()
+
 
 @router.post("", response_model=WatchlistItemResponse, status_code=status.HTTP_201_CREATED)
 def add_watchlist_item(
     item: WatchlistItemCreate,
     db: Session = Depends(get_db),
 ) -> WatchlistItem:
-    count = db.query(WatchlistItem).count()
-    if count >= MAX_WATCHLIST_SIZE:
-        raise HTTPException(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="自选股数量已达上限（100只）",
-        )
-
+    # 搜索不依赖数据库状态，可在锁外执行
     stock = stock_search.search_stock(item.stock_code)
     if stock is None:
         raise HTTPException(
@@ -32,33 +33,48 @@ def add_watchlist_item(
             detail=f"股票 {item.stock_code} 不存在",
         )
 
-    existing = db.query(WatchlistItem).filter_by(stock_code=item.stock_code).first()
-    if existing is not None:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"股票 {item.stock_code} 已存在于自选股列表中",
-        )
+    with _watchlist_add_lock:
+        count = db.query(WatchlistItem).count()
+        if count >= MAX_WATCHLIST_SIZE:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="自选股数量已达上限（100只）",
+            )
 
-    db_stock = db.get(Stock, item.stock_code)
-    if db_stock is None:
-        db_stock = Stock(
-            code=stock.code,
-            name=stock.name,
-            market=stock.market,
-            sector=stock.sector,
-            status=stock.status,
-        )
-        db.add(db_stock)
+        existing = db.query(WatchlistItem).filter_by(stock_code=item.stock_code).first()
+        if existing is not None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"股票 {item.stock_code} 已存在于自选股列表中",
+            )
 
-    watchlist_item = WatchlistItem(
-        stock_code=item.stock_code,
-        group_id=item.group_id,
-        cost_price=item.cost_price,
-        shares=item.shares,
-    )
-    db.add(watchlist_item)
-    db.commit()
-    db.refresh(watchlist_item)
+        db_stock = db.get(Stock, item.stock_code)
+        if db_stock is None:
+            db_stock = Stock(
+                code=stock.code,
+                name=stock.name,
+                market=stock.market,
+                sector=stock.sector,
+                status=stock.status,
+            )
+            db.add(db_stock)
+
+        watchlist_item = WatchlistItem(
+            stock_code=item.stock_code,
+            group_id=item.group_id,
+            cost_price=item.cost_price,
+            shares=item.shares,
+        )
+        db.add(watchlist_item)
+        try:
+            db.commit()
+        except IntegrityError as exc:
+            db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"股票 {item.stock_code} 已存在于自选股列表中",
+            ) from exc
+        db.refresh(watchlist_item)
 
     return watchlist_item
 

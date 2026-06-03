@@ -4,6 +4,9 @@ from decimal import Decimal
 
 MAX_CSV_ROWS = 100
 
+# 公式注入触发字符：Excel / Google Sheets / WPS 会将以此类字符开头的单元格解释为公式
+_FORMULA_START_CHARS = frozenset("=+-@")
+
 
 class CsvRowCountExceededError(ValueError):
     """CSV 行数超过上限。"""
@@ -11,6 +14,13 @@ class CsvRowCountExceededError(ValueError):
 
 class CsvParseError(ValueError):
     """CSV 解析失败。"""
+
+
+def _sanitize_csv_field(value: str) -> str:
+    """阻止 CSV 公式注入：对以公式触发字符开头的值前缀单引号。"""
+    if value and value[0] in _FORMULA_START_CHARS:
+        return "'" + value
+    return value
 
 
 def parse_csv_rows(content: bytes) -> list[dict]:
@@ -45,8 +55,8 @@ def parse_csv_rows(content: bytes) -> list[dict]:
         result.append(
             {
                 "code": row.get("code", ""),
-                "name": row.get("name", ""),
-                "group": row.get("group", "默认分组"),
+                "name": _sanitize_csv_field(row.get("name", "")),
+                "group": _sanitize_csv_field(row.get("group", "默认分组")),
                 "cost_price": row.get("cost_price", ""),
                 "shares": row.get("shares", ""),
             }
