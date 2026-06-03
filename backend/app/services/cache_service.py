@@ -1,11 +1,15 @@
 """缓存服务 — SQLite 持久化缓存读写与过期清理。"""
 
+import threading
 from datetime import datetime, timedelta
 
 from sqlalchemy import delete
 from sqlalchemy.orm import Session
 
 from backend.app.models.cache_entry import CacheEntry
+
+# 单进程并发锁（多进程部署需升级为分布式锁）
+_cache_lock = threading.Lock()
 
 
 def _utc_now() -> datetime:
@@ -23,18 +27,19 @@ class CacheService:
 
     def set(self, key: str, content: str, ttl_seconds: int | None = None) -> None:
         """写入缓存，如 key 已存在则覆盖。"""
-        now = _utc_now()
-        ttl = ttl_seconds if ttl_seconds is not None else self.DEFAULT_TTL_SECONDS
+        with _cache_lock:
+            now = _utc_now()
+            ttl = ttl_seconds if ttl_seconds is not None else self.DEFAULT_TTL_SECONDS
 
-        entry = self.db.get(CacheEntry, key)
-        if entry is None:
-            entry = CacheEntry(key=key)
-            self.db.add(entry)
+            entry = self.db.get(CacheEntry, key)
+            if entry is None:
+                entry = CacheEntry(key=key)
+                self.db.add(entry)
 
-        entry.content = content
-        entry.cached_at = now
-        entry.expires_at = now + timedelta(seconds=ttl)
-        self.db.commit()
+            entry.content = content
+            entry.cached_at = now
+            entry.expires_at = now + timedelta(seconds=ttl)
+            self.db.commit()
 
     def get(self, key: str) -> str | None:
         """查询缓存，过期返回 None。"""
