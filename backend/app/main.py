@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 
+from apscheduler.schedulers.background import BackgroundScheduler
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -7,12 +8,17 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import joinedload
 
 from backend.app.config import get_settings
+from backend.app.core.circuit_breaker import CircuitBreaker
+from backend.app.core.health_checker import HealthChecker
 from backend.app.database import SessionLocal, init_db
 from backend.app.models.group import Group
 from backend.app.models.watchlist import WatchlistItem
 from backend.app.routers.groups import router as groups_router
 from backend.app.routers.import_export import router as import_export_router
+from backend.app.routers.system import router as system_router
 from backend.app.routers.watchlist import router as watchlist_router
+from backend.app.services.cache_service import CacheService
+from backend.app.services.data_source import AkShareDataSource, BaoStockDataSource
 
 settings = get_settings()
 
@@ -20,7 +26,36 @@ settings = get_settings()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
+
+    # 启动 APScheduler 健康检查任务
+    scheduler = BackgroundScheduler()
+    db = SessionLocal()
+    cb = CircuitBreaker(db)
+    checker = HealthChecker(
+        circuit_breaker=cb,
+        primary=AkShareDataSource(),
+        fallback=BaoStockDataSource(),
+    )
+    scheduler.add_job(
+        checker.check_all,
+        "interval",
+        minutes=settings.health_check_interval_minutes,
+        id="health_check",
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        lambda: CacheService(db).cleanup_expired(),
+        "interval",
+        hours=1,
+        id="cache_cleanup",
+        replace_existing=True,
+    )
+    scheduler.start()
+    app.state.scheduler = scheduler
+
     yield
+
+    scheduler.shutdown()
 
 
 app = FastAPI(
@@ -36,6 +71,7 @@ templates = Jinja2Templates(directory="frontend/src/templates")
 app.include_router(watchlist_router)
 app.include_router(import_export_router)
 app.include_router(groups_router)
+app.include_router(system_router)
 
 
 @app.get("/", response_class=HTMLResponse)

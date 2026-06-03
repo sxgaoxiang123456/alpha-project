@@ -10,7 +10,7 @@
 
 ## 3. 工作流 HOW
 
-**① 启动 feature**：`superpowers:subagent-driven-development` 读取 `specs/XXX-{feature}/spec.md` + `plan.md` + `tasks.md`，按 Phase 顺序执行
+**① 启动 feature**：读取 `specs/XXX-{feature}/spec.md` + `plan.md` + `tasks.md`，按 Phase 顺序执行
 
 **② Task 启动必读**：`@specs/XXX-{feature}/spec.md`（需求）、`@specs/XXX-{feature}/plan.md`（架构）、`@specs/XXX-{feature}/tasks.md`（当前 task）；FE 任务额外读 `@design-reference/DESIGN.md` + `@design-reference/stitch-export/{page}/code.html`
 
@@ -144,3 +144,9 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 | `specs/005-push-notification/{spec,plan,tasks}.md` | F5 开发时 | 飞书/Telegram 推送、双通道冗余 |
 | `specs/006-dashboard/{spec,plan,tasks}.md` | F6 开发时 | Dashboard、设置页、前端组件 |
 | `.specify/templates/{spec,plan,tasks}-template.md` | 新建 feature 时 | 标准化文档模板 |
+
+## 11. LEARNINGS 自动加载
+
+`@LEARNINGS.md`
+
+每次会话开始，先吸收教训沉淀。实现新 feature 时若命中相关 type / 应用范围，主动避坑并明示 "本次绕开 LEARNINGS 第 N 条"。
