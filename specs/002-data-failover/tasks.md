@@ -24,10 +24,10 @@
 
 **Purpose**: 熔断器和缓存服务，不依赖数据源适配器
 
-- [ ] **T4 [BE] [P]** 实现熔断器：`backend/app/core/circuit_breaker.py`（状态机 Closed/Open/Half-Open + 连续失败计数 + 状态持久化到 DataSourceStatus）
+- [x] **T4 [BE] [P]** 实现熔断器：`backend/app/core/circuit_breaker.py`（状态机 Closed/Open/Half-Open + 连续失败计数 + 状态持久化到 DataSourceStatus）
   - [FR-004, FR-008] [依赖: T2] [出参验证: 单元测试 — 连续3次失败→Open；连续2次成功→Closed；Half-Open 状态仅允许探测]
 
-- [ ] **T5 [BE] [P]** 实现缓存服务：`backend/app/services/cache_service.py`（写入缓存、查询缓存含过期判断、批量清理过期条目）
+- [x] **T5 [BE] [P]** 实现缓存服务：`backend/app/services/cache_service.py`（写入缓存、查询缓存含过期判断、批量清理过期条目）
   - [FR-005, FR-006] [依赖: T1] [出参验证: 单元测试 — 写入后查询命中；过期后查询返回 None；批量清理删除过期条目]
 
 ---
