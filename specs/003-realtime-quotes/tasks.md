@@ -48,7 +48,7 @@
 
 **Purpose**: APScheduler 自动刷新 + Dashboard API 查询
 
-- [ ] **T8 [BE]** 实现行情定时任务：`backend/app/core/quote_scheduler.py`（APScheduler 任务：交易日判断 → 每 3 分钟触发 quote_service 刷新 → 大盘指数刷新）
+- [x] **T8 [BE]** 实现行情定时任务：`backend/app/core/quote_scheduler.py`（APScheduler 任务：交易日判断 → 每 3 分钟触发 quote_service 刷新 → 大盘指数刷新）
   - [FR-002, A-004, A-008] [依赖: T6, T7] [出参验证: 单元测试 — mock 交易日 → 任务执行刷新；mock 非交易日 → 任务跳过]
 
 - [ ] **T9 [BE]** 实现行情查询路由：`backend/app/routers/quotes.py`（GET /quotes 返回自选股行情，优先读缓存；GET /quotes/market 返回大盘指数）
