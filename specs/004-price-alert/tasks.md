@@ -27,10 +27,10 @@
 
 **Purpose**: 预警规则的 CRUD 和状态管理
 
-- [ ] **T5 [BE]** [P] 实现规则 CRUD 路由：`backend/app/routers/alerts.py`（GET /alerts 列表, POST /alerts 创建, PUT /alerts/{id} 修改, DELETE /alerts/{id} 删除，含 50 条上限校验）
+- [x] **T5 [BE]** [P] 实现规则 CRUD 路由：`backend/app/routers/alerts.py`（GET /alerts 列表, POST /alerts 创建, PUT /alerts/{id} 修改, DELETE /alerts/{id} 删除，含 50 条上限校验）
   - [FR-004, FR-009] [依赖: T4] [出参验证: API 测试 — 创建规则 → 查询列表 → 修改 → 删除 → 验证 50 条上限拒绝]
 
-- [ ] **T6 [BE]** [P] 实现规则状态管理：`backend/app/routers/alerts.py`（PATCH /alerts/{id}/toggle 启用/暂停切换）+ 扩展 `alert_service.py`（股票移除监听 → 自动暂停关联规则）
+- [x] **T6 [BE]** [P] 实现规则状态管理：`backend/app/routers/alerts.py`（PATCH /alerts/{id}/toggle 启用/暂停切换）+ 扩展 `alert_service.py`（股票移除监听 → 自动暂停关联规则）
   - [FR-005, FR-014] [依赖: T5] [出参验证: 单元测试 — 暂停后检测跳过；mock 股票移除事件 → 规则自动 paused]
 
 ---

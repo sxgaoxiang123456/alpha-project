@@ -19,6 +19,7 @@ from backend.app.models.historical_quote import HistoricalQuote
 from backend.app.models.watchlist import WatchlistItem
 from backend.app.routers.groups import router as groups_router
 from backend.app.routers.import_export import router as import_export_router
+from backend.app.routers.alerts import router as alerts_router
 from backend.app.routers.quotes import router as quotes_router
 from backend.app.routers.system import router as system_router
 from backend.app.routers.watchlist import router as watchlist_router
@@ -118,6 +119,7 @@ app = FastAPI(
 app.mount("/static", StaticFiles(directory="frontend/public"), name="static")
 templates = Jinja2Templates(directory="frontend/src/templates")
 
+app.include_router(alerts_router)
 app.include_router(watchlist_router)
 app.include_router(import_export_router)
 app.include_router(groups_router)
