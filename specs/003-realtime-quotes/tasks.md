@@ -27,7 +27,7 @@
 - [x] **T4 [BE] [P]** 实现大盘指数服务：`backend/app/services/market_index.py`（固定 3 个指数获取 + 缓存 + 返回 MarketIndex）
   - [FR-003] [依赖: T2] [出参验证: 单元测试 — mock facade 返回 3 个指数数据，清洗后返回标准化 MarketIndex 列表]
 
-- [ ] **T5 [BE] [P]** 实现行情服务核心逻辑：`backend/app/services/quote_service.py`（读取 WatchlistItem → 批量调用 facade → 清洗 → 返回 Quote 列表）
+- [x] **T5 [BE] [P]** 实现行情服务核心逻辑：`backend/app/services/quote_service.py`（读取 WatchlistItem → 批量调用 facade → 清洗 → 返回 Quote 列表）
   - [FR-001, FR-004, FR-005] [依赖: T3] [出参验证: 单元测试 — mock facade + mock 自选股列表 → 返回标准化 Quote 列表]
 
 ---
