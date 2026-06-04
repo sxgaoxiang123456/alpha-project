@@ -39,13 +39,13 @@
 
 **Purpose**: 行情匹配、条件评估、触发判定
 
-- [ ] **T7 [BE]** 实现检测引擎核心：`backend/app/services/alert_service.py`（读取 active 规则 → 获取最新行情 → 逐条评估 → 返回候选触发列表）
+- [x] **T7 [BE]** 实现检测引擎核心：`backend/app/services/alert_service.py`（读取 active 规则 → 获取最新行情 → 逐条评估 → 返回候选触发列表）
   - [FR-001~FR-003, FR-006] [依赖: T1, T4] [出参验证: 单元测试 — mock 2 条规则 + mock 行情 → 正确返回触发/未触发结果]
 
-- [ ] **T8 [BE]** [P] 实现条件评估器：扩展 `alert_service.py`（price_above/below, change_pct_above/below, volume_above 的评估逻辑）
+- [x] **T8 [BE]** [P] 实现条件评估器：扩展 `alert_service.py`（price_above/below, change_pct_above/below, volume_above 的评估逻辑）
   - [FR-001~FR-003] [依赖: T7] [出参验证: 单元测试 — 5 种条件类型边界值覆盖，含边界精确值测试]
 
-- [ ] **T9 [BE]** [P] 实现"已满足不触发"逻辑：扩展 `alert_service.py`（创建时初始化 last_evaluated_result，仅从不满足→满足才触发）
+- [x] **T9 [BE]** [P] 实现"已满足不触发"逻辑：扩展 `alert_service.py`（创建时初始化 last_evaluated_result，仅从不满足→满足才触发）
   - [FR-010] [依赖: T7] [出参验证: 单元测试 — 创建时行情已满足条件 → 不触发；行情变化后满足 → 触发]
 
 ---
