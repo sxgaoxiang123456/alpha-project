@@ -9,10 +9,21 @@ from backend.app.services.data_cleaner import DataCleaner
 
 
 class QuoteService:
-    def __init__(self, db: Session, facade: Any, cleaner: DataCleaner | None = None):
+    CACHE_TTL_SECONDS = 300
+
+    def __init__(
+        self,
+        db: Session,
+        facade: Any,
+        cleaner: DataCleaner | None = None,
+        cache: Any | None = None,
+        ttl_seconds: int = CACHE_TTL_SECONDS,
+    ):
         self.db = db
         self.facade = facade
         self.cleaner = cleaner or DataCleaner()
+        self.cache = cache
+        self.ttl_seconds = ttl_seconds
 
     def get_watchlist_quotes(
         self,
@@ -27,8 +38,7 @@ class QuoteService:
         result = self.facade.fetch_realtime(codes)
         data = result.data or {}
         timestamp = actual_timestamp or datetime.now(UTC)
-
-        return [
+        quotes = [
             self.cleaner.clean_quote(
                 code,
                 data.get(code),
@@ -37,3 +47,13 @@ class QuoteService:
             )
             for code in codes
         ]
+
+        if self.cache is not None:
+            for quote in quotes:
+                self.cache.set(
+                    f"quote:{quote.stock_code}",
+                    quote.model_dump_json(),
+                    ttl_seconds=self.ttl_seconds,
+                )
+
+        return quotes
