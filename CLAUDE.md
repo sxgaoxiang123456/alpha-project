@@ -10,15 +10,17 @@
 
 ## 3. 工作流 HOW
 
-**① 启动 feature**：读取 `specs/XXX-{feature}/spec.md` + `plan.md` + `tasks.md`，按 Phase 顺序执行
+**① 环境准备**：`cd backend && bash setup.sh` 构建/验证虚拟环境（首次进入项目或 worktree 切换后必跑）
 
-**② Task 启动必读**：`@specs/XXX-{feature}/spec.md`（需求）、`@specs/XXX-{feature}/plan.md`（架构）、`@specs/XXX-{feature}/tasks.md`（当前 task）；FE 任务额外读 `@design-reference/DESIGN.md` + `@design-reference/stitch-export/{page}/code.html`
+**② 启动 feature**：读取 `specs/XXX-{feature}/spec.md` + `plan.md` + `tasks.md`，按 Phase 顺序执行
 
-**③ 测试纪律**：`superpowers:test-driven-development` — 先写测试（FAIL），再实现（PASS），最后重构
+**③ Task 启动必读**：`@specs/XXX-{feature}/spec.md`（需求）、`@specs/XXX-{feature}/plan.md`（架构）、`@specs/XXX-{feature}/tasks.md`（当前 task）；FE 任务额外读 `@design-reference/DESIGN.md` + `@design-reference/stitch-export/{page}/code.html`
 
-**④ Feature 完成**：`pytest tests/` 全量通过 → 更新 `tasks.md` 勾选完成项 → `git commit` 标注 `[BE]`/`[FE]`/`[INT]`
+**④ 测试纪律**：`superpowers:test-driven-development` — 先写测试（FAIL），再实现（PASS），最后重构
 
-**⑤ 节奏铁律**：单 task 产出 1-3 个文件；每 Phase 结束后做 Checkpoint 验证；不跨 Phase 提前实现
+**⑤ Feature 完成**：`.venv/bin/python -m pytest tests/` 全量通过 → 更新 `tasks.md` 勾选完成项 → `git commit` 标注 `[BE]`/`[FE]`/`[INT]`
+
+**⑥ 节奏铁律**：单 task 产出 1-3 个文件；每 Phase 结束后做 Checkpoint 验证；不跨 Phase 提前实现
 
 ## 4. 技术栈
 
@@ -35,17 +37,21 @@
 | 测试框架 | pytest / httpx | 未指定 | `001/tasks.md` T1 |
 | 数据库 | PostgreSQL / Redis / ClickHouse | 未指定 | `06-架构基线决策.md` §1.1 |
 | 部署 | Docker Compose / Nginx | 未指定 | `06-架构基线决策.md` §1.1 |
+| 包管理 | uv (venv + pip) | 未指定 | `backend/setup.sh` |
 
 ## 5. 命令清单
 
-> `package.json` 不存在，暂无 npm scripts。以下从 `tasks.md` 提取。
+> 后端所有命令均需在 `backend/` 目录下执行。
 
 | 命令 | 作用 | 来源 |
 |:---|:---|:---|
-| `uvicorn app.main:app` | 启动 FastAPI 服务 | `001/tasks.md` T2 |
+| `bash setup.sh` | **构建/重建虚拟环境**（首次进入或 worktree 切换后必跑） | `backend/setup.sh` |
+| `bash setup.sh -k` | 保留已有 `.venv`，仅安装依赖 | `backend/setup.sh` |
+| `.venv/bin/python -m pytest tests/` | 运行全量测试 | `001/tasks.md` T24 |
+| `.venv/bin/python -m pytest tests/unit/` | 运行单元测试 | `001/tasks.md` T24 |
+| `.venv/bin/python -m pytest tests/integration/` | 运行集成测试 | `001/tasks.md` T25 |
+| `.venv/bin/python -m uvicorn app.main:app` | 启动 FastAPI 服务 | `001/tasks.md` T2 |
 | `docker build -t stock-mgt .` | 构建 Docker 镜像 | `001/tasks.md` T1 |
-| `pytest tests/unit/` | 运行单元测试 | `001/tasks.md` T24 |
-| `pytest tests/integration/` | 运行集成测试 | `001/tasks.md` T25 |
 
 ## 6. 项目宪法
 
@@ -67,6 +73,7 @@
 6. **不要为移动端做响应式适配** — MVP 仅支持 1280px+ 桌面端
 7. **不要在代码中使用英文 UI 文案** — 所有用户-facing 文字必须是中文
 8. **不要提前引入付费数据源** — 零成本方案验证失败前不升级
+9. **不要手动创建 venv 或用 pip 直接安装依赖** — 必须使用 `bash setup.sh` 构建环境，确保 worktree 切换后一键可复现
 
 ## 9. Behavioral Guidelines (Karpathy-Inspired)
 

@@ -80,6 +80,7 @@ class AkShareDataSource(DataSource):
                     "pre_close": float(row.get("昨收", 0) or 0),
                     "volume": int(row.get("成交量", 0) or 0),
                     "amount": float(row.get("成交额", 0) or 0),
+                    "status": str(row.get("状态", "")),
                 }
             except (ValueError, TypeError, AttributeError) as exc:
                 raise DataSourceError(
@@ -128,6 +129,7 @@ class BaoStockDataSource(DataSource):
                     "pre_close": float(row.get("pre_close", 0) or 0),
                     "volume": int(row.get("volume", 0) or 0),
                     "amount": float(row.get("amount", 0) or 0),
+                    "status": str(row.get("status", "")),
                 }
             except (ValueError, TypeError) as exc:
                 raise DataSourceError(
