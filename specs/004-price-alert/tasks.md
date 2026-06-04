@@ -9,16 +9,16 @@
 
 **Purpose**: 定义预警规则、触发记录、冷却期跟踪的数据结构
 
-- [ ] **T1 [BE]** 创建 AlertRule 数据模型：`backend/app/models/alert_rule.py`（规则 ID、股票代码、条件类型、阈值、冷却时间、触达级别、状态、last_evaluated_result，含股票代码索引）
+- [x] **T1 [BE]** 创建 AlertRule 数据模型：`backend/app/models/alert_rule.py`（规则 ID、股票代码、条件类型、阈值、冷却时间、触达级别、状态、last_evaluated_result，含股票代码索引）
   - [FR-004, FR-005, FR-009] [依赖: F1 基础设施就绪] [出参验证: `AlertRule.__table__.create()` 成功，表含 10 字段 + 索引]
 
-- [ ] **T2 [BE]** [P] 创建 AlertTrigger 数据模型：`backend/app/models/alert_trigger.py`（触发 ID、规则 ID、股票代码、触发条件、触发值、触发时间、触达级别、推送状态、合并规则列表）
+- [x] **T2 [BE]** [P] 创建 AlertTrigger 数据模型：`backend/app/models/alert_trigger.py`（触发 ID、规则 ID、股票代码、触发条件、触发值、触发时间、触达级别、推送状态、合并规则列表）
   - [FR-012] [依赖: T1] [出参验证: 表创建成功，可写入触发记录并关联 AlertRule]
 
-- [ ] **T3 [BE]** [P] 创建 CooldownTracker 数据模型：`backend/app/models/cooldown_tracker.py`（规则 ID、最近触发时间、冷却时长，含规则 ID 唯一索引）
+- [x] **T3 [BE]** [P] 创建 CooldownTracker 数据模型：`backend/app/models/cooldown_tracker.py`（规则 ID、最近触发时间、冷却时长，含规则 ID 唯一索引）
   - [FR-007] [依赖: T1] [出参验证: 表创建成功，支持按规则 ID 快速查询]
 
-- [ ] **T4 [BE]** [P] 创建 Alert Pydantic schemas：`backend/app/schemas/alert.py`（AlertRuleRequest, AlertRuleResponse, AlertTriggerResponse, CooldownStatus）
+- [x] **T4 [BE]** [P] 创建 Alert Pydantic schemas：`backend/app/schemas/alert.py`（AlertRuleRequest, AlertRuleResponse, AlertTriggerResponse, CooldownStatus）
   - [FR-004] [依赖: T1, T2, T3] [出参验证: 无效条件类型/触达级别触发 pydantic.ValidationError]
 
 ---
