@@ -1,24 +1,43 @@
 # 实施进度 · 基础实时行情
 
-## 当前任务
-[>] Feature 任务已全部完成，进入代码审查与收尾
+## 当前状态
+✅ Feature 003 已全部完成，包含代码审查修复
 
 ## 已完成
-- [x] T01 · 创建 HistoricalQuote 数据模型：app/models/historical_quote.py
-- [x] T02 · 创建 Quote Pydantic schemas：app/schemas/quote.py
-- [x] T03 · 实现数据清洗服务：app/services/data_cleaner.py
-- [x] T04 · 实现大盘指数服务：app/services/market_index.py
-- [x] T05 · 实现行情服务核心逻辑：app/services/quote_service.py
-- [x] T06 · 实现行情缓存集成：app/services/quote_service.py
-- [x] T07 · 实现异步落盘：app/services/quote_service.py
-- [x] T08 · 实现行情定时任务：app/core/quote_scheduler.py
-- [x] T09 · 实现行情查询路由：app/routers/quotes.py
-- [x] T10 · 更新配置与入口：app/config.py + app/main.py
-- [x] T11 · 单元测试 — 数据清洗：backend/tests/unit/test_data_cleaner.py
-- [x] T12 · 单元测试 — 行情服务：backend/tests/unit/test_quote_service.py + backend/tests/unit/test_market_index.py
-- [x] T13 · 单元测试 — 定时任务：backend/tests/unit/test_quote_scheduler.py
-- [x] T14 · 集成测试 — 主动查询 API：backend/tests/integration/test_quotes_api.py
-- [x] T15 · 集成测试 — 定时刷新与落盘：backend/tests/integration/test_quote_scheduler.py
+- [x] T01 · HistoricalQuote 数据模型
+- [x] T02 · Quote Pydantic schemas
+- [x] T03 · 数据清洗服务
+- [x] T04 · 大盘指数服务
+- [x] T05 · 行情核心服务
+- [x] T06 · 行情缓存集成
+- [x] T07 · 异步历史落盘
+- [x] T08 · 行情定时任务
+- [x] T09 · 行情查询路由
+- [x] T10 · 配置与入口
+- [x] T11 · 单元测试 — 数据清洗
+- [x] T12 · 单元测试 — 行情服务
+- [x] T13 · 单元测试 — 定时任务
+- [x] T14 · 集成测试 — 主动查询 API
+- [x] T15 · 集成测试 — 定时刷新与落盘
+
+## 代码审查修复 (2026-06-04)
+
+### Critical 修复
+- [x] C1: data_source 适配器添加 status 字段转发 → 停牌检测可用
+- [x] C2: MarketIndexService._decimal() None 值保护
+- [x] C3: 添加 HistoricalQuote 90 天清理定时任务
+
+### Important 修复
+- [x] I1: is_trading_day 集成 AkShare 交易日历 + 降级
+- [x] I2: 5 个新模块添加结构化日志
+- [x] I3: 缓存命中时非交易时段标记 market_closed
+- [x] I5: 缓存命中时 source_status 更新为 "cached"
+
+### 跳过（MVP 范围外）
+- I4: Router 每次请求新建 DataSourceFacade（单用户无影响）
+
+## 测试结果
+244 passed, 0 failed
 
 ## 阻塞项
 （无）

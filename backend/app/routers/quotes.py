@@ -1,7 +1,9 @@
+import logging
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from backend.app.dependencies import get_db
+from backend.app.core.trading_calendar import is_trading_day, is_trading_time
 from backend.app.models.watchlist import WatchlistItem
 from backend.app.schemas.quote import MarketIndex, Quote
 from backend.app.services.cache_service import CacheService
@@ -45,16 +47,25 @@ def list_quotes(
     cache: CacheService = Depends(get_quote_cache),
     quote_service: QuoteService = Depends(get_quote_service),
 ) -> list[Quote]:
+    from datetime import date as date_type
+
     items = db.query(WatchlistItem).order_by(WatchlistItem.id).all()
     if not items:
         return []
+
+    today = date_type.today()
+    outside_trading = not is_trading_day(today) or not is_trading_time()
 
     cached_quotes: list[Quote] = []
     for item in items:
         cached = cache.get(f"quote:{item.stock_code}")
         if cached is None:
             return quote_service.get_watchlist_quotes()
-        cached_quotes.append(Quote.model_validate_json(cached))
+        quote = Quote.model_validate_json(cached)
+        quote.source_status = "cached"
+        if outside_trading:
+            quote.status = "market_closed"
+        cached_quotes.append(quote)
 
     return cached_quotes
 

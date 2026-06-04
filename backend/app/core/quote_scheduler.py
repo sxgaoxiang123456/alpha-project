@@ -1,6 +1,9 @@
+import logging
 from collections.abc import Callable
 from datetime import date
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 
 class QuoteScheduler:
@@ -18,10 +21,13 @@ class QuoteScheduler:
     def refresh_if_trading_day(self, *, current_date: date | None = None) -> None:
         today = current_date or date.today()
         if not self.is_trading_day(today):
+            logger.debug("非交易日 %s，跳过行情刷新", today)
             return
 
+        logger.info("开始行情定时刷新")
         self.quote_service.get_watchlist_quotes()
         self.market_index_service.get_indices()
+        logger.info("行情定时刷新完成")
 
 
 def register_quote_refresh_job(

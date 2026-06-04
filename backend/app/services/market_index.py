@@ -1,9 +1,12 @@
+import logging
 from collections.abc import Mapping
 from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
 
 from backend.app.schemas.quote import MarketIndex
+
+logger = logging.getLogger(__name__)
 
 
 class MarketIndexService:
@@ -59,4 +62,6 @@ class MarketIndexService:
         )
 
     def _decimal(self, value: Any) -> Decimal:
+        if value is None or value == "":
+            return Decimal("0")
         return Decimal(str(value))

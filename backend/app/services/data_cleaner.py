@@ -1,9 +1,12 @@
+import logging
 from collections.abc import Mapping
 from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
 
 from backend.app.schemas.quote import Quote
+
+logger = logging.getLogger(__name__)
 
 
 class DataCleaner:
@@ -59,10 +62,13 @@ class DataCleaner:
         if price is None or price <= 0:
             status = "abnormal"
             price = None
+            logger.warning("股票 %s 价格异常: price=%s", stock_code, raw.get("price"))
         if change_percent is not None and abs(change_percent) > self._change_limit(stock_code):
             status = "abnormal"
+            logger.warning("股票 %s 涨跌幅超阈值: change_pct=%s", stock_code, change_percent)
         if volume == 0:
             status = "abnormal"
+            logger.warning("股票 %s 成交量=0（可能停牌或数据缺失）", stock_code)
 
         return Quote(
             stock_code=stock_code,

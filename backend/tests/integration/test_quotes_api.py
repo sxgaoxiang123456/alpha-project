@@ -118,11 +118,14 @@ def test_get_quotes_fetches_on_cache_miss_then_uses_real_cache(monkeypatch, tmp_
         miss_data = miss_response.json()
         hit_data = hit_response.json()
         assert len(miss_data) == 1
-        assert miss_data == hit_data
+        assert len(hit_data) == 1
         assert miss_data[0]["stock_code"] == "600519"
         assert miss_data[0]["stock_name"] == "贵州茅台"
         assert miss_data[0]["source_status"] == "primary"
         assert miss_data[0]["status"] == "normal"
+        # 缓存命中时 source_status 更新为 "cached"
+        assert hit_data[0]["source_status"] == "cached"
+        assert hit_data[0]["stock_code"] == miss_data[0]["stock_code"]
         assert calls == [["600519"]]
     finally:
         _dispose_database()

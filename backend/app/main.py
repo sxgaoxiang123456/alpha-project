@@ -1,11 +1,12 @@
 from contextlib import asynccontextmanager
-from datetime import date
+from datetime import datetime, timedelta
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from sqlalchemy import delete
 from sqlalchemy.orm import joinedload
 
 from backend.app.config import get_settings
@@ -14,6 +15,7 @@ from backend.app.core.health_checker import HealthChecker
 from backend.app.core.quote_scheduler import QuoteScheduler, register_quote_refresh_job
 from backend.app.database import SessionLocal, init_db
 from backend.app.models.group import Group
+from backend.app.models.historical_quote import HistoricalQuote
 from backend.app.models.watchlist import WatchlistItem
 from backend.app.routers.groups import router as groups_router
 from backend.app.routers.import_export import router as import_export_router
@@ -29,8 +31,17 @@ from backend.app.services.quote_service import QuoteService
 settings = get_settings()
 
 
-def is_trading_day(current_date: date) -> bool:
-    return current_date.weekday() < 5
+from backend.app.core.trading_calendar import is_trading_day
+
+
+def cleanup_old_historical_quotes(retention_days: int = 90) -> int:
+    cutoff = datetime.now() - timedelta(days=retention_days)
+    with SessionLocal() as session:
+        result = session.execute(
+            delete(HistoricalQuote).where(HistoricalQuote.date < cutoff.date())
+        )
+        session.commit()
+        return result.rowcount
 
 
 @asynccontextmanager
@@ -58,6 +69,14 @@ async def lifespan(app: FastAPI):
         "interval",
         hours=1,
         id="cache_cleanup",
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        cleanup_old_historical_quotes,
+        "cron",
+        hour=3,
+        minute=7,
+        id="historical_cleanup",
         replace_existing=True,
     )
     facade = DataSourceFacade(db)

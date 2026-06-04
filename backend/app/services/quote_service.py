@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from collections.abc import Mapping
 from datetime import UTC, datetime
 from decimal import Decimal
@@ -10,6 +11,8 @@ from backend.app.models.historical_quote import HistoricalQuote
 from backend.app.models.watchlist import WatchlistItem
 from backend.app.schemas.quote import Quote
 from backend.app.services.data_cleaner import DataCleaner
+
+logger = logging.getLogger(__name__)
 
 
 class QuoteService:
@@ -84,30 +87,33 @@ class QuoteService:
         data: Mapping[str, Any],
         actual_timestamp: datetime,
     ) -> None:
-        with self.history_session_factory() as session:
-            for code, raw in data.items():
-                if not isinstance(raw, Mapping):
-                    continue
+        try:
+            with self.history_session_factory() as session:
+                for code, raw in data.items():
+                    if not isinstance(raw, Mapping):
+                        continue
 
-                historical_quote = self._build_historical_quote(code, raw, actual_timestamp)
-                if historical_quote is None:
-                    continue
+                    historical_quote = self._build_historical_quote(code, raw, actual_timestamp)
+                    if historical_quote is None:
+                        continue
 
-                existing = session.get(
-                    HistoricalQuote,
-                    (historical_quote.stock_code, historical_quote.date),
-                )
-                if existing is None:
-                    session.add(historical_quote)
-                else:
-                    existing.open = historical_quote.open
-                    existing.close = historical_quote.close
-                    existing.high = historical_quote.high
-                    existing.low = historical_quote.low
-                    existing.volume = historical_quote.volume
-                    existing.turnover = historical_quote.turnover
+                    existing = session.get(
+                        HistoricalQuote,
+                        (historical_quote.stock_code, historical_quote.date),
+                    )
+                    if existing is None:
+                        session.add(historical_quote)
+                    else:
+                        existing.open = historical_quote.open
+                        existing.close = historical_quote.close
+                        existing.high = historical_quote.high
+                        existing.low = historical_quote.low
+                        existing.volume = historical_quote.volume
+                        existing.turnover = historical_quote.turnover
 
-            session.commit()
+                session.commit()
+        except Exception:
+            logger.exception("历史行情异步落盘失败")
 
     def _build_historical_quote(
         self,
