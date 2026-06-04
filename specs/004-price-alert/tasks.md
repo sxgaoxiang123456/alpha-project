@@ -81,16 +81,16 @@
 
 **Purpose**: 全量测试覆盖
 
-- [ ] **T15 [INT]** [P] 单元测试 — 检测引擎：`backend/tests/unit/test_alert_service.py`（条件评估、触发逻辑、合并推送、已满足不触发）
+- [x] **T15 [INT]** [P] 单元测试 — 检测引擎：`backend/tests/unit/test_alert_service.py`（条件评估、触发逻辑、合并推送、已满足不触发）
   - [FR-001~FR-011] [依赖: T7~T11] [出参验证: pytest 全部通过]
 
-- [ ] **T16 [INT]** [P] 单元测试 — 冷却期：`backend/tests/unit/test_cooldown.py`（冷却期计算、跨交易日重置、修改后重置、持久化验证）
+- [x] **T16 [INT]** [P] 单元测试 — 冷却期：`backend/tests/unit/test_cooldown.py`（冷却期计算、跨交易日重置、修改后重置、持久化验证）
   - [FR-007] [依赖: T10, T12] [出参验证: pytest 全部通过（使用 freezegun 冻结时间）]
 
-- [ ] **T17 [INT]** [P] 单元测试 — 规则 CRUD：`backend/tests/unit/test_alert_rules.py`（创建、查询、修改、删除、暂停、上限校验、股票移除自动暂停）
+- [x] **T17 [INT]** [P] 单元测试 — 规则 CRUD：`backend/tests/unit/test_alert_rules.py`（创建、查询、修改、删除、暂停、上限校验、股票移除自动暂停）
   - [FR-004, FR-005, FR-009, FR-014] [依赖: T5, T6] [出参验证: pytest 全部通过]
 
-- [ ] **T18 [INT]** 集成测试 — 端到端：`backend/tests/integration/test_alerts_api.py`（创建规则 → 模拟行情 → 触发 → 冷却期 → 再触发 → 合并推送 → 跨交易日重置）
+- [x] **T18 [INT]** 集成测试 — 端到端：`backend/tests/integration/test_alerts_api.py`（创建规则 → 模拟行情 → 触发 → 冷却期 → 再触发 → 合并推送 → 跨交易日重置）
   - [FR-001~FR-014] [依赖: T13, T14] [出参验证: pytest 全部通过，覆盖 US-1~US-4 全部 AC]
 
 ---
