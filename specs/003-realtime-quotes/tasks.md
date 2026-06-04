@@ -24,7 +24,7 @@
 - [x] **T3 [BE] [P]** 实现数据清洗服务：`backend/app/services/data_cleaner.py`（异常值检测：价格为负/0、涨跌幅超阈值、停牌识别；返回标准化 Quote）
   - [FR-005, FR-008] [依赖: T2] [出参验证: 单元测试 — 价格为-10→标记异常；涨跌幅+25%（非科创）→标记异常；停牌股票→status="suspended"]
 
-- [ ] **T4 [BE] [P]** 实现大盘指数服务：`backend/app/services/market_index.py`（固定 3 个指数获取 + 缓存 + 返回 MarketIndex）
+- [x] **T4 [BE] [P]** 实现大盘指数服务：`backend/app/services/market_index.py`（固定 3 个指数获取 + 缓存 + 返回 MarketIndex）
   - [FR-003] [依赖: T2] [出参验证: 单元测试 — mock facade 返回 3 个指数数据，清洗后返回标准化 MarketIndex 列表]
 
 - [ ] **T5 [BE] [P]** 实现行情服务核心逻辑：`backend/app/services/quote_service.py`（读取 WatchlistItem → 批量调用 facade → 清洗 → 返回 Quote 列表）
