@@ -75,7 +75,7 @@
 - [x] **T12 [INT] [P]** 单元测试 — 行情服务：`backend/tests/unit/test_quote_service.py` + `backend/tests/unit/test_market_index.py`（mock facade、缓存集成、落盘验证）
   - [FR-001~FR-007] [依赖: T5, T6, T7] [出参验证: pytest 全部通过]
 
-- [ ] **T13 [INT] [P]** 单元测试 — 定时任务：`backend/tests/unit/test_quote_scheduler.py`（交易日判断、调度逻辑、非交易时段跳过）
+- [x] **T13 [INT] [P]** 单元测试 — 定时任务：`backend/tests/unit/test_quote_scheduler.py`（交易日判断、调度逻辑、非交易时段跳过）
   - [FR-002, A-008] [依赖: T8] [出参验证: pytest 全部通过（使用 freezegun 冻结时间）]
 
 - [ ] **T14 [INT]** 集成测试 — 主动查询 API：`backend/tests/integration/test_quotes_api.py`（GET /quotes、GET /quotes/market、缓存命中/未命中）
