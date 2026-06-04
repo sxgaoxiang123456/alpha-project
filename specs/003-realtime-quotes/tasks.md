@@ -12,7 +12,7 @@
 - [x] **T1 [BE]** 创建 HistoricalQuote 数据模型：`backend/app/models/historical_quote.py`（stock_code, date, open, close, high, low, volume, turnover，含日期+代码复合索引）
   - [FR-007] [依赖: F1 基础设施就绪] [出参验证: `HistoricalQuote.__table__.create()` 成功，表含 8 字段 + 复合索引]
 
-- [ ] **T2 [BE]** 创建 Quote Pydantic schemas：`backend/app/schemas/quote.py`（Quote, MarketIndex, HistoricalQuote 请求/响应模型）
+- [x] **T2 [BE]** 创建 Quote Pydantic schemas：`backend/app/schemas/quote.py`（Quote, MarketIndex, HistoricalQuote 请求/响应模型）
   - [FR-001, FR-003, FR-010] [依赖: T1] [出参验证: 无效价格/涨跌幅触发 pydantic.ValidationError]
 
 ---
