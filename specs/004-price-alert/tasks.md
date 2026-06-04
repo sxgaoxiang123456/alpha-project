@@ -69,10 +69,10 @@
 
 **Purpose**: 与 F3 行情刷新集成，注册路由和配置
 
-- [ ] **T13 [BE]** 与 F3 行情刷新集成：更新 `backend/app/core/quote_scheduler.py`（行情刷新完成后调用 `alert_service.evaluate()`）
+- [x] **T13 [BE]** 与 F3 行情刷新集成：更新 `backend/app/core/quote_scheduler.py`（行情刷新完成后调用 `alert_service.evaluate()`）
   - [FR-006] [依赖: T7, T10, T11] [出参验证: 集成测试 — mock 行情刷新 → 触发 alert_service → 验证检测执行并生成触发记录]
 
-- [ ] **T14 [BE]** 更新配置与路由注册：更新 `backend/app/config.py`（新增规则数上限 50、默认冷却期 30 分钟配置）+ 更新 `backend/app/main.py`（注册 alerts 路由）
+- [x] **T14 [BE]** 更新配置与路由注册：更新 `backend/app/config.py`（新增规则数上限 50、默认冷却期 30 分钟配置）+ 更新 `backend/app/main.py`（注册 alerts 路由）
   - [A-003, A-005] [依赖: T5, T13] [出参验证: `uvicorn app.main:app` 启动后路由和配置正常加载]
 
 ---

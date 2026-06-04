@@ -82,6 +82,36 @@ async def lifespan(app: FastAPI):
     )
     facade = DataSourceFacade(db)
     quote_cache = CacheService(db)
+
+    def _run_alert_detection() -> None:
+        """行情刷新后执行预警检测。"""
+        import json
+        import logging
+        _logger = logging.getLogger("alert_detection")
+        alert_db = SessionLocal()
+        try:
+            from backend.app.models.watchlist import WatchlistItem
+            from backend.app.services.alert_service import detect_alerts
+
+            stock_codes = [
+                row[0] for row in alert_db.query(WatchlistItem.stock_code).all()
+            ]
+            quotes_dict = {}
+            for code in stock_codes:
+                raw = quote_cache.get(f"quote:{code}")
+                if raw:
+                    quotes_dict[code] = json.loads(raw)
+
+            triggers = detect_alerts(alert_db, quotes_dict)
+            if triggers:
+                alert_db.add_all(triggers)
+                alert_db.commit()
+                _logger.info("预警检测完成，触发 %d 条规则", len(triggers))
+        except Exception:
+            _logger.exception("预警检测异常")
+        finally:
+            alert_db.close()
+
     quote_scheduler = QuoteScheduler(
         quote_service=QuoteService(
             db=db,
@@ -95,6 +125,7 @@ async def lifespan(app: FastAPI):
             ttl_seconds=settings.quote_cache_ttl_seconds,
         ),
         is_trading_day=is_trading_day,
+        on_quotes_refreshed=_run_alert_detection,
     )
     register_quote_refresh_job(
         scheduler,

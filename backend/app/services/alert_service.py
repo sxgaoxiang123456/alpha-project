@@ -113,16 +113,40 @@ def init_evaluation_state(rule: AlertRule, quote: dict) -> None:
 # ---------------------------------------------------------------------------
 
 
+def _normalize_quote(quote: dict) -> dict:
+    """将 JSON 反序列化后的字符串数值转为 float/int。
+
+    缓存存储 Quote.model_dump_json() 后，Decimal → str, datetime → str。
+    """
+    for key in ("current_price", "change_percent", "change_amount", "turnover"):
+        val = quote.get(key)
+        if isinstance(val, str):
+            try:
+                quote[key] = float(val)
+            except (ValueError, TypeError):
+                quote[key] = None
+    vol = quote.get("volume")
+    if isinstance(vol, str):
+        try:
+            quote["volume"] = int(vol)
+        except (ValueError, TypeError):
+            quote["volume"] = None
+    return quote
+
+
 def detect_alerts(db: Session, quotes: dict[str, dict]) -> list[AlertTrigger]:
     """遍历所有生效规则，对最新行情进行检测。
 
     Args:
         db: 数据库会话。
-        quotes: {stock_code: quote_dict} 最新行情快照。
+        quotes: {stock_code: quote_dict} 最新行情快照 (dict 或 JSON 解析结果均可)。
 
     Returns:
         本次检测中新生成的 AlertTrigger 列表 (已合并，尚未持久化)。
     """
+    # 标准化数值类型 (JSON 反序列化后字符串 → 数值)
+    for quote in quotes.values():
+        _normalize_quote(quote)
     active_rules = db.query(AlertRule).filter_by(status="active").all()
     raw_triggers: list[AlertTrigger] = []
 
