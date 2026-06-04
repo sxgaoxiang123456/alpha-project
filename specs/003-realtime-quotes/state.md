@@ -1,46 +1,38 @@
 # 实施进度 · 基础实时行情
 
 ## 当前状态
-✅ Feature 003 已全部完成，包含代码审查修复
+✅ Feature 003 已收尾 — PR #1 已提交，tag v0.2.0-003-realtime-quotes 已推送
 
-## 已完成
-- [x] T01 · HistoricalQuote 数据模型
-- [x] T02 · Quote Pydantic schemas
-- [x] T03 · 数据清洗服务
-- [x] T04 · 大盘指数服务
-- [x] T05 · 行情核心服务
-- [x] T06 · 行情缓存集成
-- [x] T07 · 异步历史落盘
-- [x] T08 · 行情定时任务
-- [x] T09 · 行情查询路由
-- [x] T10 · 配置与入口
-- [x] T11 · 单元测试 — 数据清洗
-- [x] T12 · 单元测试 — 行情服务
-- [x] T13 · 单元测试 — 定时任务
-- [x] T14 · 集成测试 — 主动查询 API
-- [x] T15 · 集成测试 — 定时刷新与落盘
+## 已完成 (15/15 tasks + 收尾)
+- [x] T01-T10: 10 个 [BE] 实现任务
+- [x] T11-T15: 5 个 [INT] 测试任务
 
 ## 代码审查修复 (2026-06-04)
-
-### Critical 修复
-- [x] C1: data_source 适配器添加 status 字段转发 → 停牌检测可用
+- [x] C1: data_source 适配器转发 status 字段（停牌检测）
 - [x] C2: MarketIndexService._decimal() None 值保护
-- [x] C3: 添加 HistoricalQuote 90 天清理定时任务
+- [x] C3: HistoricalQuote 90 天清理定时任务
+- [x] I1: AkShare 交易日历 + weekday 降级（trading_calendar.py）
+- [x] I2: 5 个新模块结构化日志
+- [x] I3: 缓存命中 + 非交易时段 → market_closed
+- [x] I5: 缓存命中 → source_status="cached"
+- [x] I4: 跳过（MVP 单用户无影响）
 
-### Important 修复
-- [x] I1: is_trading_day 集成 AkShare 交易日历 + 降级
-- [x] I2: 5 个新模块添加结构化日志
-- [x] I3: 缓存命中时非交易时段标记 market_closed
-- [x] I5: 缓存命中时 source_status 更新为 "cached"
+## 后端结构性缺口补测
+- [x] G1: cleanup_old_historical_quotes 真库回归（6 cases）
+- [x] G2: is_trading_day AkShare 降级路径（7 cases）
 
-### 跳过（MVP 范围外）
-- I4: Router 每次请求新建 DataSourceFacade（单用户无影响）
+## 基础设施
+- [x] `backend/setup.sh` — uv 一键构建虚拟环境
+- [x] CLAUDE.md §3/§4/§5/§8 环境构建约束
+- [x] LEARNINGS.md 避坑复盘（5 条）
 
 ## 测试结果
-244 passed, 0 failed
+257 passed, 0 failed
 
-## 阻塞项
-（无）
+## 收尾
+- PR: https://github.com/sxgaoxiang123456/alpha-project/pull/1
+- Tag: v0.2.0-003-realtime-quotes
+- 21 commits on develop (db4a453..86f5183)
 
 ## 最后更新
 2026-06-04
