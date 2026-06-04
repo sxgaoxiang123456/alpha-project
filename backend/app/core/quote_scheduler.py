@@ -21,7 +21,7 @@ class QuoteScheduler:
             return
 
         self.quote_service.get_watchlist_quotes()
-        self.market_index_service.get_market_indices()
+        self.market_index_service.get_indices()
 
 
 def register_quote_refresh_job(

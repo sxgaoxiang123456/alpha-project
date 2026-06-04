@@ -7,7 +7,9 @@ from fastapi.testclient import TestClient
 
 def import_fresh(module_name: str, *module_names_to_clear: str):
     for name in module_names_to_clear:
-        sys.modules.pop(name, None)
+        for loaded_name in list(sys.modules):
+            if loaded_name == name or loaded_name.startswith(f"{name}."):
+                sys.modules.pop(loaded_name, None)
     return importlib.import_module(module_name)
 
 
@@ -59,12 +61,12 @@ def test_fastapi_app_serves_health_and_docs(monkeypatch, tmp_path):
     main = import_fresh(
         "backend.app.main",
         "backend.app.main",
-        "backend.app.models.group",
-        "backend.app.models.stock",
-        "backend.app.models",
-        "backend.models",
-        "backend.app.database",
         "backend.app.config",
+        "backend.app.database",
+        "backend.app.dependencies",
+        "backend.app.models",
+        "backend.app.routers",
+        "backend.models",
     )
 
     try:
@@ -73,6 +75,8 @@ def test_fastapi_app_serves_health_and_docs(monkeypatch, tmp_path):
         with TestClient(main.app) as client:
             health_response = client.get("/health")
             docs_response = client.get("/docs")
+            quotes_response = client.get("/quotes")
+            quote_refresh_job = main.app.state.scheduler.get_job("quote_refresh")
 
         assert health_response.status_code == 200
         assert health_response.json() == {
@@ -81,6 +85,13 @@ def test_fastapi_app_serves_health_and_docs(monkeypatch, tmp_path):
         }
         assert docs_response.status_code == 200
         assert "Swagger UI" in docs_response.text
+        assert quotes_response.status_code == 200
+        assert quotes_response.json() == []
+        assert quote_refresh_job is not None
+        assert (
+            quote_refresh_job.trigger.interval.total_seconds()
+            == main.settings.quote_refresh_interval_minutes * 60
+        )
     finally:
         database = sys.modules.get("backend.app.database")
         if database is not None:

@@ -60,7 +60,7 @@
 
 **Purpose**: 注册定时任务和配置参数
 
-- [ ] **T10 [BE]** 更新配置与入口：更新 `backend/app/config.py`（新增行情刷新周期、缓存过期时间、交易日历配置）+ 更新 `backend/app/main.py`（注册 quote_scheduler APScheduler 任务）
+- [x] **T10 [BE]** 更新配置与入口：更新 `backend/app/config.py`（新增行情刷新周期、缓存过期时间、交易日历配置）+ 更新 `backend/app/main.py`（注册 quote_scheduler APScheduler 任务）
   - [FR-002, A-004, A-006] [依赖: T8] [出参验证: `uvicorn app.main:app` 启动后定时任务正常运行，日志显示行情刷新执行]
 
 ---

@@ -1,7 +1,7 @@
 # 实施进度 · 基础实时行情
 
 ## 当前任务
-[>] T10 · 更新配置与入口：app/config.py + app/main.py
+[>] T11 · 单元测试 — 数据清洗：backend/tests/unit/test_data_cleaner.py
 
 ## 已完成
 - [x] T01 · 创建 HistoricalQuote 数据模型：app/models/historical_quote.py
@@ -13,6 +13,7 @@
 - [x] T07 · 实现异步落盘：app/services/quote_service.py
 - [x] T08 · 实现行情定时任务：app/core/quote_scheduler.py
 - [x] T09 · 实现行情查询路由：app/routers/quotes.py
+- [x] T10 · 更新配置与入口：app/config.py + app/main.py
 
 ## 阻塞项
 （无）
