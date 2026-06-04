@@ -34,6 +34,14 @@ def load_watchlist_model():
     return WatchlistItem
 
 
+def load_historical_quote_model():
+    try:
+        from backend.app.models.historical_quote import HistoricalQuote
+    except ModuleNotFoundError as exc:
+        pytest.fail(f"HistoricalQuote model is not implemented: {exc}", pytrace=False)
+    return HistoricalQuote
+
+
 def import_fresh_database():
     for module_name in (
         "backend.app.main",
@@ -241,6 +249,75 @@ def test_group_table_can_be_created_and_round_trips_a_group():
         assert group.name == "观察"
         assert group.created_at is not None
         assert group.is_default is False
+    finally:
+        engine.dispose()
+
+
+def test_historical_quote_uses_historical_quotes_table_name():
+    HistoricalQuote = load_historical_quote_model()
+
+    assert HistoricalQuote.__tablename__ == "historical_quotes"
+
+
+def test_historical_quote_table_has_exact_required_columns():
+    HistoricalQuote = load_historical_quote_model()
+
+    assert set(HistoricalQuote.__table__.columns.keys()) == {
+        "stock_code",
+        "date",
+        "open",
+        "close",
+        "high",
+        "low",
+        "volume",
+        "turnover",
+    }
+
+
+def test_historical_quote_has_stock_code_date_composite_index():
+    HistoricalQuote = load_historical_quote_model()
+
+    indexed_column_sets = {
+        frozenset(expression.name for expression in index.expressions)
+        for index in HistoricalQuote.__table__.indexes
+    }
+
+    assert frozenset({"stock_code", "date"}) in indexed_column_sets
+
+
+def test_historical_quote_table_can_be_created_and_round_trips_quote():
+    from datetime import date
+    from decimal import Decimal
+
+    HistoricalQuote = load_historical_quote_model()
+    engine = create_engine("sqlite:///:memory:")
+
+    try:
+        HistoricalQuote.__table__.create(bind=engine)
+        Session = sessionmaker(bind=engine)
+
+        with Session() as session:
+            session.add(
+                HistoricalQuote(
+                    stock_code="600519",
+                    date=date(2026, 6, 4),
+                    open=Decimal("10.00"),
+                    close=Decimal("10.20"),
+                    high=Decimal("10.50"),
+                    low=Decimal("9.90"),
+                    volume=100000,
+                    turnover=Decimal("1020000.00"),
+                )
+            )
+            session.commit()
+
+        with Session() as session:
+            quote = session.query(HistoricalQuote).filter_by(stock_code="600519").one()
+
+        assert quote.date == date(2026, 6, 4)
+        assert quote.close == Decimal("10.20")
+        assert quote.volume == 100000
+        assert quote.turnover == Decimal("1020000.00")
     finally:
         engine.dispose()
 

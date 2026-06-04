@@ -9,7 +9,7 @@
 
 **Purpose**: 定义历史数据和行情响应的数据结构
 
-- [ ] **T1 [BE]** 创建 HistoricalQuote 数据模型：`backend/app/models/historical_quote.py`（stock_code, date, open, close, high, low, volume, turnover，含日期+代码复合索引）
+- [x] **T1 [BE]** 创建 HistoricalQuote 数据模型：`backend/app/models/historical_quote.py`（stock_code, date, open, close, high, low, volume, turnover，含日期+代码复合索引）
   - [FR-007] [依赖: F1 基础设施就绪] [出参验证: `HistoricalQuote.__table__.create()` 成功，表含 8 字段 + 复合索引]
 
 - [ ] **T2 [BE]** 创建 Quote Pydantic schemas：`backend/app/schemas/quote.py`（Quote, MarketIndex, HistoricalQuote 请求/响应模型）
