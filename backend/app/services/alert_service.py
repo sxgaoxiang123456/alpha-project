@@ -1,9 +1,12 @@
+from datetime import UTC, datetime
+
 import logging
 
 from sqlalchemy.orm import Session
 
 from backend.app.models.alert_rule import AlertRule
 from backend.app.models.alert_trigger import AlertTrigger
+from backend.app.models.cooldown_tracker import CooldownTracker
 
 logger = logging.getLogger(__name__)
 
@@ -118,10 +121,10 @@ def detect_alerts(db: Session, quotes: dict[str, dict]) -> list[AlertTrigger]:
         quotes: {stock_code: quote_dict} 最新行情快照。
 
     Returns:
-        本次检测中新生成的 AlertTrigger 列表 (尚未持久化)。
+        本次检测中新生成的 AlertTrigger 列表 (已合并，尚未持久化)。
     """
     active_rules = db.query(AlertRule).filter_by(status="active").all()
-    triggers: list[AlertTrigger] = []
+    raw_triggers: list[AlertTrigger] = []
 
     for rule in active_rules:
         quote = quotes.get(rule.stock_code)
@@ -133,6 +136,10 @@ def detect_alerts(db: Session, quotes: dict[str, dict]) -> list[AlertTrigger]:
             init_evaluation_state(rule, quote)
             continue
 
+        # 冷却期检查
+        if is_in_cooldown(db, rule):
+            continue
+
         if evaluate_rule(rule, quote):
             trigger = AlertTrigger(
                 rule_id=rule.id,
@@ -142,13 +149,14 @@ def detect_alerts(db: Session, quotes: dict[str, dict]) -> list[AlertTrigger]:
                 level=rule.level,
                 push_status="pending",
             )
-            triggers.append(trigger)
+            raw_triggers.append(trigger)
+            update_cooldown(db, rule)
 
         # 更新 last_evaluated_result 以反映本次行情状态
         if not _should_skip_quote(quote):
             rule.last_evaluated_result = _is_condition_satisfied(rule, quote)
 
-    return triggers
+    return merge_triggers(db, raw_triggers)
 
 
 def _trigger_value(rule: AlertRule, quote: dict) -> float:
@@ -161,3 +169,91 @@ def _trigger_value(rule: AlertRule, quote: dict) -> float:
     elif ct == "volume_above":
         return float(quote.get("volume") or 0)
     return 0.0
+
+
+# ---------------------------------------------------------------------------
+# 冷却期管理 (T10)
+# ---------------------------------------------------------------------------
+
+
+def is_in_cooldown(db: Session, rule: AlertRule) -> bool:
+    """检查规则当前是否在冷却期内。"""
+    tracker = db.get(CooldownTracker, rule.id)
+    if tracker is None:
+        return False
+
+    elapsed = datetime.utcnow() - tracker.last_triggered_at
+    return elapsed.total_seconds() <= tracker.cooldown_minutes * 60
+
+
+def update_cooldown(db: Session, rule: AlertRule) -> None:
+    """触发规则后更新冷却期记录 (upsert)。"""
+    tracker = db.get(CooldownTracker, rule.id)
+    if tracker is None:
+        tracker = CooldownTracker(
+            rule_id=rule.id,
+            last_triggered_at=datetime.utcnow(),
+            cooldown_minutes=rule.cooldown_minutes,
+        )
+        db.add(tracker)
+        db.flush()
+    else:
+        tracker.last_triggered_at = datetime.utcnow()
+        tracker.cooldown_minutes = rule.cooldown_minutes
+
+
+def reset_all_cooldowns(db: Session) -> None:
+    """清除所有冷却期记录 (跨交易日重置)。"""
+    db.query(CooldownTracker).delete()
+    logger.info("交易日变更，已重置全部冷却期")
+
+
+# ---------------------------------------------------------------------------
+# 合并推送 (T11)
+# ---------------------------------------------------------------------------
+
+
+def merge_triggers(
+    db: Session,
+    triggers: list[AlertTrigger],
+) -> list[AlertTrigger]:
+    """合并同一股票的多规则触发。
+
+    规则：
+    - 同一 stock_code 的 trigger 合并为 1 条
+    - 触达级别取被触发规则中的最高级别 (alert > watch)
+    - 合并后的 merged_rule_ids 记录所有被合并的 rule_id
+
+    Args:
+        db: 数据库会话。
+        triggers: 待合并的 trigger 列表。
+
+    Returns:
+        合并后的 trigger 列表。
+    """
+    if len(triggers) <= 1:
+        return triggers
+
+    # 按 stock_code 分组
+    groups: dict[str, list[AlertTrigger]] = {}
+    for t in triggers:
+        groups.setdefault(t.stock_code, []).append(t)
+
+    merged: list[AlertTrigger] = []
+    for stock_code, group in groups.items():
+        if len(group) == 1:
+            merged.append(group[0])
+            continue
+
+        rule_ids = sorted(t.rule_id for t in group)
+        # 取最高 level
+        levels = {t.level for t in group}
+        highest_level = "alert" if "alert" in levels else "watch"
+
+        keeper = group[0]
+        keeper.level = highest_level
+        keeper.merged_rule_ids = ",".join(str(rid) for rid in rule_ids)
+        merged.append(keeper)
+
+    return merged
+

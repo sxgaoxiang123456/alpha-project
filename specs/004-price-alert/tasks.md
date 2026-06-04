@@ -54,13 +54,13 @@
 
 **Purpose**: 防刷屏机制和分级触达
 
-- [ ] **T10 [BE]** 实现冷却期检查：扩展 `alert_service.py`（读取 CooldownTracker → 判断是否冷却中 → 触发后更新记录）
+- [x] **T10 [BE]** 实现冷却期检查：扩展 `alert_service.py`（读取 CooldownTracker → 判断是否冷却中 → 触发后更新记录）
   - [FR-007] [依赖: T3, T7] [出参验证: 单元测试 — freezegun 模拟时间 → 冷却期内不触发；冷却期结束后触发]
 
-- [ ] **T11 [BE]** [P] 实现合并推送逻辑：扩展 `alert_service.py`（同一股票多规则触发合并为一条，触达级别取最高 alert > watch）
+- [x] **T11 [BE]** [P] 实现合并推送逻辑：扩展 `alert_service.py`（同一股票多规则触发合并为一条，触达级别取最高 alert > watch）
   - [FR-008, FR-011] [依赖: T7] [出参验证: 单元测试 — 同一股票 2 条规则同时触发 → 合并为 1 条，级别取 alert]
 
-- [ ] **T12 [BE]** 实现跨交易日冷却期重置：扩展 `alert_service.py`（交易日变更时清空全部 CooldownTracker）
+- [x] **T12 [BE]** 实现跨交易日冷却期重置：扩展 `alert_service.py`（交易日变更时清空全部 CooldownTracker）
   - [A-007] [依赖: T10] [出参验证: 单元测试 — freezegun 跨交易日 → 冷却期重置，原规则可再次触发]
 
 ---
