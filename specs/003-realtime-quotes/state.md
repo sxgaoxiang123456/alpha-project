@@ -1,7 +1,7 @@
 # 实施进度 · 基础实时行情
 
 ## 当前任务
-[>] T07 · 实现异步落盘：扩展 app/services/quote_service.py
+[>] T08 · 实现行情定时任务：app/core/quote_scheduler.py
 
 ## 已完成
 - [x] T01 · 创建 HistoricalQuote 数据模型：app/models/historical_quote.py
@@ -10,6 +10,7 @@
 - [x] T04 · 实现大盘指数服务：app/services/market_index.py
 - [x] T05 · 实现行情服务核心逻辑：app/services/quote_service.py
 - [x] T06 · 实现行情缓存集成：app/services/quote_service.py
+- [x] T07 · 实现异步落盘：app/services/quote_service.py
 
 ## 阻塞项
 （无）

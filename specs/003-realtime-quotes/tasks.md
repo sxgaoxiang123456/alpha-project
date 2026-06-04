@@ -39,7 +39,7 @@
 - [x] **T6 [BE]** 实现行情缓存集成：扩展 `quote_service.py`（清洗后写入 F2 CacheService，缓存键 `quote:{code}`，过期时间 5 分钟）
   - [FR-006, A-006] [依赖: T5] [出参验证: 单元测试 — 写入后通过 CacheService 查询命中，过期后查询返回 None]
 
-- [ ] **T7 [BE]** 实现异步落盘：扩展 `quote_service.py`（使用 asyncio.create_task 将 HistoricalQuote 异步写入 SQLite，不阻塞主线程）
+- [x] **T7 [BE]** 实现异步落盘：扩展 `quote_service.py`（使用 asyncio.create_task 将 HistoricalQuote 异步写入 SQLite，不阻塞主线程）
   - [FR-007] [依赖: T5] [出参验证: 单元测试 — 落盘任务完成后数据库包含 HistoricalQuote 记录]
 
 ---

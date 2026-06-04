@@ -1,12 +1,15 @@
+import asyncio
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
+import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from backend.app.database import Base
 from backend.app.models.cache_entry import CacheEntry
 from backend.app.models.group import Group
+from backend.app.models.historical_quote import HistoricalQuote
 from backend.app.models.stock import Stock
 from backend.app.models.watchlist import WatchlistItem
 from backend.app.schemas.data_fetch import DataFetchResult
@@ -28,6 +31,9 @@ class FakeFacade:
                 "600519": {
                     "name": "贵州茅台",
                     "price": 1500.5,
+                    "open": 1490.0,
+                    "high": 1510.0,
+                    "low": 1488.0,
                     "change_pct": 1.25,
                     "change_amount": 18.5,
                     "volume": 100000,
@@ -36,6 +42,9 @@ class FakeFacade:
                 "000001": {
                     "name": "平安银行",
                     "price": 12.34,
+                    "open": 12.2,
+                    "high": 12.5,
+                    "low": 12.1,
                     "change_pct": -0.5,
                     "change_amount": -0.06,
                     "volume": 200000,
@@ -132,5 +141,49 @@ def test_quote_service_writes_cleaned_quotes_to_cache_with_five_minute_ttl():
             entry.expires_at = datetime.now(UTC).replace(tzinfo=None) - timedelta(seconds=1)
             session.commit()
             assert cache.get("quote:600519") is None
+    finally:
+        engine.dispose()
+
+
+@pytest.mark.asyncio
+async def test_quote_service_persists_historical_quote_in_background_task():
+    from backend.app.services.quote_service import QuoteService
+
+    engine = create_engine("sqlite:///:memory:")
+    try:
+        Base.metadata.create_all(bind=engine)
+        Session = sessionmaker(bind=engine)
+        actual_timestamp = datetime(2026, 6, 4, 10, 0, tzinfo=UTC)
+
+        with Session() as session:
+            session.add_all(
+                [
+                    Group(id=1, name="默认分组", is_default=True),
+                    Stock(code="600519", name="贵州茅台", market="沪", sector="白酒"),
+                    WatchlistItem(stock_code="600519", group_id=1),
+                ]
+            )
+            session.commit()
+
+            QuoteService(
+                db=session,
+                facade=FakeFacade(),
+                cleaner=DataCleaner(),
+                history_session_factory=Session,
+            ).get_watchlist_quotes(actual_timestamp=actual_timestamp)
+
+            await asyncio.sleep(0)
+
+            historical_quote = session.get(
+                HistoricalQuote,
+                ("600519", actual_timestamp.date()),
+            )
+            assert historical_quote is not None
+            assert historical_quote.open == Decimal("1490.00")
+            assert historical_quote.close == Decimal("1500.50")
+            assert historical_quote.high == Decimal("1510.00")
+            assert historical_quote.low == Decimal("1488.00")
+            assert historical_quote.volume == 100000
+            assert historical_quote.turnover == Decimal("150050000.00")
     finally:
         engine.dispose()
