@@ -1,12 +1,12 @@
 # 会话交接 · 基础实时行情
 
 ## 上次做到哪
-T02 已完成：Quote、MarketIndex、HistoricalQuote 请求/响应 Pydantic schemas 已创建并导出，覆盖价格、涨跌幅、状态值、指数代码和日期区间校验。
+T03 已完成：DataCleaner 已创建，覆盖标准 Quote 转换、负价格异常、非科创/创业涨跌幅超阈值异常、停牌识别和缺失数据标记。
 
 ## 下次会话要做的事
 1. 先读宪法（constitution.md）
-2. 读 state.md → 当前任务是 T03
-3. 从 T03 继续，禁止重新规划
+2. 读 state.md → 当前任务是 T04
+3. 从 T04 继续，禁止重新规划
 
 ## 禁止重新规划
 plan.md 已经定稿，tasks.md 已经锁定。
