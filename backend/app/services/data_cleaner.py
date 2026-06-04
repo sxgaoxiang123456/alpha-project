@@ -61,6 +61,8 @@ class DataCleaner:
             price = None
         if change_percent is not None and abs(change_percent) > self._change_limit(stock_code):
             status = "abnormal"
+        if volume == 0:
+            status = "abnormal"
 
         return Quote(
             stock_code=stock_code,

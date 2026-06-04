@@ -69,7 +69,7 @@
 
 **Purpose**: 全量测试覆盖
 
-- [ ] **T11 [INT] [P]** 单元测试 — 数据清洗：`backend/tests/unit/test_data_cleaner.py`（异常值规则、停牌识别、科创板阈值）
+- [x] **T11 [INT] [P]** 单元测试 — 数据清洗：`backend/tests/unit/test_data_cleaner.py`（异常值规则、停牌识别、科创板阈值）
   - [FR-005, FR-008] [依赖: T3] [出参验证: pytest 全部通过]
 
 - [ ] **T12 [INT] [P]** 单元测试 — 行情服务：`backend/tests/unit/test_quote_service.py` + `backend/tests/unit/test_market_index.py`（mock facade、缓存集成、落盘验证）
