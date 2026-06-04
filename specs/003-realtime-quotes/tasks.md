@@ -72,7 +72,7 @@
 - [x] **T11 [INT] [P]** 单元测试 — 数据清洗：`backend/tests/unit/test_data_cleaner.py`（异常值规则、停牌识别、科创板阈值）
   - [FR-005, FR-008] [依赖: T3] [出参验证: pytest 全部通过]
 
-- [ ] **T12 [INT] [P]** 单元测试 — 行情服务：`backend/tests/unit/test_quote_service.py` + `backend/tests/unit/test_market_index.py`（mock facade、缓存集成、落盘验证）
+- [x] **T12 [INT] [P]** 单元测试 — 行情服务：`backend/tests/unit/test_quote_service.py` + `backend/tests/unit/test_market_index.py`（mock facade、缓存集成、落盘验证）
   - [FR-001~FR-007] [依赖: T5, T6, T7] [出参验证: pytest 全部通过]
 
 - [ ] **T13 [INT] [P]** 单元测试 — 定时任务：`backend/tests/unit/test_quote_scheduler.py`（交易日判断、调度逻辑、非交易时段跳过）
