@@ -81,7 +81,7 @@
 - [x] **T14 [INT]** 集成测试 — 主动查询 API：`backend/tests/integration/test_quotes_api.py`（GET /quotes、GET /quotes/market、缓存命中/未命中）
   - [FR-001, FR-003, SC-001, SC-002] [依赖: T9] [出参验证: pytest 全部通过，首屏加载 < 3 秒]
 
-- [ ] **T15 [INT]** 集成测试 — 定时刷新与落盘：`backend/tests/integration/test_quote_scheduler.py`（定时触发 → 数据获取 → 清洗 → 缓存更新 → 历史落盘）
+- [x] **T15 [INT]** 集成测试 — 定时刷新与落盘：`backend/tests/integration/test_quote_scheduler.py`（定时触发 → 数据获取 → 清洗 → 缓存更新 → 历史落盘）
   - [FR-002, FR-005~FR-007] [依赖: T8, T10] [出参验证: pytest 全部通过，覆盖 US-2 全部 AC]
 
 ---

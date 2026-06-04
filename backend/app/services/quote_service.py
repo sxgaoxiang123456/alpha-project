@@ -72,11 +72,12 @@ class QuoteService:
         actual_timestamp: datetime,
     ) -> None:
         try:
-            asyncio.get_running_loop()
+            loop = asyncio.get_running_loop()
         except RuntimeError:
+            asyncio.run(self._persist_historical_quotes(data, actual_timestamp))
             return
 
-        asyncio.create_task(self._persist_historical_quotes(data, actual_timestamp))
+        loop.create_task(self._persist_historical_quotes(data, actual_timestamp))
 
     async def _persist_historical_quotes(
         self,
