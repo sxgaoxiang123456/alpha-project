@@ -1,7 +1,7 @@
 # 实施进度 · 基础实时行情
 
 ## 当前任务
-[>] T14 · 集成测试 — 主动查询 API：backend/tests/integration/test_quotes_api.py
+[>] T15 · 集成测试 — 定时刷新与落盘：backend/tests/integration/test_quote_scheduler.py
 
 ## 已完成
 - [x] T01 · 创建 HistoricalQuote 数据模型：app/models/historical_quote.py
@@ -17,6 +17,7 @@
 - [x] T11 · 单元测试 — 数据清洗：backend/tests/unit/test_data_cleaner.py
 - [x] T12 · 单元测试 — 行情服务：backend/tests/unit/test_quote_service.py + backend/tests/unit/test_market_index.py
 - [x] T13 · 单元测试 — 定时任务：backend/tests/unit/test_quote_scheduler.py
+- [x] T14 · 集成测试 — 主动查询 API：backend/tests/integration/test_quotes_api.py
 
 ## 阻塞项
 （无）

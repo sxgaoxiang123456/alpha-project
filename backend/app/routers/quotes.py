@@ -61,6 +61,14 @@ def list_quotes(
 
 @router.get("/market", response_model=list[MarketIndex])
 def list_market_indices(
+    cache: CacheService = Depends(get_quote_cache),
     market_index_service: MarketIndexService = Depends(get_market_index_service),
 ) -> list[MarketIndex]:
-    return market_index_service.get_indices()
+    cached_indices: list[MarketIndex] = []
+    for index_code in MarketIndexService.INDEX_CODES:
+        cached = cache.get(f"market_index:{index_code}")
+        if cached is None:
+            return market_index_service.get_indices()
+        cached_indices.append(MarketIndex.model_validate_json(cached))
+
+    return cached_indices

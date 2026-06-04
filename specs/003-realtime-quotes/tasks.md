@@ -78,7 +78,7 @@
 - [x] **T13 [INT] [P]** 单元测试 — 定时任务：`backend/tests/unit/test_quote_scheduler.py`（交易日判断、调度逻辑、非交易时段跳过）
   - [FR-002, A-008] [依赖: T8] [出参验证: pytest 全部通过（使用 freezegun 冻结时间）]
 
-- [ ] **T14 [INT]** 集成测试 — 主动查询 API：`backend/tests/integration/test_quotes_api.py`（GET /quotes、GET /quotes/market、缓存命中/未命中）
+- [x] **T14 [INT]** 集成测试 — 主动查询 API：`backend/tests/integration/test_quotes_api.py`（GET /quotes、GET /quotes/market、缓存命中/未命中）
   - [FR-001, FR-003, SC-001, SC-002] [依赖: T9] [出参验证: pytest 全部通过，首屏加载 < 3 秒]
 
 - [ ] **T15 [INT]** 集成测试 — 定时刷新与落盘：`backend/tests/integration/test_quote_scheduler.py`（定时触发 → 数据获取 → 清洗 → 缓存更新 → 历史落盘）
