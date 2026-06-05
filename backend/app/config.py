@@ -16,6 +16,10 @@ class Settings(BaseSettings):
     data_source_retry: int = 1  # 重试次数
     health_check_interval_minutes: int = 5  # 健康检查间隔（分钟）
 
+    # 预警配置
+    max_alert_rules: int = Field(default=50, ge=1)
+    default_cooldown_minutes: int = Field(default=30, ge=5, le=120)
+
     # 行情配置
     quote_refresh_interval_minutes: int = Field(default=3, ge=1, le=5)
     quote_cache_ttl_seconds: int = Field(default=300, gt=0)

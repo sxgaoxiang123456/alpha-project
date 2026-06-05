@@ -19,6 +19,7 @@ from backend.app.models.historical_quote import HistoricalQuote
 from backend.app.models.watchlist import WatchlistItem
 from backend.app.routers.groups import router as groups_router
 from backend.app.routers.import_export import router as import_export_router
+from backend.app.routers.alerts import router as alerts_router
 from backend.app.routers.quotes import router as quotes_router
 from backend.app.routers.system import router as system_router
 from backend.app.routers.watchlist import router as watchlist_router
@@ -81,6 +82,66 @@ async def lifespan(app: FastAPI):
     )
     facade = DataSourceFacade(db)
     quote_cache = CacheService(db)
+
+    def _run_alert_detection() -> None:
+        """行情刷新后执行预警检测。
+
+        数据源中断保护 (FR-013): 若所有行情数据 source_status 均为
+        "unavailable"，或缓存中无任何行情数据，则跳过本轮检测，避免基于
+        过期数据误报。
+        """
+        import json
+        import logging
+        _logger = logging.getLogger("alert_detection")
+        alert_db = SessionLocal()
+        try:
+            from backend.app.models.watchlist import WatchlistItem
+            from backend.app.services.alert_service import detect_alerts
+
+            stock_codes = [
+                row[0] for row in alert_db.query(WatchlistItem.stock_code).all()
+            ]
+            quotes_dict = {}
+            for code in stock_codes:
+                raw = quote_cache.get(f"quote:{code}")
+                if raw:
+                    quotes_dict[code] = json.loads(raw)
+
+            # FR-013: 数据源全中断时跳过检测，不基于过期数据误报
+            if not quotes_dict:
+                _logger.debug("无行情缓存数据，跳过预警检测")
+                return
+
+            statuses = {
+                q.get("source_status", "")
+                for q in quotes_dict.values()
+            }
+            if statuses == {"unavailable"}:
+                _logger.warning("全部数据源不可用，跳过预警检测")
+                return
+
+            # A-007: 跨交易日冷却期自动重置
+            from datetime import date
+            from backend.app.services.alert_service import reset_all_cooldowns
+
+            today = date.today()
+            last_date = getattr(app.state, "_last_alert_detection_date", None)
+            if last_date is not None and last_date != today:
+                reset_all_cooldowns(alert_db)
+                alert_db.commit()
+                _logger.info("交易日变更 %s → %s，已重置冷却期", last_date, today)
+            app.state._last_alert_detection_date = today
+
+            triggers = detect_alerts(alert_db, quotes_dict)
+            if triggers:
+                alert_db.add_all(triggers)
+                alert_db.commit()
+                _logger.info("预警检测完成，触发 %d 条规则", len(triggers))
+        except Exception:
+            _logger.exception("预警检测异常")
+        finally:
+            alert_db.close()
+
     quote_scheduler = QuoteScheduler(
         quote_service=QuoteService(
             db=db,
@@ -94,6 +155,7 @@ async def lifespan(app: FastAPI):
             ttl_seconds=settings.quote_cache_ttl_seconds,
         ),
         is_trading_day=is_trading_day,
+        on_quotes_refreshed=_run_alert_detection,
     )
     register_quote_refresh_job(
         scheduler,
@@ -118,6 +180,7 @@ app = FastAPI(
 app.mount("/static", StaticFiles(directory="frontend/public"), name="static")
 templates = Jinja2Templates(directory="frontend/src/templates")
 
+app.include_router(alerts_router)
 app.include_router(watchlist_router)
 app.include_router(import_export_router)
 app.include_router(groups_router)

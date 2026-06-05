@@ -13,10 +13,12 @@ class QuoteScheduler:
         quote_service: Any,
         market_index_service: Any,
         is_trading_day: Callable[[date], bool],
+        on_quotes_refreshed: Callable[[], None] | None = None,
     ):
         self.quote_service = quote_service
         self.market_index_service = market_index_service
         self.is_trading_day = is_trading_day
+        self.on_quotes_refreshed = on_quotes_refreshed
 
     def refresh_if_trading_day(self, *, current_date: date | None = None) -> None:
         today = current_date or date.today()
@@ -28,6 +30,12 @@ class QuoteScheduler:
         self.quote_service.get_watchlist_quotes()
         self.market_index_service.get_indices()
         logger.info("行情定时刷新完成")
+
+        if self.on_quotes_refreshed:
+            try:
+                self.on_quotes_refreshed()
+            except Exception:
+                logger.exception("预警检测回调异常")
 
 
 def register_quote_refresh_job(
