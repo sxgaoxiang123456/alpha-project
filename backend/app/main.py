@@ -12,7 +12,11 @@ from sqlalchemy.orm import joinedload
 from backend.app.config import get_settings
 from backend.app.core.circuit_breaker import CircuitBreaker
 from backend.app.core.health_checker import HealthChecker
-from backend.app.core.quote_scheduler import QuoteScheduler, register_quote_refresh_job
+from backend.app.core.quote_scheduler import (
+    QuoteScheduler,
+    register_briefing_job,
+    register_quote_refresh_job,
+)
 from backend.app.database import SessionLocal, init_db
 from backend.app.models.group import Group
 from backend.app.models.historical_quote import HistoricalQuote
@@ -20,6 +24,7 @@ from backend.app.models.watchlist import WatchlistItem
 from backend.app.routers.groups import router as groups_router
 from backend.app.routers.import_export import router as import_export_router
 from backend.app.routers.alerts import router as alerts_router
+from backend.app.routers.push import router as push_router
 from backend.app.routers.quotes import router as quotes_router
 from backend.app.routers.system import router as system_router
 from backend.app.routers.watchlist import router as watchlist_router
@@ -137,10 +142,42 @@ async def lifespan(app: FastAPI):
                 alert_db.add_all(triggers)
                 alert_db.commit()
                 _logger.info("预警检测完成，触发 %d 条规则", len(triggers))
+
+                # 链路贯通：将 AlertTrigger 提交给 PushService（F4→F5）
+                push_service = _push_service_factory()
+                from backend.app.schemas.push import PushMessageRequest
+
+                for trigger in triggers:
+                    try:
+                        quote = quotes_dict.get(trigger.stock_code, {})
+                        message = PushMessageRequest(
+                            message_type="alert",
+                            priority="high" if trigger.level == "alert" else "normal",
+                            content={
+                                "stock_code": trigger.stock_code,
+                                "condition": f"{trigger.condition_type} {trigger.trigger_value}",
+                                "level": trigger.level,
+                                "price": quote.get("current_price", ""),
+                                "change_pct": quote.get("change_percent", ""),
+                                "triggered_at": trigger.triggered_at.isoformat() if trigger.triggered_at else "",
+                            },
+                        )
+                        push_service.send(message)
+                    except Exception:
+                        _logger.exception("推送预警失败: %s", trigger.stock_code)
         except Exception:
             _logger.exception("预警检测异常")
         finally:
             alert_db.close()
+
+    _push_db_sessions = []
+
+    def _push_service_factory():
+        from backend.app.services.push_service import PushService
+
+        push_db = SessionLocal()
+        _push_db_sessions.append(push_db)
+        return PushService(db=push_db, feishu_client=None, telegram_client=None)
 
     quote_scheduler = QuoteScheduler(
         quote_service=QuoteService(
@@ -156,18 +193,23 @@ async def lifespan(app: FastAPI):
         ),
         is_trading_day=is_trading_day,
         on_quotes_refreshed=_run_alert_detection,
+        push_service_factory=_push_service_factory,
     )
     register_quote_refresh_job(
         scheduler,
         quote_scheduler,
         interval_minutes=settings.quote_refresh_interval_minutes,
     )
+    register_briefing_job(scheduler, quote_scheduler)
     scheduler.start()
     app.state.scheduler = scheduler
 
     yield
 
     scheduler.shutdown()
+    for push_db in _push_db_sessions:
+        if push_db.is_active:
+            push_db.close()
 
 
 app = FastAPI(
@@ -186,6 +228,7 @@ app.include_router(import_export_router)
 app.include_router(groups_router)
 app.include_router(system_router)
 app.include_router(quotes_router)
+app.include_router(push_router)
 
 
 @app.get("/", response_class=HTMLResponse)

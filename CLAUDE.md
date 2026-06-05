@@ -16,9 +16,14 @@
 
 **③ Task 启动必读**：`@specs/XXX-{feature}/spec.md`（需求）、`@specs/XXX-{feature}/plan.md`（架构）、`@specs/XXX-{feature}/tasks.md`（当前 task）；FE 任务额外读 `@design-reference/DESIGN.md` + `@design-reference/stitch-export/{page}/code.html`
 
-**④ 测试纪律**：`superpowers:test-driven-development` — 先写测试（FAIL），再实现（PASS），最后重构
+**④ Task 完成必读（不可跳过）**：
+- `state.md` 已更新当前 task 状态（勾选完成项，更新"当前任务"）
+- `tasks.md` 已勾选当前 task
+- 如果当前 task 是 Phase 最后一个 task：全量测试通过 → 走 Step 4 code review → 0 缺陷后才允许进入下一 Phase
 
-**⑤ Feature 完成**：`.venv/bin/python -m pytest tests/` 全量通过 → 更新 `tasks.md` 勾选完成项 → `git commit` 标注 `[BE]`/`[FE]`/`[INT]`
+**⑤ 测试纪律**：`superpowers:test-driven-development` — 先写测试（FAIL），再实现（PASS），最后重构
+
+**⑥ Feature 完成**：`.venv/bin/python -m pytest tests/` 全量通过 → 更新 `tasks.md` 勾选完成项 → 更新 `state.md` → `git commit` 标注 `[BE]`/`[FE]`/`[INT]` → 走 Step 4 code review（requesting-code-review → receiving-code-review）→ 0 缺陷后 merge
 
 **⑥ 节奏铁律**：单 task 产出 1-3 个文件；每 Phase 结束后做 Checkpoint 验证；不跨 Phase 提前实现
 
