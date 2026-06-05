@@ -3,47 +3,42 @@
 {% block title %}Dashboard - A股 AI 盯盘助手{% endblock %}
 
 {% block content %}
-<div class="dashboard-container">
-  <h1>Dashboard</h1>
+<!-- Side Navigation -->
+{% include "components/side_nav.html" %}
 
-  {% if view.degraded %}
-  <div class="degraded-banner">{{ view.degradation_message }}</div>
-  {% endif %}
+<!-- Main Content Area -->
+<div class="flex-1 md:ml-64 flex flex-col min-h-screen">
+    <!-- Top Navigation -->
+    {% include "components/top_nav.html" %}
 
-  <section class="market-indices">
-    <h2>大盘指数</h2>
-    {% for idx in view.market_indices %}
-    <div class="index-card">
-      <span class="name">{{ idx.name }}</span>
-      <span class="value">{{ idx.current_value }}</span>
-      <span class="change">{{ idx.change_percent }}%</span>
-    </div>
-    {% endfor %}
-  </section>
+    <!-- Dashboard Content -->
+    <main class="flex-1 p-8 overflow-y-auto w-full max-w-[1280px] mx-auto grid grid-cols-12 gap-container-gap">
+        {% if view.degraded %}
+        <div class="col-span-12 bg-market-warning/10 border border-market-warning rounded p-4 flex items-center gap-2">
+            <span class="material-symbols-outlined text-market-warning">warning</span>
+            <span class="font-body-md text-body-md text-market-warning">{{ view.degradation_message }}</span>
+        </div>
+        {% endif %}
 
-  <section class="watchlist">
-    <h2>自选股</h2>
-    {% for stock in view.watchlist %}
-    <div class="stock-card">
-      <span class="code">{{ stock.code }}</span>
-      <span class="name">{{ stock.name }}</span>
-      <span class="price">{{ stock.current_price }}</span>
-      <span class="change">{{ stock.change_percent }}%</span>
-    </div>
-    {% endfor %}
-  </section>
+        <!-- Market Indices Row -->
+        {% with market_indices=view.market_indices %}
+        {% include "components/market_index.html" %}
+        {% endwith %}
 
-  <section class="briefing">
-    <h2>AI 简报</h2>
-    {% if view.briefing and view.briefing.insights %}
-    <ul>
-      {% for insight in view.briefing.insights %}
-      <li>{{ insight }}</li>
-      {% endfor %}
-    </ul>
-    {% else %}
-    <p>今日暂无简报</p>
-    {% endif %}
-  </section>
+        <!-- Left Column: Watchlist & Quick Actions -->
+        <div class="col-span-12 lg:col-span-8 flex flex-col gap-container-gap">
+            {% with watchlist=view.watchlist %}
+            {% include "components/watchlist_snapshot.html" %}
+            {% endwith %}
+            {% include "components/quick_actions.html" %}
+        </div>
+
+        <!-- Right Column: AI Briefing -->
+        <div class="col-span-12 lg:col-span-4 flex flex-col">
+            {% with briefing=view.briefing %}
+            {% include "components/briefing_card.html" %}
+            {% endwith %}
+        </div>
+    </main>
 </div>
 {% endblock %}

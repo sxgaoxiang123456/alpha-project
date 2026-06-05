@@ -1,0 +1,42 @@
+<div class="bg-surface-base border border-outline-variant rounded">
+<div class="p-card-padding border-b border-outline-variant flex justify-between items-center">
+<h2 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined">star</span>自选股快照
+</h2>
+<a class="font-label-caps text-label-caps text-primary hover:underline" href="/watchlist-page">查看全部</a>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-outline-variant bg-surface-raised/50">
+<th class="font-label-caps text-label-caps text-on-surface-variant py-3 px-4 font-normal">代码</th>
+<th class="font-label-caps text-label-caps text-on-surface-variant py-3 px-4 font-normal">名称</th>
+<th class="font-label-caps text-label-caps text-on-surface-variant py-3 px-4 font-normal text-right">价格</th>
+<th class="font-label-caps text-label-caps text-on-surface-variant py-3 px-4 font-normal text-right">涨跌幅</th>
+<th class="font-label-caps text-label-caps text-on-surface-variant py-3 px-4 font-normal text-center">趋势</th>
+</tr>
+</thead>
+<tbody>
+{% for stock in watchlist %}
+<tr class="h-table-row-height border-b border-outline-variant/50 hover:bg-surface-variant/30 transition-colors">
+<td class="font-data-table text-data-table text-on-surface px-4 py-2">{{ stock.code }}</td>
+<td class="font-body-md text-body-md text-on-surface px-4 py-2">{{ stock.name }}</td>
+<td class="font-data-table text-data-table text-on-surface px-4 py-2 text-right">{{ "%.2f"|format(stock.current_price) }}</td>
+<td class="font-data-table text-data-table {% if stock.change_percent >= 0 %}text-market-up{% else %}text-market-down{% endif %} px-4 py-2 text-right">
+    {% if stock.change_percent >= 0 %}+{% endif %}{{ "%.2f"|format(stock.change_percent) }}%
+</td>
+<td class="px-4 py-2 text-center {% if stock.change_percent >= 0 %}text-market-up{% elif stock.change_percent < 0 %}text-market-down{% else %}text-on-surface-variant{% endif %}">
+    {% if stock.change_percent > 0 %}
+    <span class="material-symbols-outlined">trending_up</span>
+    {% elif stock.change_percent < 0 %}
+    <span class="material-symbols-outlined">trending_down</span>
+    {% else %}
+    <span class="material-symbols-outlined">trending_flat</span>
+    {% endif %}
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+</div>

@@ -62,7 +62,7 @@ class TestDashboardPage:
         monkeypatch.setattr("backend.app.routers.dashboard._get_dashboard_service", lambda db: _mock_dashboard_service())
         with TestClient(app) as client:
             response = client.get("/")
-        assert "大盘指数" in response.text
+        assert "上证指数" in response.text
 
     def test_dashboard_contains_watchlist_section(self, monkeypatch, tmp_path):
         """页面包含自选股模块。"""
