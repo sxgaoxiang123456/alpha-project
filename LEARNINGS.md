@@ -1,5 +1,29 @@
 # 项目教训沉淀
 
+## 2026-06-05 · tool-quirk · 004-price-alert
+**现象 / 决策**: freezegun 与 `datetime.now(UTC)` 不兼容——冻结后返回 FakeDatetime，`.replace(tzinfo=None)` 退回真实时间；嵌套 `freeze_time` 上下文管理器行为不一致，内层不生效；`frozen_time.tick()` 在 SQLAlchemy session 内对后续 `datetime.utcnow()` 调用不生效。来回试了 `datetime.now(UTC).replace(tzinfo=None)` → `with freeze_time` 嵌套 → `tick()` 共 4 轮才确认唯一可靠组合是 `@freeze_time` 装饰器 + `datetime.utcnow()`。
+**应对**: 项目中所有涉时间测试统一用 `datetime.utcnow()` + `@freeze_time` 装饰器。不要试图用 `datetime.now(UTC)`、嵌套 `freeze_time`、`frozen_time.tick()` 来模拟时间推进——用多个独立测试 case 各自挂 `@freeze_time` 替代。
+**应用范围**: 任何使用 freezegun 的测试（冷却期、交易日历、定时任务）。
+**相关文件**: `backend/app/services/alert_service.py:185-226`, `backend/tests/unit/test_cooldown.py`
+
+## 2026-06-05 · pattern · 004-price-alert
+**现象 / 决策**: 集成测试有两种模式——A) `_fresh_app`：`sys.modules.pop` 清缓存 + `importlib.import_module` 重导整个 main.py；B) `FastAPI()` + 内存 SQLite + `dependency_overrides` 直接注册被测路由。模式 A 在跨 feature 引入新 import（如 main.py 新增 `from routers.alerts import router`）时，必须把新增模块也加入 `modules_to_clear` 列表，否则旧 Base 与新模型不匹配 → `no such table`。本 feature 为此修复了 5 处旧测试的 `modules_to_clear` 从精确匹配改为前缀匹配。模式 B 不碰 sys.modules，天然隔离，出问题的概率低得多。
+**应对**: 新增 feature 的集成测试优先用模式 B（FastAPI + 内存 SQLite + dependency_overrides）。模式 A 仅用于确实需要完整 lifespan（含 APScheduler 启动）的集成场景，且 `modules_to_clear` 必须用前缀匹配而非精确匹配。
+**应用范围**: 所有新增 API 集成测试。
+**相关文件**: `backend/tests/integration/test_alerts_api.py` (模式 B 示例), `backend/tests/integration/test_watchlist_edit_delete.py:11-26` (模式 A 已修复)
+
+## 2026-06-05 · pitfall · 004-price-alert
+**现象 / 决策**: state.md 在整个 6 个 Phase 开发过程中从未更新，直保留着 "T01 进行中"。收尾阶段才一次性写完 18 task + review 修复 + backend-testing 补测的全部进度。run-feature §2 要求"每个 task 跑完更新 state.md → commit"，但如果 state.md 不在 developer 的视野里（不在 task 启动必读清单中），就容易被遗忘。后果：中间会话崩溃 resume 时只能靠 git log 猜进度。
+**应对**: task 启动必读清单除了 spec.md / plan.md / tasks.md，还应包含 state.md。每个 task commit 前检查 state.md 是否更新了当前 task 的勾选状态。CLAUDE.md 的 §3 "Task 启动必读" 应补上 state.md。
+**应用范围**: 所有 run-feature 执行的 feature。
+**相关文件**: `specs/004-price-alert/state.md`, `CLAUDE.md` §3
+
+## 2026-06-05 · pattern · 004-price-alert
+**现象 / 决策**: `alert_service.pause_rules_for_stock(db, code)` 设计为"不执行 commit，由调用方统一控制事务边界"。原因是调用方（watchlist router 的 delete/batch-delete）需要在同一个事务中完成 `db.delete(item)` + `pause_rules_for_stock()` → 最后统一 `db.commit()`。如果 service 内部自己 commit，会导致事务边界碎片化——调用方的其他操作如果失败无法回滚已提交的 service 操作。docstring 明确标注了这一约定。
+**应对**: 被其他模块调用的 service 函数默认不执行 commit，事务由最外层的调用方（router）控制。在 docstring 第一行写明"不执行 commit，由调用方统一控制事务边界"，避免后续维护者误加 commit 或误以为函数自己管理事务。
+**应用范围**: 所有被多个模块调用的 service 函数。
+**相关文件**: `backend/app/services/alert_service.py:16-25`
+
 ## 2026-06-05 · process-gap · 004-price-alert
 **现象 / 决策**: run-feature Step 4（code review）在 Phase 6 结束后被直接跳过——18 task 全勾、319 全绿后心态进入"收工模式"，把 review 当成了"测试过了就行"的可选步骤。实际后果：review 在 merge 之后补做，失去了"合并前拦下缺陷"的意义（reviewer 发现 `reset_all_cooldowns` 已实现但无调用点——这种架构缺口是 TDD 单元测试覆盖不到的）。
 **应对**: run-feature 的每个 Step 是强制门禁，不是建议。**TDD GREEN ≠ 架构无缺口**。16 task 全绿说明代码正确，不等于设计完整。review 必须发生在 merge 之前——在 worktree 分支上做完 Step 4 确认 0 缺陷后再 merge。
