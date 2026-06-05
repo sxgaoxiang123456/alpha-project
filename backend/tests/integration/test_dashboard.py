@@ -8,7 +8,17 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from fastapi.testclient import TestClient
 
-from backend.app.schemas.dashboard import BriefingData, DashboardViewResponse, MarketSnapshot, StockCardData
+from backend.app.schemas.dashboard import (
+    AlertSummary,
+    BriefingData,
+    ChannelStatusItem,
+    ChannelHealth,
+    DashboardViewResponse,
+    MarketSnapshot,
+    PushHistoryItem,
+    PushStatus,
+    StockCardData,
+)
 
 
 def _fresh_app(monkeypatch, tmp_path):
@@ -43,6 +53,16 @@ def _mock_dashboard_service():
             StockCardData(code="600000", name="浦发银行", current_price=10.5, change_percent=2.5, change_amount=0.25),
         ],
         briefing=BriefingData(insights=["大盘整体向好"]),
+        alerts=[
+            AlertSummary(stock_code="000001", stock_name="平安银行", condition="涨幅 > 5%", level="alert"),
+        ],
+        push_history=[
+            PushHistoryItem(message_type="price_alert", title="价格预警", sent_at=datetime.now(UTC), channel="lark", status=PushStatus.SUCCESS),
+        ],
+        channel_status=[
+            ChannelStatusItem(name="飞书", status=ChannelHealth.ACTIVE),
+            ChannelStatusItem(name="Telegram", status=ChannelHealth.DEGRADED, rate_limited=True),
+        ],
     ))
     return svc
 
@@ -87,6 +107,33 @@ class TestDashboardPage:
         with TestClient(app) as client:
             response = client.get("/market_data")
         assert response.status_code == 200
+
+    def test_dashboard_contains_alert_banner(self, monkeypatch, tmp_path):
+        """页面包含今日预警横幅。"""
+        app, _ = _fresh_app(monkeypatch, tmp_path)
+        monkeypatch.setattr("backend.app.routers.dashboard._get_dashboard_service", lambda db: _mock_dashboard_service())
+        with TestClient(app) as client:
+            response = client.get("/")
+        assert "今日预警" in response.text
+        assert "平安银行" in response.text
+
+    def test_dashboard_contains_push_history(self, monkeypatch, tmp_path):
+        """页面包含推送历史模块。"""
+        app, _ = _fresh_app(monkeypatch, tmp_path)
+        monkeypatch.setattr("backend.app.routers.dashboard._get_dashboard_service", lambda db: _mock_dashboard_service())
+        with TestClient(app) as client:
+            response = client.get("/")
+        assert "推送历史" in response.text
+        assert "价格预警" in response.text
+
+    def test_dashboard_contains_channel_status(self, monkeypatch, tmp_path):
+        """页面包含通道状态模块。"""
+        app, _ = _fresh_app(monkeypatch, tmp_path)
+        monkeypatch.setattr("backend.app.routers.dashboard._get_dashboard_service", lambda db: _mock_dashboard_service())
+        with TestClient(app) as client:
+            response = client.get("/")
+        assert "飞书" in response.text
+        assert "Telegram" in response.text
 
     def test_market_data_is_partial(self, monkeypatch, tmp_path):
         """market_data 返回的是 Partial HTML（不含完整 HTML 结构）。"""

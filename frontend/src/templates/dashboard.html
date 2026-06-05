@@ -39,6 +39,21 @@
             {% include "components/briefing_card.html" %}
             {% endwith %}
         </div>
+
+        <!-- Alert Banner -->
+        {% with alerts=view.alerts %}
+        {% include "components/alert_banner.html" %}
+        {% endwith %}
+
+        <!-- Push History -->
+        {% with push_history=view.push_history %}
+        {% include "components/push_history.html" %}
+        {% endwith %}
+
+        <!-- Channel Status -->
+        {% with channel_status=view.channel_status %}
+        {% include "components/channel_status.html" %}
+        {% endwith %}
     </main>
 </div>
 {% endblock %}
