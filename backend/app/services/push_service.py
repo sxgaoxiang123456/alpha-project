@@ -1,7 +1,9 @@
 import asyncio
+import html
+import json
 import time
 import uuid
-from datetime import UTC, datetime
+from datetime import datetime
 
 from backend.app.models.push_channel import PushChannel
 from backend.app.models.push_log import PushLog
@@ -26,7 +28,7 @@ class PushService:
         log = PushLog(
             message_id=message_id,
             message_type=message.message_type,
-            channel="feishu",
+            channel="unknown",
             status="pending",
         )
         self.db.add(log)
@@ -41,7 +43,10 @@ class PushService:
 
     async def _execute_send_async(self, message_id: str, message: PushMessageRequest):
         """异步包装，实际调用同步发送逻辑。"""
-        self._execute_send(message_id, message)
+        try:
+            await asyncio.to_thread(self._execute_send, message_id, message)
+        except Exception:
+            self._mark_failed(message_id)
 
     def _execute_send(self, message_id: str, message: PushMessageRequest):
         """同步执行发送逻辑：通道检查 → 主通道尝试 → 重试 → 降级 → 日志更新。"""
@@ -141,6 +146,7 @@ class PushService:
                 log.status = "fallback"
             else:
                 log.status = "sent"
+            self._reset_channel_success(used_channel)
         else:
             log.status = "failed"
             # 双通道均失败时，优先使用主通道错误信息
@@ -166,18 +172,47 @@ class PushService:
             record.status = "unavailable"
         elif record.consecutive_failures >= 3:
             record.status = "degraded"
-        record.updated_at = datetime.now(UTC).replace(tzinfo=None)
+        record.updated_at = datetime.utcnow()
         self.db.commit()
+
+    def _reset_channel_success(self, channel_name: str):
+        """通道成功发送后重置失败计数。"""
+        record = self.db.get(PushChannel, channel_name)
+        if record is not None and record.consecutive_failures > 0:
+            record.consecutive_failures = 0
+            record.status = "active"
+            record.updated_at = datetime.utcnow()
+            self.db.commit()
+
+    def _mark_failed(self, message_id: str):
+        """将 pending 日志标记为 failed（异常兜底）。"""
+        log = (
+            self.db.query(PushLog)
+            .filter(PushLog.message_id == message_id)
+            .first()
+        )
+        if log is not None:
+            log.status = "failed"
+            log.error_reason = "Async execution exception"
+            self.db.commit()
 
     # ---------- 格式化方法 (T7/T8) ----------
 
     def _format_content(self, message: PushMessageRequest) -> dict:
         """将推送请求格式化为卡片/文本内容。"""
         if message.message_type == "alert":
-            return self._format_alert_content(message.content)
+            content = self._format_alert_content(message.content)
         elif message.message_type == "briefing":
-            return self._format_briefing_content(message.content)
-        return message.content
+            content = self._format_briefing_content(message.content)
+        else:
+            content = message.content
+
+        # JSON 预检查：确保内容可被序列化
+        try:
+            json.dumps(content, ensure_ascii=False)
+        except (TypeError, ValueError):
+            content = {"_type": "raw", "error": "Content serialization failed"}
+        return content
 
     def _format_alert_content(self, content: dict) -> dict:
         """预警内容结构化。"""
@@ -218,33 +253,34 @@ class PushService:
         return self._truncate_text(text, max_length=4000)
 
     def _format_alert_text(self, content: dict) -> str:
-        """预警 Telegram 文本格式。"""
+        """预警 Telegram 文本格式（HTML 转义用户输入）。"""
         level_emoji = "🔴" if content.get("level") == "alert" else "🔵"
         return (
             f"{level_emoji} 预警提醒\n"
-            f"股票: {content.get('stock_name', '')}({content.get('stock_code', '')})\n"
-            f"当前价格: {content.get('price', '')}\n"
-            f"涨跌幅: {content.get('change_pct', '')}%\n"
-            f"触发条件: {content.get('condition', '')}\n"
-            f"触发时间: {content.get('triggered_at', '')}"
+            f"股票: {html.escape(str(content.get('stock_name', '')))}({html.escape(str(content.get('stock_code', '')))})\n"
+            f"当前价格: {html.escape(str(content.get('price', '')))}\n"
+            f"涨跌幅: {html.escape(str(content.get('change_pct', '')))}%\n"
+            f"触发条件: {html.escape(str(content.get('condition', '')))}\n"
+            f"触发时间: {html.escape(str(content.get('triggered_at', '')))}"
         )
 
     def _format_briefing_text(self, content: dict) -> str:
-        """简报 Telegram 文本格式。"""
-        date = content.get("date", "")
+        """简报 Telegram 文本格式（HTML 转义用户输入）。"""
+        date = html.escape(str(content.get("date", "")))
         indices = content.get("market_indices", {})
         top_movers = content.get("top_movers", [])
 
         lines = [f"📊 早盘简报 {date}", ""]
         lines.append("【大盘指数】")
         for name, value in indices.items():
-            lines.append(f"  {name}: {value}")
+            lines.append(f"  {html.escape(str(name))}: {html.escape(str(value))}")
         lines.append("")
         lines.append("【异动 TOP 3】")
         for i, mover in enumerate(top_movers[:3], 1):
             lines.append(
-                f"  {i}. {mover.get('name', '')}({mover.get('code', '')}): "
-                f"{mover.get('change_pct', '')}%"
+                f"  {i}. {html.escape(str(mover.get('name', '')))}"
+                f"({html.escape(str(mover.get('code', '')))}): "
+                f"{html.escape(str(mover.get('change_pct', '')))}%"
             )
         return "\n".join(lines)
 

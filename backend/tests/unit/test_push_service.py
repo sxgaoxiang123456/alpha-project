@@ -295,7 +295,7 @@ class TestPushServiceFormatting:
         assert "贵州茅台" in text
         assert "600519" in text
         assert "1498.5" in text
-        assert "价格 < 1500" in text
+        assert "价格 &lt; 1500" in text  # HTML escaped
         assert "2026-06-05 10:30" in text
         assert "🔴" in text  # alert 级别红色标记
 

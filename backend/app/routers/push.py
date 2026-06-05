@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from backend.app.dependencies import get_db
@@ -49,12 +49,19 @@ def list_push_logs(
         query = query.filter(PushLog.status == status)
 
     parsed_start = _parse_iso_datetime(start_time)
+    if start_time is not None and parsed_start is None:
+        raise HTTPException(status_code=400, detail="Invalid start_time format")
     if parsed_start:
         query = query.filter(PushLog.created_at >= parsed_start)
 
     parsed_end = _parse_iso_datetime(end_time)
+    if end_time is not None and parsed_end is None:
+        raise HTTPException(status_code=400, detail="Invalid end_time format")
     if parsed_end:
         query = query.filter(PushLog.created_at <= parsed_end)
+
+    if parsed_start and parsed_end and parsed_start > parsed_end:
+        raise HTTPException(status_code=400, detail="start_time must not be greater than end_time")
 
     logs = (
         query.order_by(PushLog.created_at.desc())
