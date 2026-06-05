@@ -50,26 +50,60 @@ tasks.md 中每个 task 的标签决定打法。常见标签 `[BE]` 后端 / `[F
 - E2E 类：本 feature 所有 [FE]/[BE] 通过后，最后跑真实链路（不 mock）。
 - 跨 feature patch 类（改其他 feature 的源码）：改完**必须重跑被改 feature 的现有测试**，绿了才算过。
 
-## Step 4 · 代码审查
+## Step 4 · 代码审查（Merge 前物理门禁）
 
-全部 task 绿后，用 `superpowers:requesting-code-review`，扫描至少覆盖：
+**本 Step 是 merge 前的强制门禁，不可跳过。**
+
+### 4.1 产出独立审查报告
+
+调用 `superpowers:requesting-code-review` dispatch reviewer subagent，产出独立审查报告。
+
+Reviewer 扫描至少覆盖：
 ① 韧性：缺重试 / 超时 / 熔断
 ② 横切一致性：鉴权 / 限流 / 日志 是否覆盖**所有**接口
 ③ 防御性：未处理 null / 缺输入校验 / 缺幂等键
 ④ DB 迁移（如涉及）：回滚脚本 + 分批操作
 ⑤ 项目宪法/设计系统合规（**仅当 feature 含 [FE] 且项目有设计系统时**）：是否硬编码了本应走 token 的视觉值、是否违反项目宪法里的视觉/业务铁律、是否引入了项目禁止的依赖
 
-用 `superpowers:receiving-code-review` 消化，输出表：`| 编号 | 类别 | 文件:行 | 描述 | 优先级 |`
-0 缺陷 → Step 5；有缺陷 → 回对应 task 走 TDD 修，重走 review，直到 0 缺陷。
+### 4.2 逐条评估（不可跳过）
+
+等待 reviewer 返回完整报告后，**必须**调用 `superpowers:receiving-code-review` 逐条评估，产出评估表：
+
+```
+| 编号 | 类别 | 文件:行 | 描述 | 处置 | 理由 |
+|:---|:---|:---|:---|:---|:---|
+| 1 | Critical | foo.py:42 | ... | 接受修复 | ... |
+| 2 | Important | bar.py:10 | ... | Push back | ... |
+| 3 | Minor | baz.py:5 | ... | Deferred | ... |
+```
+
+处置列只允许三种值：**接受修复** / **Push back** / **Deferred**。
+
+- **接受修复**：回对应 task 走 TDD 修复 → 重跑全量测试 → 重新 dispatch reviewer（重走 Step 4）
+- **Push back**：在评估表中写明技术理由，不修复
+- **Deferred**：记录到 `specs/<id>-<feature>/session.md`，不阻塞 merge
+
+### 4.3 门禁条件（进入 Step 5 的前提）
+
+**Critical / Important 缺陷必须处理完毕**，以下两种状态之一才允许进入 Step 5：
+1. reviewer 报告 0 个 Critical + Important 缺陷（Minor 不影响 merge）
+2. 所有 Critical / Important 缺陷都有明确处置决策（已修复 或 Push back），且不存在未修复的 Critical / Important 项
+
+**Minor 缺陷不阻塞 merge**——可 Deferred 或 Push back，在 Step 5 报告中提醒用户即可。
+
+**不满足门禁条件时，禁止进入 Step 5。**
 
 ## Step 5 · 收尾
+
+**前置检查**：确认 Step 4 门禁已通过（Critical / Important 无未修复项）。未通过时返回 Step 4。
 
 1. 最终 commit，message 含 `Closes <id>-<feature>`
 2. merge 回主分支
 3. 打 tag（如 `v0.1.0-<feature>`，按项目 tag 约定）
 4. 更新该 feature 的会话/交接记录（若有，如 `session.md`）标记完成
-5. **feature 的 spec 目录永不删除**（CI 种子 + 下一 feature 的上下文）
-6. 报告：本 feature 共 N task / M 个 [FE] / K 个 [BE] / 审查发现 X 个缺陷已全部修复
+5. 更新 `state.md` 标记全部完成（如尚未更新）
+6. **feature 的 spec 目录永不删除**（CI 种子 + 下一 feature 的上下文）
+7. 报告：本 feature 共 N task / M 个 [FE] / K 个 [BE]；审查发现 C 个 Critical + I 个 Important（已全部修复）+ M 个 Minor（已在报告中提醒用户）
 
 ## 节奏铁律
 
