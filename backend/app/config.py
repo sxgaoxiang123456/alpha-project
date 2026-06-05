@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     quote_cache_ttl_seconds: int = Field(default=300, gt=0)
     trading_calendar: str = "cn_stock"
 
+    # 加密配置
+    encryption_key: str | None = None
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 

@@ -24,6 +24,7 @@ from backend.app.models.historical_quote import HistoricalQuote
 from backend.app.models.watchlist import WatchlistItem
 from backend.app.routers.dashboard import router as dashboard_router
 from backend.app.routers.groups import router as groups_router
+from backend.app.routers.settings import router as settings_router
 from backend.app.routers.import_export import router as import_export_router
 from backend.app.routers.alerts import router as alerts_router
 from backend.app.routers.push import router as push_router
@@ -228,6 +229,7 @@ app.mount("/static", StaticFiles(directory=str(_FRONTEND_DIR / "public")), name=
 templates = Jinja2Templates(directory=str(_FRONTEND_DIR / "src" / "templates"))
 
 app.include_router(dashboard_router)
+app.include_router(settings_router)
 app.include_router(alerts_router)
 app.include_router(watchlist_router)
 app.include_router(import_export_router)

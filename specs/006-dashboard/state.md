@@ -22,9 +22,12 @@
 - [x] T13 · 创建 ChannelStatus 组件
 - [x] T14 · 创建 QuickActions + Onboarding 组件
 - [x] T15 · 实现响应式样式和刷新逻辑
+- [x] T16 · 创建设置页模板
+- [x] T17 · 实现设置页路由
+- [x] T18 · 更新路由注册
 
 ## 当前任务
-[>] T16 · 创建设置页模板
+[>] T19 · 单元测试 — DashboardService
 
 ## 阻塞项
 （无）
