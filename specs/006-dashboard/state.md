@@ -25,9 +25,14 @@
 - [x] T16 · 创建设置页模板
 - [x] T17 · 实现设置页路由
 - [x] T18 · 更新路由注册
+- [x] T19 · 单元测试 — DashboardService
+- [x] T20 · 单元测试 — SettingsService
+- [x] T21 · 集成测试 — 页面渲染
+- [x] T22 · 响应式测试 — 多 viewport
+- [x] T23 · 前端视觉回归测试
 
 ## 当前任务
-[>] T19 · 单元测试 — DashboardService
+（全部完成）
 
 ## 阻塞项
 （无）
