@@ -5,30 +5,57 @@ from datetime import date, datetime, timedelta
 import pytest
 
 
+_BACKEND_MODULES_TO_CLEAR = [
+    "backend.app.main",
+    "backend.app.config",
+    "backend.app.database",
+    "backend.app.dependencies",
+    "backend.app.models",
+    "backend.app.models.historical_quote",
+    "backend.app.routers",
+    "backend.app.routers.quotes",
+    "backend.app.services.cache_service",
+    "backend.app.services.data_source_facade",
+    "backend.app.services.market_index",
+    "backend.app.services.quote_service",
+    "backend.app.core.trading_calendar",
+]
+
+
+def _is_backend_module_to_clear(loaded_name):
+    return any(
+        loaded_name == name or loaded_name.startswith(f"{name}.")
+        for name in _BACKEND_MODULES_TO_CLEAR
+    )
+
+
+@pytest.fixture(autouse=True)
+def _restore_backend_modules():
+    original_modules = {
+        name: module
+        for name, module in sys.modules.items()
+        if _is_backend_module_to_clear(name)
+    }
+    yield
+
+    database = sys.modules.get("backend.app.database")
+    if database is not None:
+        database.engine.dispose()
+
+    for loaded_name in list(sys.modules):
+        if _is_backend_module_to_clear(loaded_name):
+            sys.modules.pop(loaded_name, None)
+    sys.modules.update(original_modules)
+
+
 def _fresh_main_for_cleanup(monkeypatch, tmp_path):
     """设置临时数据库后重新导入 main 模块，返回 cleanup 函数和 SessionLocal。"""
     database_path = tmp_path / "cleanup_test.db"
     monkeypatch.setenv("DATABASE_URL", f"sqlite:///{database_path}")
 
-    modules_to_clear = [
-        "backend.app.main",
-        "backend.app.config",
-        "backend.app.database",
-        "backend.app.dependencies",
-        "backend.app.models",
-        "backend.app.models.historical_quote",
-        "backend.app.routers",
-        "backend.app.routers.quotes",
-        "backend.app.services.cache_service",
-        "backend.app.services.data_source_facade",
-        "backend.app.services.market_index",
-        "backend.app.services.quote_service",
-        "backend.app.core.trading_calendar",
-    ]
-    for name in modules_to_clear:
-        for loaded_name in list(sys.modules):
-            if loaded_name == name or loaded_name.startswith(f"{name}."):
-                sys.modules.pop(loaded_name, None)
+    for loaded_name in list(sys.modules):
+        if _is_backend_module_to_clear(loaded_name):
+            sys.modules.pop(loaded_name, None)
 
     main = importlib.import_module("backend.app.main")
     main.init_db()

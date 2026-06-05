@@ -12,7 +12,11 @@ from sqlalchemy.orm import joinedload
 from backend.app.config import get_settings
 from backend.app.core.circuit_breaker import CircuitBreaker
 from backend.app.core.health_checker import HealthChecker
-from backend.app.core.quote_scheduler import QuoteScheduler, register_quote_refresh_job
+from backend.app.core.quote_scheduler import (
+    QuoteScheduler,
+    register_briefing_job,
+    register_quote_refresh_job,
+)
 from backend.app.database import SessionLocal, init_db
 from backend.app.models.group import Group
 from backend.app.models.historical_quote import HistoricalQuote
@@ -20,6 +24,7 @@ from backend.app.models.watchlist import WatchlistItem
 from backend.app.routers.groups import router as groups_router
 from backend.app.routers.import_export import router as import_export_router
 from backend.app.routers.alerts import router as alerts_router
+from backend.app.routers.push import router as push_router
 from backend.app.routers.quotes import router as quotes_router
 from backend.app.routers.system import router as system_router
 from backend.app.routers.watchlist import router as watchlist_router
@@ -142,6 +147,12 @@ async def lifespan(app: FastAPI):
         finally:
             alert_db.close()
 
+    def _push_service_factory():
+        from backend.app.services.push_service import PushService
+
+        push_db = SessionLocal()
+        return PushService(db=push_db, feishu_client=None, telegram_client=None)
+
     quote_scheduler = QuoteScheduler(
         quote_service=QuoteService(
             db=db,
@@ -156,12 +167,14 @@ async def lifespan(app: FastAPI):
         ),
         is_trading_day=is_trading_day,
         on_quotes_refreshed=_run_alert_detection,
+        push_service_factory=_push_service_factory,
     )
     register_quote_refresh_job(
         scheduler,
         quote_scheduler,
         interval_minutes=settings.quote_refresh_interval_minutes,
     )
+    register_briefing_job(scheduler, quote_scheduler)
     scheduler.start()
     app.state.scheduler = scheduler
 
@@ -186,6 +199,7 @@ app.include_router(import_export_router)
 app.include_router(groups_router)
 app.include_router(system_router)
 app.include_router(quotes_router)
+app.include_router(push_router)
 
 
 @app.get("/", response_class=HTMLResponse)

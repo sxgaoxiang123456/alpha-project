@@ -24,7 +24,7 @@ _alert_add_lock = threading.Lock()
 def create_alert_rule(
     req: AlertRuleRequest,
     db: Session = Depends(get_db),
-) -> AlertRule:
+) -> AlertRuleResponse:
     with _alert_add_lock:
         active_count = db.query(AlertRule).filter_by(status="active").count()
         if active_count >= MAX_ALERT_RULES:
@@ -42,6 +42,8 @@ def create_alert_rule(
         )
         db.add(rule)
         try:
+            db.flush()
+            response = AlertRuleResponse.model_validate(rule)
             db.commit()
         except IntegrityError as exc:
             db.rollback()
@@ -49,9 +51,8 @@ def create_alert_rule(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="规则创建失败，请检查输入数据",
             ) from exc
-        db.refresh(rule)
 
-    return rule
+    return response
 
 
 @router.get("", response_model=list[AlertRuleResponse])
