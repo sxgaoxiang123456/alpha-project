@@ -156,14 +156,15 @@ class DashboardService:
             return BriefingData(insights=[])
 
     def _get_today_alerts(self) -> list[AlertSummary]:
-        """获取今日预警汇总。"""
-        from datetime import date
+        """获取今日预警汇总（基于 UTC 日期边界）。"""
+        from datetime import date, timedelta
 
-        today = date.today()
+        today = datetime.now(UTC).date()
+        start_of_day = datetime(today.year, today.month, today.day, tzinfo=UTC)
         triggers = (
             self.db.query(AlertTrigger)
             .filter(
-                AlertTrigger.triggered_at >= datetime(today.year, today.month, today.day),
+                AlertTrigger.triggered_at >= start_of_day,
             )
             .order_by(AlertTrigger.triggered_at.desc())
             .limit(50)

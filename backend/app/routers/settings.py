@@ -53,6 +53,15 @@ async def settings_page(request: Request, db: Session = Depends(get_db)):
     )
 
 
+def _validate_form(data: dict[str, str]) -> list[str]:
+    """校验表单数据，返回错误信息列表。"""
+    errors: list[str] = []
+    interval = data.get("refresh_interval", "")
+    if interval and not interval.isdigit() or (interval.isdigit() and not (1 <= int(interval) <= 5)):
+        errors.append("刷新间隔必须在 1-5 分钟之间")
+    return errors
+
+
 @router.post("/settings", response_class=HTMLResponse)
 async def settings_save(
     request: Request,
@@ -66,8 +75,6 @@ async def settings_save(
     """保存设置 — 接收表单数据并持久化。"""
     from backend.app.main import templates
 
-    service = SettingsService(db, encryption_key=_get_encryption_key())
-
     form_data = {
         "lark_webhook": lark_webhook,
         "telegram_token": telegram_token,
@@ -76,6 +83,16 @@ async def settings_save(
         "alert_cooldown": alert_cooldown,
     }
 
+    errors = _validate_form(form_data)
+    if errors:
+        settings = _load_settings(db)
+        return templates.TemplateResponse(
+            request,
+            "settings.html",
+            {"settings": settings, "errors": errors},
+        )
+
+    service = SettingsService(db, encryption_key=_get_encryption_key())
     for form_field, value in form_data.items():
         key, category, is_encrypted = _FORM_FIELDS[form_field]
         if value:  # 只保存非空值
