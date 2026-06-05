@@ -21,9 +21,10 @@
 - [x] T12 · 创建 PushHistory 组件
 - [x] T13 · 创建 ChannelStatus 组件
 - [x] T14 · 创建 QuickActions + Onboarding 组件
+- [x] T15 · 实现响应式样式和刷新逻辑
 
 ## 当前任务
-[>] T15 · 实现响应式样式和刷新逻辑
+[>] T16 · 创建设置页模板
 
 ## 阻塞项
 （无）

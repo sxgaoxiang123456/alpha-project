@@ -160,3 +160,19 @@ class TestDashboardPage:
             response = client.get("/market_data")
         assert "<!DOCTYPE html>" not in response.text
         assert "上证指数" in response.text
+
+    def test_static_css_accessible(self, monkeypatch, tmp_path):
+        """/static/css/dashboard.css 可访问。"""
+        app, _ = _fresh_app(monkeypatch, tmp_path)
+        with TestClient(app) as client:
+            response = client.get("/static/css/dashboard.css")
+        assert response.status_code == 200
+        assert "Dashboard" in response.text
+
+    def test_static_js_accessible(self, monkeypatch, tmp_path):
+        """/static/js/dashboard.js 可访问。"""
+        app, _ = _fresh_app(monkeypatch, tmp_path)
+        with TestClient(app) as client:
+            response = client.get("/static/js/dashboard.js")
+        assert response.status_code == 200
+        assert "fetchMarketData" in response.text
