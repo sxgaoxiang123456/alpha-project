@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - A股 AI 盯盘助手{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+  <h1>Dashboard</h1>
+
+  {% if view.degraded %}
+  <div class="degraded-banner">{{ view.degradation_message }}</div>
+  {% endif %}
+
+  <section class="market-indices">
+    <h2>大盘指数</h2>
+    {% for idx in view.market_indices %}
+    <div class="index-card">
+      <span class="name">{{ idx.name }}</span>
+      <span class="value">{{ idx.current_value }}</span>
+      <span class="change">{{ idx.change_percent }}%</span>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="watchlist">
+    <h2>自选股</h2>
+    {% for stock in view.watchlist %}
+    <div class="stock-card">
+      <span class="code">{{ stock.code }}</span>
+      <span class="name">{{ stock.name }}</span>
+      <span class="price">{{ stock.current_price }}</span>
+      <span class="change">{{ stock.change_percent }}%</span>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="briefing">
+    <h2>AI 简报</h2>
+    {% if view.briefing and view.briefing.insights %}
+    <ul>
+      {% for insight in view.briefing.insights %}
+      <li>{{ insight }}</li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p>今日暂无简报</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

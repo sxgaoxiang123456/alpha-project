@@ -1,0 +1,34 @@
+<div class="market-data-partial">
+  <section class="market-indices">
+    {% for idx in market_indices %}
+    <div class="index-card">
+      <span class="name">{{ idx.name }}</span>
+      <span class="value">{{ idx.current_value }}</span>
+      <span class="change">{{ idx.change_percent }}%</span>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="watchlist">
+    {% for stock in watchlist %}
+    <div class="stock-card">
+      <span class="code">{{ stock.code }}</span>
+      <span class="name">{{ stock.name }}</span>
+      <span class="price">{{ stock.current_price }}</span>
+      <span class="change">{{ stock.change_percent }}%</span>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="briefing">
+    {% if briefing and briefing.insights %}
+    <ul>
+      {% for insight in briefing.insights %}
+      <li>{{ insight }}</li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p>今日暂无简报</p>
+    {% endif %}
+  </section>
+</div>

@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
+from pathlib import Path
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from fastapi import FastAPI, Request
@@ -21,6 +22,7 @@ from backend.app.database import SessionLocal, init_db
 from backend.app.models.group import Group
 from backend.app.models.historical_quote import HistoricalQuote
 from backend.app.models.watchlist import WatchlistItem
+from backend.app.routers.dashboard import router as dashboard_router
 from backend.app.routers.groups import router as groups_router
 from backend.app.routers.import_export import router as import_export_router
 from backend.app.routers.alerts import router as alerts_router
@@ -219,9 +221,13 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-app.mount("/static", StaticFiles(directory="frontend/public"), name="static")
-templates = Jinja2Templates(directory="frontend/src/templates")
+_PROJECT_ROOT = Path(__file__).parent.parent.parent
+_FRONTEND_DIR = _PROJECT_ROOT / "frontend"
 
+app.mount("/static", StaticFiles(directory=str(_FRONTEND_DIR / "public")), name="static")
+templates = Jinja2Templates(directory=str(_FRONTEND_DIR / "src" / "templates"))
+
+app.include_router(dashboard_router)
 app.include_router(alerts_router)
 app.include_router(watchlist_router)
 app.include_router(import_export_router)
@@ -229,11 +235,6 @@ app.include_router(groups_router)
 app.include_router(system_router)
 app.include_router(quotes_router)
 app.include_router(push_router)
-
-
-@app.get("/", response_class=HTMLResponse)
-def dashboard_page(request: Request):
-    return templates.TemplateResponse("watchlist/list.html", {"request": request, "items": [], "groups": []})
 
 
 @app.get("/watchlist-page", response_class=HTMLResponse)
