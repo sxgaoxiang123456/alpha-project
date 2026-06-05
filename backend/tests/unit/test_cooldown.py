@@ -190,12 +190,14 @@ class TestMergeTriggers:
         db_session.flush()
 
         merged = merge_triggers(db_session, [t1, t2])
-        assert len(merged) == 1
+        assert len(merged) == 2  # 保留全部 trigger 记录 (FR-012 审计)
         assert merged[0].merged_rule_ids is not None
         assert str(r1.id) in merged[0].merged_rule_ids
         assert str(r2.id) in merged[0].merged_rule_ids
+        # 第二条也有合并标记
+        assert merged[1].merged_rule_ids is not None
 
-    def test_merge_takes_highest_level(self, db_session):
+    def test_merge_preserves_individual_levels(self, db_session):
         from backend.app.services.alert_service import merge_triggers
 
         r1 = _make_rule(db_session, condition_type="price_below", level="watch")
@@ -213,8 +215,9 @@ class TestMergeTriggers:
         db_session.flush()
 
         merged = merge_triggers(db_session, [t1, t2])
-        assert len(merged) == 1
-        assert merged[0].level == "alert"
+        assert len(merged) == 2
+        levels = {t.level for t in merged}
+        assert levels == {"watch", "alert"}
 
     def test_different_stocks_not_merged(self, db_session):
         from backend.app.services.alert_service import merge_triggers

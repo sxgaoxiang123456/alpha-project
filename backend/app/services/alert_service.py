@@ -44,22 +44,23 @@ def _is_condition_satisfied(rule: AlertRule, quote: dict) -> bool:
     ct = rule.condition_type
     threshold = rule.threshold
 
-    if ct == "price_above":
-        return (quote.get("current_price") or 0) > threshold
-    elif ct == "price_below":
-        return (quote.get("current_price") or float("inf")) < threshold
-    elif ct == "change_pct_above":
+    if ct in ("price_above", "price_below"):
+        price = quote.get("current_price")
+        if price is None:
+            return False
+        price = float(price)
+        return price > threshold if ct == "price_above" else price < threshold
+    elif ct in ("change_pct_above", "change_pct_below"):
         pct = quote.get("change_percent")
         if pct is None:
             return False
-        return float(pct) > threshold
-    elif ct == "change_pct_below":
-        pct = quote.get("change_percent")
-        if pct is None:
-            return False
-        return float(pct) < threshold
+        pct = float(pct)
+        return pct > threshold if ct == "change_pct_above" else pct < threshold
     elif ct == "volume_above":
-        return (quote.get("volume") or 0) > threshold
+        vol = quote.get("volume")
+        if vol is None:
+            return False
+        return float(vol) > threshold
     return False
 
 
@@ -180,7 +181,7 @@ def detect_alerts(db: Session, quotes: dict[str, dict]) -> list[AlertTrigger]:
         if not _should_skip_quote(quote):
             rule.last_evaluated_result = _is_condition_satisfied(rule, quote)
 
-    return merge_triggers(db, raw_triggers)
+    return raw_triggers
 
 
 def _trigger_value(rule: AlertRule, quote: dict) -> float:
@@ -241,43 +242,28 @@ def merge_triggers(
     db: Session,
     triggers: list[AlertTrigger],
 ) -> list[AlertTrigger]:
-    """合并同一股票的多规则触发。
+    """为同一股票的多规则触发标记合并关系。
+
+    保留全部 trigger 记录（FR-012 审计要求），在同一股票的多条
+    trigger 上设置 merged_rule_ids，供 F4 推送时合并。
 
     规则：
-    - 同一 stock_code 的 trigger 合并为 1 条
-    - 触达级别取被触发规则中的最高级别 (alert > watch)
-    - 合并后的 merged_rule_ids 记录所有被合并的 rule_id
-
-    Args:
-        db: 数据库会话。
-        triggers: 待合并的 trigger 列表。
-
-    Returns:
-        合并后的 trigger 列表。
+    - 同股票触发多条规则时，所有 trigger 记录 merged_rule_ids
+    - 不丢弃任何 trigger 记录，不修改原始 level
     """
     if len(triggers) <= 1:
         return triggers
 
-    # 按 stock_code 分组
     groups: dict[str, list[AlertTrigger]] = {}
     for t in triggers:
         groups.setdefault(t.stock_code, []).append(t)
 
-    merged: list[AlertTrigger] = []
-    for stock_code, group in groups.items():
-        if len(group) == 1:
-            merged.append(group[0])
+    for group in groups.values():
+        if len(group) <= 1:
             continue
+        rule_ids = ",".join(str(t.rule_id) for t in group)
+        for t in group:
+            t.merged_rule_ids = rule_ids
 
-        rule_ids = sorted(t.rule_id for t in group)
-        # 取最高 level
-        levels = {t.level for t in group}
-        highest_level = "alert" if "alert" in levels else "watch"
-
-        keeper = group[0]
-        keeper.level = highest_level
-        keeper.merged_rule_ids = ",".join(str(rid) for rid in rule_ids)
-        merged.append(keeper)
-
-    return merged
+    return triggers
 

@@ -84,7 +84,12 @@ async def lifespan(app: FastAPI):
     quote_cache = CacheService(db)
 
     def _run_alert_detection() -> None:
-        """行情刷新后执行预警检测。"""
+        """行情刷新后执行预警检测。
+
+        数据源中断保护 (FR-013): 若所有行情数据 source_status 均为
+        "unavailable"，或缓存中无任何行情数据，则跳过本轮检测，避免基于
+        过期数据误报。
+        """
         import json
         import logging
         _logger = logging.getLogger("alert_detection")
@@ -101,6 +106,31 @@ async def lifespan(app: FastAPI):
                 raw = quote_cache.get(f"quote:{code}")
                 if raw:
                     quotes_dict[code] = json.loads(raw)
+
+            # FR-013: 数据源全中断时跳过检测，不基于过期数据误报
+            if not quotes_dict:
+                _logger.debug("无行情缓存数据，跳过预警检测")
+                return
+
+            statuses = {
+                q.get("source_status", "")
+                for q in quotes_dict.values()
+            }
+            if statuses == {"unavailable"}:
+                _logger.warning("全部数据源不可用，跳过预警检测")
+                return
+
+            # A-007: 跨交易日冷却期自动重置
+            from datetime import date
+            from backend.app.services.alert_service import reset_all_cooldowns
+
+            today = date.today()
+            last_date = getattr(app.state, "_last_alert_detection_date", None)
+            if last_date is not None and last_date != today:
+                reset_all_cooldowns(alert_db)
+                alert_db.commit()
+                _logger.info("交易日变更 %s → %s，已重置冷却期", last_date, today)
+            app.state._last_alert_detection_date = today
 
             triggers = detect_alerts(alert_db, quotes_dict)
             if triggers:
