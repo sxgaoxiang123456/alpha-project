@@ -87,9 +87,11 @@ class PushService:
             message_id, used_channel, primary_result, fallback_result, elapsed_ms, channel_status
         )
 
-        # 更新通道失败计数（仅主通道尝试失败时）
-        if channel_status == "active" and primary_result and not primary_result["success"]:
-            self._record_channel_failure("feishu")
+        # 更新通道失败计数
+        if primary_result and not primary_result["success"]:
+            self._record_channel_failure("feishu", primary_result.get("error_type"))
+        if fallback_result and not fallback_result["success"]:
+            self._record_channel_failure("telegram", fallback_result.get("error_type"))
 
     def _try_channel(self, channel: str, content, max_retries: int = 2) -> dict | None:
         """尝试通过指定通道发送，支持重试。"""
@@ -99,6 +101,8 @@ class PushService:
 
         last_result = None
         for attempt in range(max_retries + 1):
+            if attempt > 0:
+                time.sleep(0.5 * (2 ** (attempt - 1)))
             if channel == "feishu":
                 last_result = client.send_card(content)
             else:
@@ -159,7 +163,7 @@ class PushService:
 
         self.db.commit()
 
-    def _record_channel_failure(self, channel_name: str):
+    def _record_channel_failure(self, channel_name: str, error_type: str | None = None):
         """记录通道失败，连续失败过多则标记为 degraded/unavailable。"""
         record = self.db.get(PushChannel, channel_name)
         if record is None:
@@ -168,6 +172,8 @@ class PushService:
             self.db.flush()
 
         record.consecutive_failures += 1
+        if error_type == "rate_limited":
+            record.rate_limited = True
         if record.consecutive_failures >= 5:
             record.status = "unavailable"
         elif record.consecutive_failures >= 3:
@@ -176,10 +182,11 @@ class PushService:
         self.db.commit()
 
     def _reset_channel_success(self, channel_name: str):
-        """通道成功发送后重置失败计数。"""
+        """通道成功发送后重置失败计数和限流标记。"""
         record = self.db.get(PushChannel, channel_name)
-        if record is not None and record.consecutive_failures > 0:
+        if record is not None and (record.consecutive_failures > 0 or record.rate_limited):
             record.consecutive_failures = 0
+            record.rate_limited = False
             record.status = "active"
             record.updated_at = datetime.utcnow()
             self.db.commit()

@@ -153,6 +153,7 @@ class TestPushChannelModel:
             channel = PushChannel(name="feishu")
             session.add(channel)
             session.commit()
+            session.expunge(channel)
 
             # name 是主键，不能重复插入
             dup = PushChannel(name="feishu")

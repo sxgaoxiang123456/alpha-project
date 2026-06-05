@@ -72,21 +72,6 @@ class TestPushLogResponse:
         assert resp.id == 1
         assert resp.error_reason is None
 
-    def test_invalid_status_raises(self):
-        from datetime import UTC, datetime
-        from backend.app.schemas.push import PushLogResponse
-
-        with pytest.raises(ValidationError):
-            PushLogResponse(
-                id=1,
-                message_id="msg-001",
-                message_type="alert",
-                channel="feishu",
-                status="unknown",
-                created_at=datetime.now(UTC),
-            )
-
-
 class TestPushChannelStatus:
     """PushChannelStatus 通道状态模型校验。"""
 

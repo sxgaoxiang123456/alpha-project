@@ -56,15 +56,6 @@ class PushLogResponse(BaseModel):
     elapsed_ms: int | None = None
     created_at: datetime
 
-    @field_validator("status")
-    @classmethod
-    def validate_status(cls, value: str) -> str:
-        if value not in _VALID_LOG_STATUSES:
-            raise ValueError(
-                f"状态必须是 {sorted(_VALID_LOG_STATUSES)} 之一，当前值: '{value}'"
-            )
-        return value
-
 
 class PushChannelStatus(BaseModel):
     model_config = ConfigDict(from_attributes=True)

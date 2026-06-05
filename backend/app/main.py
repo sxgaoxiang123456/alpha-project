@@ -147,10 +147,13 @@ async def lifespan(app: FastAPI):
         finally:
             alert_db.close()
 
+    _push_db_sessions = []
+
     def _push_service_factory():
         from backend.app.services.push_service import PushService
 
         push_db = SessionLocal()
+        _push_db_sessions.append(push_db)
         return PushService(db=push_db, feishu_client=None, telegram_client=None)
 
     quote_scheduler = QuoteScheduler(
@@ -181,6 +184,9 @@ async def lifespan(app: FastAPI):
     yield
 
     scheduler.shutdown()
+    for push_db in _push_db_sessions:
+        if push_db.is_active:
+            push_db.close()
 
 
 app = FastAPI(
