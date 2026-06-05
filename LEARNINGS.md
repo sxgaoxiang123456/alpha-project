@@ -1,5 +1,17 @@
 # 项目教训沉淀
 
+## 2026-06-05 · process-gap · 004-price-alert
+**现象 / 决策**: run-feature Step 4（code review）在 Phase 6 结束后被直接跳过——18 task 全勾、319 全绿后心态进入"收工模式"，把 review 当成了"测试过了就行"的可选步骤。实际后果：review 在 merge 之后补做，失去了"合并前拦下缺陷"的意义（reviewer 发现 `reset_all_cooldowns` 已实现但无调用点——这种架构缺口是 TDD 单元测试覆盖不到的）。
+**应对**: run-feature 的每个 Step 是强制门禁，不是建议。**TDD GREEN ≠ 架构无缺口**。16 task 全绿说明代码正确，不等于设计完整。review 必须发生在 merge 之前——在 worktree 分支上做完 Step 4 确认 0 缺陷后再 merge。
+**应用范围**: 所有 run-feature 执行的 feature，以及任何"task 全绿就准备收工"的时刻。
+**相关文件**: `backend/app/services/alert_service.py:230-233` (reset_all_cooldowns 实现), `backend/app/main.py:86-113` (调用点缺失，review 后补上)
+
+## 2026-06-05 · process-gap · 004-price-alert
+**现象 / 决策**: 收到 code review 反馈后，因为 reviewer 的 3 个 Important 问题全部正确，直接进入修 bug 模式，跳过了 `superpowers:receiving-code-review` skill。潜意识里把这个 skill 理解成了"质疑外部 review 用的"——既然 reviewer 说的都对，就不需要了。实际遗漏了该 skill 的核心作用：**逐条评估、识别应该 push back 的项目**。比如 reviewer 的 Issue 7（通用 Exception 捕获）和 Issue 9（Toggle 行为），reviewer 自己在分析中也标注了"实际不是 bug"，但没有 receiving-code-review 的逐条评估表，这些 item 容易被当作"全部要修"囫囵吞下。
+**应对**: `receiving-code-review` 不只是质疑工具，它的核心产出是 **评估表**（逐条判断：接受修复 / 有意识选择 / push back）。收到任何 review 后必须先过这张表，明确每个 item 的处置决策和理由，再动手修。Push back 是合理行为——reviewer 自己也会标注不确定的项。
+**应用范围**: 所有收到 code review 反馈的时刻（无论 reviewer 是人还是 agent）。
+**相关文件**: `.claude/skills/run-feature/SKILL.md` Step 4, `superpowers:receiving-code-review` skill
+
 ## 2026-06-04 · pitfall · 003-realtime-quotes
 **现象 / 决策**: `Starlette StaticFiles(directory="frontend/public")` 在模块导入时（不是首次请求时）就校验目录存在性，目录缺失直接抛 `RuntimeError`。worktree 和主仓库各踩一次——新建 worktree 时前端占位目录不会被 git 跟踪，导致整个 `main.py` 无法导入，所有测试在 collection 阶段就报错。
 **应对**: `setup.sh` 中已加入 `mkdir -p frontend/public frontend/src/templates`。新建 worktree 后跑一次 `bash setup.sh` 即可。另一种思路是在 `main.py` 中惰性创建目录或用 `try/except` 包装 `StaticFiles` 初始化。
