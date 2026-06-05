@@ -1,26 +1,53 @@
 from contextlib import asynccontextmanager
+from datetime import datetime, timedelta
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from sqlalchemy import delete
 from sqlalchemy.orm import joinedload
 
 from backend.app.config import get_settings
 from backend.app.core.circuit_breaker import CircuitBreaker
 from backend.app.core.health_checker import HealthChecker
+from backend.app.core.quote_scheduler import (
+    QuoteScheduler,
+    register_briefing_job,
+    register_quote_refresh_job,
+)
 from backend.app.database import SessionLocal, init_db
 from backend.app.models.group import Group
+from backend.app.models.historical_quote import HistoricalQuote
 from backend.app.models.watchlist import WatchlistItem
 from backend.app.routers.groups import router as groups_router
 from backend.app.routers.import_export import router as import_export_router
+from backend.app.routers.alerts import router as alerts_router
+from backend.app.routers.push import router as push_router
+from backend.app.routers.quotes import router as quotes_router
 from backend.app.routers.system import router as system_router
 from backend.app.routers.watchlist import router as watchlist_router
 from backend.app.services.cache_service import CacheService
 from backend.app.services.data_source import AkShareDataSource, BaoStockDataSource
+from backend.app.services.data_source_facade import DataSourceFacade
+from backend.app.services.market_index import MarketIndexService
+from backend.app.services.quote_service import QuoteService
 
 settings = get_settings()
+
+
+from backend.app.core.trading_calendar import is_trading_day
+
+
+def cleanup_old_historical_quotes(retention_days: int = 90) -> int:
+    cutoff = datetime.now() - timedelta(days=retention_days)
+    with SessionLocal() as session:
+        result = session.execute(
+            delete(HistoricalQuote).where(HistoricalQuote.date < cutoff.date())
+        )
+        session.commit()
+        return result.rowcount
 
 
 @asynccontextmanager
@@ -50,6 +77,104 @@ async def lifespan(app: FastAPI):
         id="cache_cleanup",
         replace_existing=True,
     )
+    scheduler.add_job(
+        cleanup_old_historical_quotes,
+        "cron",
+        hour=3,
+        minute=7,
+        id="historical_cleanup",
+        replace_existing=True,
+    )
+    facade = DataSourceFacade(db)
+    quote_cache = CacheService(db)
+
+    def _run_alert_detection() -> None:
+        """行情刷新后执行预警检测。
+
+        数据源中断保护 (FR-013): 若所有行情数据 source_status 均为
+        "unavailable"，或缓存中无任何行情数据，则跳过本轮检测，避免基于
+        过期数据误报。
+        """
+        import json
+        import logging
+        _logger = logging.getLogger("alert_detection")
+        alert_db = SessionLocal()
+        try:
+            from backend.app.models.watchlist import WatchlistItem
+            from backend.app.services.alert_service import detect_alerts
+
+            stock_codes = [
+                row[0] for row in alert_db.query(WatchlistItem.stock_code).all()
+            ]
+            quotes_dict = {}
+            for code in stock_codes:
+                raw = quote_cache.get(f"quote:{code}")
+                if raw:
+                    quotes_dict[code] = json.loads(raw)
+
+            # FR-013: 数据源全中断时跳过检测，不基于过期数据误报
+            if not quotes_dict:
+                _logger.debug("无行情缓存数据，跳过预警检测")
+                return
+
+            statuses = {
+                q.get("source_status", "")
+                for q in quotes_dict.values()
+            }
+            if statuses == {"unavailable"}:
+                _logger.warning("全部数据源不可用，跳过预警检测")
+                return
+
+            # A-007: 跨交易日冷却期自动重置
+            from datetime import date
+            from backend.app.services.alert_service import reset_all_cooldowns
+
+            today = date.today()
+            last_date = getattr(app.state, "_last_alert_detection_date", None)
+            if last_date is not None and last_date != today:
+                reset_all_cooldowns(alert_db)
+                alert_db.commit()
+                _logger.info("交易日变更 %s → %s，已重置冷却期", last_date, today)
+            app.state._last_alert_detection_date = today
+
+            triggers = detect_alerts(alert_db, quotes_dict)
+            if triggers:
+                alert_db.add_all(triggers)
+                alert_db.commit()
+                _logger.info("预警检测完成，触发 %d 条规则", len(triggers))
+        except Exception:
+            _logger.exception("预警检测异常")
+        finally:
+            alert_db.close()
+
+    def _push_service_factory():
+        from backend.app.services.push_service import PushService
+
+        push_db = SessionLocal()
+        return PushService(db=push_db, feishu_client=None, telegram_client=None)
+
+    quote_scheduler = QuoteScheduler(
+        quote_service=QuoteService(
+            db=db,
+            facade=facade,
+            cache=quote_cache,
+            ttl_seconds=settings.quote_cache_ttl_seconds,
+        ),
+        market_index_service=MarketIndexService(
+            facade=facade,
+            cache=quote_cache,
+            ttl_seconds=settings.quote_cache_ttl_seconds,
+        ),
+        is_trading_day=is_trading_day,
+        on_quotes_refreshed=_run_alert_detection,
+        push_service_factory=_push_service_factory,
+    )
+    register_quote_refresh_job(
+        scheduler,
+        quote_scheduler,
+        interval_minutes=settings.quote_refresh_interval_minutes,
+    )
+    register_briefing_job(scheduler, quote_scheduler)
     scheduler.start()
     app.state.scheduler = scheduler
 
@@ -68,10 +193,13 @@ app = FastAPI(
 app.mount("/static", StaticFiles(directory="frontend/public"), name="static")
 templates = Jinja2Templates(directory="frontend/src/templates")
 
+app.include_router(alerts_router)
 app.include_router(watchlist_router)
 app.include_router(import_export_router)
 app.include_router(groups_router)
 app.include_router(system_router)
+app.include_router(quotes_router)
+app.include_router(push_router)
 
 
 @app.get("/", response_class=HTMLResponse)

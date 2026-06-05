@@ -9,6 +9,7 @@ from backend.app.models.stock import Stock
 from backend.app.models.watchlist import WatchlistItem
 from backend.app.schemas.stock import StockSearchResult
 from backend.app.schemas.watchlist import BatchDeleteRequest, WatchlistItemCreate, WatchlistItemResponse, WatchlistItemUpdate
+from backend.app.services.alert_service import pause_rules_for_stock
 import backend.app.services.stock_search as stock_search
 
 router = APIRouter(prefix="/watchlist", tags=["watchlist"])
@@ -136,6 +137,7 @@ def delete_watchlist_item(
         )
 
     db.delete(item)
+    pause_rules_for_stock(code, db)
     db.commit()
     return None
 
@@ -150,6 +152,7 @@ def batch_delete_watchlist_items(
         item = db.query(WatchlistItem).filter_by(stock_code=code).first()
         if item is not None:
             db.delete(item)
+            pause_rules_for_stock(code, db)
             deleted += 1
 
     db.commit()

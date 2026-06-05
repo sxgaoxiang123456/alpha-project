@@ -19,19 +19,18 @@ def _fresh_app(monkeypatch, tmp_path):
 
     modules_to_clear = [
         "backend.app.main",
-        "backend.app.routers.watchlist",
+        "backend.app.routers",
         "backend.app.services.stock_search",
         "backend.app.dependencies",
-        "backend.app.models.group",
-        "backend.app.models.stock",
-        "backend.app.models.watchlist",
         "backend.app.models",
         "backend.models",
         "backend.app.database",
         "backend.app.config",
     ]
     for name in modules_to_clear:
-        sys.modules.pop(name, None)
+        for loaded_name in list(sys.modules):
+            if loaded_name == name or loaded_name.startswith(f"{name}."):
+                sys.modules.pop(loaded_name, None)
 
     main = importlib.import_module("backend.app.main")
     return main.app, database_path
