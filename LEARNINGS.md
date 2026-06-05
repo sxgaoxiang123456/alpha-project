@@ -1,5 +1,17 @@
 # 项目教训沉淀
 
+## 2026-06-05 · process-gap · 005-push-notification
+**现象 / 决策**: run-feature Step 4（code review）虽然最终执行了，但没有按 skill 规范走——先 `requesting-code-review` dispatch reviewer 产出独立报告，再用 `receiving-code-review` 逐条评估消化。实际是开发者自己读代码、自己判断、自己列修复项，reviewer 没有独立产出。第二轮补走了完整流程，但代码已合入 main，失去了"合并前拦下缺陷"的门禁意义。
+**应对**: run-feature Step 4 的两个 skill 是强制顺序，不是可选项。必须先 dispatch reviewer → 等独立报告 → 再用 receiving-code-review 逐条评估（产出评估表：接受/Deferred/Push back）→ 确认 0 缺陷或所有缺陷有明确处置决策后，才允许 merge。不要在实现者脑中完成 review。
+**应用范围**: 所有 run-feature 执行的 feature。
+**相关文件**: `superpowers:requesting-code-review`, `superpowers:receiving-code-review`, `.claude/skills/run-feature/SKILL.md` Step 4
+
+## 2026-06-05 · pitfall · 005-push-notification
+**现象 / 决策**: state.md 在整个 15 个 task 开发过程中从未实时更新，tasks.md 也是全部完成后才批量勾选——和 004-price-alert 犯了完全相同的错误。虽然 LEARNINGS.md 第 3 条已经记录了 004 的这个教训，但 005 开发时 state.md 仍不在"task 启动必读"清单里，开发者看不到它就忘了更新。后果：中间 session 崩溃 resume 时，只能靠 git log 和 conversation summary 猜进度。
+**应对**: LEARNINGS 是"知识"不是"行为"——知道不等于做到。必须在 CLAUDE.md §3 "Task 启动必读"中把 state.md 列为强制项，并在每个 task 完成后的 checklist 中加入"□ state.md 已更新当前 task 状态"。让流程倒逼行为，而不是依赖记忆。
+**应用范围**: 所有 run-feature 执行的 feature。
+**相关文件**: `CLAUDE.md` §3, `specs/005-push-notification/state.md`
+
 ## 2026-06-05 · tool-quirk · 004-price-alert
 **现象 / 决策**: freezegun 与 `datetime.now(UTC)` 不兼容——冻结后返回 FakeDatetime，`.replace(tzinfo=None)` 退回真实时间；嵌套 `freeze_time` 上下文管理器行为不一致，内层不生效；`frozen_time.tick()` 在 SQLAlchemy session 内对后续 `datetime.utcnow()` 调用不生效。来回试了 `datetime.now(UTC).replace(tzinfo=None)` → `with freeze_time` 嵌套 → `tick()` 共 4 轮才确认唯一可靠组合是 `@freeze_time` 装饰器 + `datetime.utcnow()`。
 **应对**: 项目中所有涉时间测试统一用 `datetime.utcnow()` + `@freeze_time` 装饰器。不要试图用 `datetime.now(UTC)`、嵌套 `freeze_time`、`frozen_time.tick()` 来模拟时间推进——用多个独立测试 case 各自挂 `@freeze_time` 替代。
