@@ -42,14 +42,14 @@ def _fresh_app(monkeypatch, tmp_path):
     return main.app, database_path
 
 
-def _mock_dashboard_service():
+def _mock_dashboard_service(watchlist=None):
     """返回固定 mock 数据的 DashboardService。"""
     svc = MagicMock()
     svc.build_dashboard_view = AsyncMock(return_value=DashboardViewResponse(
         market_indices=[
             MarketSnapshot(name="上证指数", current_value=3000.0, change_percent=1.23, change_amount=36.5),
         ],
-        watchlist=[
+        watchlist=watchlist if watchlist is not None else [
             StockCardData(code="600000", name="浦发银行", current_price=10.5, change_percent=2.5, change_amount=0.25),
         ],
         briefing=BriefingData(insights=["大盘整体向好"]),
@@ -134,6 +134,23 @@ class TestDashboardPage:
             response = client.get("/")
         assert "飞书" in response.text
         assert "Telegram" in response.text
+
+    def test_dashboard_shows_onboarding_when_watchlist_empty(self, monkeypatch, tmp_path):
+        """空自选股时显示引导卡片。"""
+        app, _ = _fresh_app(monkeypatch, tmp_path)
+        monkeypatch.setattr("backend.app.routers.dashboard._get_dashboard_service", lambda db: _mock_dashboard_service(watchlist=[]))
+        with TestClient(app) as client:
+            response = client.get("/")
+        assert "开始构建您的自选股列表" in response.text
+        assert "添加第一只股票" in response.text
+
+    def test_dashboard_hides_onboarding_when_watchlist_present(self, monkeypatch, tmp_path):
+        """有自选股时不显示引导卡片。"""
+        app, _ = _fresh_app(monkeypatch, tmp_path)
+        monkeypatch.setattr("backend.app.routers.dashboard._get_dashboard_service", lambda db: _mock_dashboard_service())
+        with TestClient(app) as client:
+            response = client.get("/")
+        assert "开始构建您的自选股列表" not in response.text
 
     def test_market_data_is_partial(self, monkeypatch, tmp_path):
         """market_data 返回的是 Partial HTML（不含完整 HTML 结构）。"""

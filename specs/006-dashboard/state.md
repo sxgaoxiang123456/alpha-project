@@ -20,6 +20,10 @@
 - [x] T11 · 创建 AlertBanner 组件
 - [x] T12 · 创建 PushHistory 组件
 - [x] T13 · 创建 ChannelStatus 组件
+- [x] T14 · 创建 QuickActions + Onboarding 组件
+
+## 当前任务
+[>] T15 · 实现响应式样式和刷新逻辑
 
 ## 阻塞项
 （无）

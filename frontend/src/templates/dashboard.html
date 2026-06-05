@@ -29,6 +29,7 @@
         <div class="col-span-12 lg:col-span-8 flex flex-col gap-container-gap">
             {% with watchlist=view.watchlist %}
             {% include "components/watchlist_snapshot.html" %}
+            {% include "components/onboarding.html" %}
             {% endwith %}
             {% include "components/quick_actions.html" %}
         </div>
