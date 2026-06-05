@@ -3,7 +3,7 @@ import html
 import json
 import time
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 from backend.app.models.push_channel import PushChannel
 from backend.app.models.push_log import PushLog
@@ -164,32 +164,90 @@ class PushService:
         self.db.commit()
 
     def _record_channel_failure(self, channel_name: str, error_type: str | None = None):
-        """记录通道失败，连续失败过多则标记为 degraded/unavailable。"""
-        record = self.db.get(PushChannel, channel_name)
-        if record is None:
-            record = PushChannel(name=channel_name, status="active", consecutive_failures=0)
-            self.db.add(record)
-            self.db.flush()
+        """记录通道失败，连续失败过多则标记为 degraded/unavailable。
 
-        record.consecutive_failures += 1
+        使用原子 UPDATE 避免并发 read-modify-write 丢失更新。
+        """
+        from sqlalchemy import update
+
+        now = datetime.now(UTC).replace(tzinfo=None)
+
+        # 先尝试原子 UPDATE（记录已存在）
+        stmt = (
+            update(PushChannel)
+            .where(PushChannel.name == channel_name)
+            .values(
+                consecutive_failures=PushChannel.consecutive_failures + 1,
+                updated_at=now,
+            )
+        )
         if error_type == "rate_limited":
-            record.rate_limited = True
-        if record.consecutive_failures >= 5:
-            record.status = "unavailable"
-        elif record.consecutive_failures >= 3:
-            record.status = "degraded"
-        record.updated_at = datetime.utcnow()
+            stmt = stmt.values(rate_limited=True)
+
+        result = self.db.execute(stmt)
         self.db.commit()
 
-    def _reset_channel_success(self, channel_name: str):
-        """通道成功发送后重置失败计数和限流标记。"""
+        if result.rowcount == 0:
+            # 记录不存在，尝试 INSERT（可能与其他线程竞态）
+            record = PushChannel(
+                name=channel_name,
+                status="active",
+                consecutive_failures=1,
+                rate_limited=(error_type == "rate_limited"),
+                updated_at=now,
+            )
+            self.db.add(record)
+            try:
+                self.db.commit()
+            except Exception:
+                self.db.rollback()
+                # 其他线程已插入，回退为原子 UPDATE
+                stmt = (
+                    update(PushChannel)
+                    .where(PushChannel.name == channel_name)
+                    .values(
+                        consecutive_failures=PushChannel.consecutive_failures + 1,
+                        updated_at=now,
+                    )
+                )
+                if error_type == "rate_limited":
+                    stmt = stmt.values(rate_limited=True)
+                self.db.execute(stmt)
+                self.db.commit()
+
+        # 更新状态阈值（基于已准确的 consecutive_failures）
         record = self.db.get(PushChannel, channel_name)
-        if record is not None and (record.consecutive_failures > 0 or record.rate_limited):
-            record.consecutive_failures = 0
-            record.rate_limited = False
-            record.status = "active"
-            record.updated_at = datetime.utcnow()
-            self.db.commit()
+        if record is not None:
+            new_status = record.status
+            if record.consecutive_failures >= 5:
+                new_status = "unavailable"
+            elif record.consecutive_failures >= 3:
+                new_status = "degraded"
+            if new_status != record.status:
+                record.status = new_status
+                self.db.commit()
+
+    def _reset_channel_success(self, channel_name: str):
+        """通道成功发送后重置失败计数和限流标记。
+
+        使用原子 UPDATE 避免并发 read-modify-write。
+        """
+        from sqlalchemy import update
+
+        now = datetime.now(UTC).replace(tzinfo=None)
+
+        stmt = (
+            update(PushChannel)
+            .where(PushChannel.name == channel_name)
+            .values(
+                consecutive_failures=0,
+                rate_limited=False,
+                status="active",
+                updated_at=now,
+            )
+        )
+        self.db.execute(stmt)
+        self.db.commit()
 
     def _mark_failed(self, message_id: str):
         """将 pending 日志标记为 failed（异常兜底）。"""

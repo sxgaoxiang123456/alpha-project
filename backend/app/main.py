@@ -142,6 +142,29 @@ async def lifespan(app: FastAPI):
                 alert_db.add_all(triggers)
                 alert_db.commit()
                 _logger.info("预警检测完成，触发 %d 条规则", len(triggers))
+
+                # 链路贯通：将 AlertTrigger 提交给 PushService（F4→F5）
+                push_service = _push_service_factory()
+                from backend.app.schemas.push import PushMessageRequest
+
+                for trigger in triggers:
+                    try:
+                        quote = quotes_dict.get(trigger.stock_code, {})
+                        message = PushMessageRequest(
+                            message_type="alert",
+                            priority="high" if trigger.level == "alert" else "normal",
+                            content={
+                                "stock_code": trigger.stock_code,
+                                "condition": f"{trigger.condition_type} {trigger.trigger_value}",
+                                "level": trigger.level,
+                                "price": quote.get("current_price", ""),
+                                "change_pct": quote.get("change_percent", ""),
+                                "triggered_at": trigger.triggered_at.isoformat() if trigger.triggered_at else "",
+                            },
+                        )
+                        push_service.send(message)
+                    except Exception:
+                        _logger.exception("推送预警失败: %s", trigger.stock_code)
         except Exception:
             _logger.exception("预警检测异常")
         finally:
