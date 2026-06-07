@@ -11,44 +11,35 @@
 {% endblock %}
 
 {% block content %}
-<!-- Side Navigation -->
-{% include "components/side_nav.html" %}
+<!-- Dashboard Content -->
+<main class="w-full grid grid-cols-12 gap-container-gap">
+    {% if view.degraded %}
+    <div class="col-span-12 bg-market-warning/10 border border-market-warning rounded p-4 flex items-center gap-2">
+        <span class="material-symbols-outlined text-market-warning">warning</span>
+        <span class="font-body-md text-body-md text-market-warning">{{ view.degradation_message }}</span>
+    </div>
+    {% endif %}
 
-<!-- Main Content Area -->
-<div class="flex-1 md:ml-64 flex flex-col min-h-screen">
-    <!-- Top Navigation -->
-    {% include "components/top_nav.html" %}
-
-    <!-- Dashboard Content -->
-    <main class="flex-1 p-8 overflow-y-auto w-full max-w-[1280px] mx-auto grid grid-cols-12 gap-container-gap">
-        {% if view.degraded %}
-        <div class="col-span-12 bg-market-warning/10 border border-market-warning rounded p-4 flex items-center gap-2">
-            <span class="material-symbols-outlined text-market-warning">warning</span>
-            <span class="font-body-md text-body-md text-market-warning">{{ view.degradation_message }}</span>
-        </div>
-        {% endif %}
-
-        <!-- Refreshable Market Data Area -->
-        <div id="market-data-container" class="contents">
-            {% with market_indices=view.market_indices, watchlist=view.watchlist, briefing=view.briefing %}
-            {% include "components/market_data_refreshable.html" %}
-            {% endwith %}
-        </div>
-
-        <!-- Alert Banner -->
-        {% with alerts=view.alerts %}
-        {% include "components/alert_banner.html" %}
+    <!-- Refreshable Market Data Area -->
+    <div id="market-data-container" class="contents">
+        {% with market_indices=view.market_indices, watchlist=view.watchlist, briefing=view.briefing %}
+        {% include "components/market_data_refreshable.html" %}
         {% endwith %}
+    </div>
 
-        <!-- Push History -->
-        {% with push_history=view.push_history %}
-        {% include "components/push_history.html" %}
-        {% endwith %}
+    <!-- Alert Banner -->
+    {% with alerts=view.alerts %}
+    {% include "components/alert_banner.html" %}
+    {% endwith %}
 
-        <!-- Channel Status -->
-        {% with channel_status=view.channel_status %}
-        {% include "components/channel_status.html" %}
-        {% endwith %}
-    </main>
-</div>
+    <!-- Push History -->
+    {% with push_history=view.push_history %}
+    {% include "components/push_history.html" %}
+    {% endwith %}
+
+    <!-- Channel Status -->
+    {% with channel_status=view.channel_status %}
+    {% include "components/channel_status.html" %}
+    {% endwith %}
+</main>
 {% endblock %}

@@ -40,6 +40,14 @@ from backend.app.services.quote_service import QuoteService
 settings = get_settings()
 
 
+def _get_encryption_key() -> bytes | None:
+    """从应用配置读取加密密钥。"""
+    key = settings.encryption_key
+    if key is None:
+        return None
+    return key.encode() if isinstance(key, str) else key
+
+
 from backend.app.core.trading_calendar import is_trading_day
 
 
@@ -177,10 +185,27 @@ async def lifespan(app: FastAPI):
 
     def _push_service_factory():
         from backend.app.services.push_service import PushService
+        from backend.app.services.settings_service import SettingsService
+        from backend.app.services.telegram_client import TelegramClient
 
         push_db = SessionLocal()
         _push_db_sessions.append(push_db)
-        return PushService(db=push_db, feishu_client=None, telegram_client=None)
+
+        settings_service = SettingsService(push_db, encryption_key=_get_encryption_key())
+        telegram_token = settings_service.get_setting("telegram_token")
+        telegram_chat_id = settings_service.get_setting("telegram_chat_id")
+
+        telegram_client = None
+        if telegram_token and telegram_chat_id:
+            telegram_client = TelegramClient(
+                bot_token=telegram_token,
+                chat_id=telegram_chat_id,
+            )
+
+        # NOTE: FeishuClient requires app_id/app_secret/chat_id (lark-cli),
+        # but settings page only collects lark_webhook (webhook URL).
+        # Feishu push requires aligning settings UI with FeishuClient constructor.
+        return PushService(db=push_db, feishu_client=None, telegram_client=telegram_client)
 
     quote_scheduler = QuoteScheduler(
         quote_service=QuoteService(
@@ -252,14 +277,19 @@ def watchlist_page(request: Request):
         for g in groups:
             group_counts[g.id] = db.query(WatchlistItem).filter_by(group_id=g.id).count()
     return templates.TemplateResponse(
+        request,
         "watchlist/list.html",
         {
-            "request": request,
             "items": items,
             "groups": groups,
             "group_counts": group_counts,
         },
     )
+
+
+@app.get("/alerts-page", response_class=HTMLResponse)
+def alerts_page(request: Request):
+    return templates.TemplateResponse(request, "alerts.html", {})
 
 
 @app.get("/health")

@@ -1,34 +1,40 @@
-<nav class="bg-surface-container-lowest w-64 h-screen fixed left-0 top-0 border-r border-outline-variant flex flex-col py-6 z-40">
+<nav id="side-nav" class="bg-surface-container-lowest h-screen fixed left-0 top-0 border-r border-outline-variant flex flex-col py-6 z-40 transition-all duration-300 w-64">
     <div class="px-6 mb-8 flex items-center gap-3">
-        <div class="w-10 h-10 rounded-full bg-surface-variant flex items-center justify-center overflow-hidden">
+        <div class="w-10 h-10 rounded-full bg-surface-variant flex items-center justify-center overflow-hidden shrink-0">
             <span class="material-symbols-outlined text-[20px] text-primary">account_circle</span>
         </div>
-        <div>
+        <div class="side-nav-text overflow-hidden whitespace-nowrap transition-opacity duration-300">
             <h1 class="font-headline-lg text-2xl font-bold text-primary leading-tight">A股 AI 盯盘助手</h1>
             <p class="font-label-caps text-label-caps text-on-surface-variant mt-1">机构级</p>
         </div>
     </div>
     <div class="flex-1 flex flex-col gap-1 px-3">
-        <a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-variant transition-colors duration-200" href="/">
-            <span class="material-symbols-outlined text-[20px]">dashboard</span>
-            <span class="font-body-md text-body-md font-medium">控制面板</span>
+        <a class="flex items-center gap-3 px-3 py-2.5 rounded transition-colors duration-200 {% if active_route == '/' or active_route == '' %}text-primary border-r-2 border-primary-container font-bold bg-surface-container-high{% else %}text-on-surface-variant hover:bg-surface-variant{% endif %}" href="/">
+            <span class="material-symbols-outlined text-[20px] shrink-0">dashboard</span>
+            <span class="font-body-md text-body-md font-medium side-nav-text overflow-hidden whitespace-nowrap transition-opacity duration-300">控制面板</span>
         </a>
-        <a class="flex items-center gap-3 px-3 py-2 rounded text-primary border-r-2 border-primary-container font-bold bg-surface-container-high transition-transform duration-200" href="/watchlist-page">
-            <span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">monitoring</span>
-            <span class="font-body-md text-body-md">自选股</span>
+        <a class="flex items-center gap-3 px-3 py-2.5 rounded transition-colors duration-200 {% if active_route == '/watchlist-page' %}text-primary border-r-2 border-primary-container font-bold bg-surface-container-high{% else %}text-on-surface-variant hover:bg-surface-variant{% endif %}" href="/watchlist-page">
+            <span class="material-symbols-outlined text-[20px] shrink-0" style="font-variation-settings: 'FILL' 1;">monitoring</span>
+            <span class="font-body-md text-body-md side-nav-text overflow-hidden whitespace-nowrap transition-opacity duration-300">自选股</span>
         </a>
-        <a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-variant transition-colors duration-200" href="/alerts">
-            <span class="material-symbols-outlined text-[20px]">notifications_active</span>
-            <span class="font-body-md text-body-md font-medium">预警规则</span>
+        <a class="flex items-center gap-3 px-3 py-2.5 rounded transition-colors duration-200 {% if active_route == '/alerts-page' %}text-primary border-r-2 border-primary-container font-bold bg-surface-container-high{% else %}text-on-surface-variant hover:bg-surface-variant{% endif %}" href="/alerts-page">
+            <span class="material-symbols-outlined text-[20px] shrink-0">notifications_active</span>
+            <span class="font-body-md text-body-md font-medium side-nav-text overflow-hidden whitespace-nowrap transition-opacity duration-300">预警规则</span>
         </a>
-        <a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-variant transition-colors duration-200" href="/settings">
-            <span class="material-symbols-outlined text-[20px]">settings</span>
-            <span class="font-body-md text-body-md font-medium">设置</span>
+        <a class="flex items-center gap-3 px-3 py-2.5 rounded transition-colors duration-200 {% if active_route == '/settings' %}text-primary border-r-2 border-primary-container font-bold bg-surface-container-high{% else %}text-on-surface-variant hover:bg-surface-variant{% endif %}" href="/settings">
+            <span class="material-symbols-outlined text-[20px] shrink-0">settings</span>
+            <span class="font-body-md text-body-md font-medium side-nav-text overflow-hidden whitespace-nowrap transition-opacity duration-300">设置</span>
         </a>
     </div>
-    <div class="px-6 mt-auto">
+    <div class="px-3 mt-auto mb-2">
+        <button id="sidebar-toggle" class="w-full flex items-center justify-center gap-2 px-3 py-2 rounded transition-colors duration-200 text-on-surface-variant hover:bg-surface-variant hover:text-primary" title="收起侧边栏">
+            <span class="material-symbols-outlined text-[18px] transition-transform duration-300">chevron_left</span>
+            <span class="side-nav-text overflow-hidden whitespace-nowrap transition-opacity duration-300 font-body-md text-sm">收起侧边栏</span>
+        </button>
+    </div>
+    <div class="px-6 pb-4 side-nav-text transition-opacity duration-300">
         <button class="w-full bg-primary-container text-on-primary-container hover:bg-primary hover:text-on-primary py-2 px-4 rounded font-headline-md text-headline-md transition-colors flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(0,82,255,0.2)]">
-            <span class="material-symbols-outlined text-[18px]">auto_awesome</span>AI 简报
+            <span class="material-symbols-outlined text-[18px]">auto_awesome</span><span class="side-nav-text-label">AI 简报</span>
         </button>
     </div>
 </nav>

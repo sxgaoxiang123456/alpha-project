@@ -8,6 +8,7 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
+from backend.app.config import get_settings
 from backend.app.models.alert_trigger import AlertTrigger
 from backend.app.models.push_channel import PushChannel
 from backend.app.models.push_log import PushLog
@@ -25,7 +26,7 @@ from backend.app.schemas.dashboard import (
 
 logger = logging.getLogger(__name__)
 
-_TIMEOUT_SECONDS = 5.0
+_TIMEOUT_SECONDS = float(get_settings().data_source_timeout)
 
 
 class DashboardService:
@@ -34,7 +35,7 @@ class DashboardService:
     通过依赖注入接收各上游服务实例，便于测试时 mock。
     """
 
-    DEFAULT_TIMEOUT_SECONDS = 5.0
+    DEFAULT_TIMEOUT_SECONDS = float(get_settings().data_source_timeout)
 
     def __init__(
         self,

@@ -15,6 +15,7 @@ router = APIRouter(tags=["settings"])
 _FORM_FIELDS = {
     "lark_webhook": ("lark_webhook", SettingCategory.LARK, True),
     "telegram_token": ("telegram_token", SettingCategory.TELEGRAM, True),
+    "telegram_chat_id": ("telegram_chat_id", SettingCategory.TELEGRAM, False),
     "datasource": ("datasource", SettingCategory.DATASOURCE, False),
     "refresh_interval": ("refresh_interval", SettingCategory.PREFERENCE, False),
     "alert_cooldown": ("alert_cooldown", SettingCategory.PREFERENCE, False),
@@ -68,6 +69,7 @@ async def settings_save(
     db: Session = Depends(get_db),
     lark_webhook: str = Form(default=""),
     telegram_token: str = Form(default=""),
+    telegram_chat_id: str = Form(default=""),
     datasource: str = Form(default="akshare"),
     refresh_interval: str = Form(default="3"),
     alert_cooldown: str = Form(default="30"),
@@ -78,6 +80,7 @@ async def settings_save(
     form_data = {
         "lark_webhook": lark_webhook,
         "telegram_token": telegram_token,
+        "telegram_chat_id": telegram_chat_id,
         "datasource": datasource,
         "refresh_interval": refresh_interval,
         "alert_cooldown": alert_cooldown,
