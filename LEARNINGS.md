@@ -1,5 +1,41 @@
 # 项目教训沉淀
 
+## 2026-06-07 · pitfall · 006-dashboard
+**现象 / 决策**: BaoStock 数据源适配器踩了三个连环坑：① 代码格式要求 `sh.600519`（exchange.code 带点），系统传 `sh600519` → 报错"股票代码应为9位"；② 全局连接非线程安全，并发查询抛 `IndexError: list index out of range`；③ 指数（sh000001 等）不支持 5min K线，只返回 0 行。三个问题各自独立、表面无关，但根源相同——**写适配器前没有先读 BaoStock 文档的约束说明**，边测边修来回 4 轮。
+**应对**: 每接入一个新数据源，先列一张"约束 checklist"再写代码：代码格式（带点/前缀/纯数字？）、线程安全（全局连接？需要 Lock？）、品种频率限制（指数/股票各支持哪些 K线周期？）。 checklist 未确认前不启动实现。
+**应用范围**: 任何新增数据源 adapter（包括后续付费源升级）。
+**相关文件**: `backend/app/services/data_source.py:101-106` (格式映射), `backend/app/services/data_source.py:137` (Lock), `backend/app/services/data_source.py:192-193` (日线频率)
+
+## 2026-06-07 · pitfall · 006-dashboard
+**现象 / 决策**: `_push_service_factory()` 在 `main.py` 中始终传 `feishu_client=None, telegram_client=None`。预警检测引擎能触发、AlertTrigger 能写入 DB、Dashboard 能显示触发记录，但**实际外部推送永不发送**——端到端链路在最后 10cm 断了。直到做 US journey 验证时才暴露，之前所有测试都 mock 了 PushService，避开了工厂初始化逻辑。
+**应对**: 涉及"客户端初始化 → 外部调用"的链路，不能只测业务逻辑层，必须有一个集成测试验证**真实客户端是否被创建**（哪怕不真发消息，也要断言 `push_service.feishu is not None` 或 `telegram is not None`）。端到端验证必须在"用户收到消息"这一环闭环，不能只验证到"数据库有记录"。
+**应用范围**: 任何涉及第三方客户端初始化的 feature（推送、支付、短信、存储）。
+**相关文件**: `backend/app/main.py:178-200` (_push_service_factory), `backend/app/services/push_service.py:96-100` (_try_channel 返回 None)
+
+## 2026-06-07 · decision-rethink · 006-dashboard
+**现象 / 决策**: 设置页 UI 收集 `lark_webhook`（Webhook URL），但 `FeishuClient` 使用 lark-cli Open API，构造函数需要 `app_id`/`app_secret`/`brand`/`chat_id`。两者完全不匹配——用户配置的是 webhook，代码要的是 app 凭证，**飞书推送当前根本无法工作**。这是设计阶段没有对齐"UI 表单字段"与"客户端构造函数参数"导致的结构性断裂。
+**应对**: 在 feature 设计阶段（plan.md），把"用户输入什么"和"代码需要什么"两张表放一起对账。如果 UI 已经定了 webhook，客户端就必须用 webhook 方案（HTTP POST）；如果客户端定了 lark-cli，UI 就必须收集 app_id/app_secret。不能两端各自决定。
+**应用范围**: 任何有"用户配置 → 第三方 SDK 初始化"链条的 feature。
+**相关文件**: `frontend/src/templates/settings.html:70-78` (lark_webhook 输入框), `backend/app/services/feishu_client.py:8-18` (构造函数参数), `backend/app/routers/settings.py:16` (FORM_FIELDS 映射)
+
+## 2026-06-07 · pitfall · 006-dashboard
+**现象 / 决策**: Dashboard 右侧"执行日志"面板内容超出容器高度但不显示滚动条。CSS 已加 `overflow-y-auto`，但 Flex item 默认 `min-height: auto` 会扩展以适应内容高度，导致溢出永远不会触发。需要显式覆盖为 `min-h-0` 才能让 `overflow-y-auto` 生效。这个问题在 Tailwind CSS 中特别隐蔽，因为 `min-h-0` 不是默认值。
+**应对**: Flex 容器内出现"应该滚动但不滚"时，第一检查项就是子元素是否有 `min-h-0`。Tailwind 中 `h-full` + `overflow-auto` 的组合在 flex item 中不可靠，必须显式 `min-h-0`。
+**应用范围**: 任何使用 Flexbox + 溢出滚动的 UI 组件。
+**相关文件**: `frontend/src/templates/alerts.html:57` (Alert History 面板)
+
+## 2026-06-07 · pattern · 006-dashboard
+**现象 / 决策**: 006-dashboard 的数据源修复沉淀出一个可复用的"数据源 adapter 防御 checklist"：① 代码格式映射（输入格式 → 数据源格式 → 输出格式，三套格式必须各自独立转换）；② 线程安全（全局连接 → 类级 Lock）；③ 品种频率限制（指数/股票各支持什么 K线周期）。 checklist 让 004-price-alert 的 AkShare 集成和 006 的 BaoStock 集成有了统一检查框架。
+**应对**: 每新增一个数据源 adapter，在实现前填写 checklist：
+- [ ] 代码格式：系统格式 __ → 数据源格式 __ → 返回格式 __
+- [ ] 线程安全：是否需要 Lock？连接是全局还是 per-request？
+- [ ] 品种限制：指数/股票/ETF 各支持哪些频率？哪些品种返回空数据？
+- [ ] 异常映射：超时/限流/格式错误 → 统一 DataSourceError 类型
+**应用范围**: 所有新增/升级数据源的 feature。
+**相关文件**: `backend/app/services/data_source.py` (AkShareDataSource + BaoStockDataSource)
+
+# 项目教训沉淀
+
 ## 2026-06-05 · process-gap · 005-push-notification
 **现象 / 决策**: run-feature Step 4（code review）虽然最终执行了，但没有按 skill 规范走——先 `requesting-code-review` dispatch reviewer 产出独立报告，再用 `receiving-code-review` 逐条评估消化。实际是开发者自己读代码、自己判断、自己列修复项，reviewer 没有独立产出。第二轮补走了完整流程，但代码已合入 main，失去了"合并前拦下缺陷"的门禁意义。
 **应对**: run-feature Step 4 的两个 skill 是强制顺序，不是可选项。必须先 dispatch reviewer → 等独立报告 → 再用 receiving-code-review 逐条评估（产出评估表：接受/Deferred/Push back）→ 确认 0 缺陷或所有缺陷有明确处置决策后，才允许 merge。不要在实现者脑中完成 review。
