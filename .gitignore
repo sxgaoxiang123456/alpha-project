@@ -68,3 +68,4 @@ db/
 tmp/
 temp/
 *.tmp
+.gstack/

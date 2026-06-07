@@ -1,0 +1,312 @@
+{% extends "base.html" %}
+
+{% block title %}预警规则 - A股 AI 盯盘助手{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="flex justify-between items-end mb-8">
+    <div>
+        <h1 class="font-headline-lg text-headline-lg text-on-surface">预警规则</h1>
+        <p class="text-on-surface-variant mt-1">配置算法阈值和告警逻辑。</p>
+    </div>
+    <button id="addRuleBtn" class="flex items-center gap-2 bg-primary-container text-on-primary-container px-4 py-2 rounded font-headline-md text-headline-md hover:bg-primary hover:text-on-primary transition-colors shadow-[0_0_15px_rgba(0,82,255,0.2)]">
+        <span class="material-symbols-outlined text-[18px]">add</span>新建规则
+    </button>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-container-gap">
+    <!-- Left Column: Rules Table -->
+    <div class="lg:col-span-8 flex flex-col gap-container-gap">
+        <div class="bg-surface-base border border-outline-variant rounded shadow-sm">
+            <div class="p-card-padding border-b border-outline-variant flex justify-between items-center">
+                <h2 class="font-headline-md text-headline-md">生效中的逻辑规则</h2>
+                <span id="ruleCount" class="font-data-table text-data-table text-on-surface-variant">0 个生效</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-outline-variant bg-surface-container-low/50">
+                            <th class="py-2 px-4 font-label-caps text-label-caps text-on-surface-variant font-normal">股票</th>
+                            <th class="py-2 px-4 font-label-caps text-label-caps text-on-surface-variant font-normal">条件</th>
+                            <th class="py-2 px-4 font-label-caps text-label-caps text-on-surface-variant font-normal text-right">目标</th>
+                            <th class="py-2 px-4 font-label-caps text-label-caps text-on-surface-variant font-normal text-center">级别</th>
+                            <th class="py-2 px-4 font-label-caps text-label-caps text-on-surface-variant font-normal text-center">冷却</th>
+                            <th class="py-2 px-4 font-label-caps text-label-caps text-on-surface-variant font-normal text-center">状态</th>
+                            <th class="py-2 px-4 font-label-caps text-label-caps text-on-surface-variant font-normal text-right">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rulesTableBody" class="font-data-table text-data-table">
+                        <!-- JS populated -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="emptyRules" class="hidden p-8 text-center">
+                <span class="material-symbols-outlined text-4xl text-on-surface-variant mb-2">notifications_off</span>
+                <p class="text-on-surface-variant">暂无预警规则</p>
+                <p class="text-on-surface-variant text-sm mt-1">点击右上角新建规则开始监控</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Alert History -->
+    <div class="lg:col-span-4">
+        <div class="bg-surface-base border border-outline-variant rounded h-full flex flex-col shadow-sm">
+            <div class="p-card-padding border-b border-outline-variant">
+                <h2 class="font-headline-md text-headline-md">执行日志</h2>
+            </div>
+            <div id="alertHistory" class="p-card-padding flex-1 overflow-y-auto space-y-4 max-h-[600px]">
+                <!-- JS populated -->
+            </div>
+            <div id="emptyHistory" class="hidden p-8 text-center">
+                <span class="material-symbols-outlined text-4xl text-on-surface-variant mb-2">history</span>
+                <p class="text-on-surface-variant">暂无执行记录</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Rule Modal -->
+<div id="ruleModal" class="fixed inset-0 bg-background/80 backdrop-blur-sm z-[100] hidden flex items-center justify-center opacity-0 transition-opacity duration-200">
+    <div id="modalContent" class="bg-surface-base border border-outline-variant rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.4)] w-full max-w-lg scale-95 transition-transform duration-200">
+        <div class="p-card-padding border-b border-outline-variant flex justify-between items-center">
+            <h3 id="modalTitle" class="font-headline-md text-headline-md">新建规则</h3>
+            <button id="closeModalBtn" class="text-on-surface-variant hover:text-on-surface transition-colors">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <form id="ruleForm" class="p-card-padding space-y-6">
+            <input type="hidden" id="ruleId" value="">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block font-label-caps text-label-caps text-on-surface-variant mb-1">股票代码</label>
+                    <input id="stockCode" type="text" maxlength="6" placeholder="600519"
+                        class="w-full bg-surface-raised border border-outline-variant rounded py-2 px-3 font-data-table text-data-table text-on-surface focus:border-primary-container outline-none"
+                        required>
+                </div>
+                <div>
+                    <label class="block font-label-caps text-label-caps text-on-surface-variant mb-1">条件类型</label>
+                    <select id="conditionType"
+                        class="w-full bg-surface-raised border border-outline-variant rounded py-2 px-3 font-body-md text-body-md text-on-surface focus:border-primary-container outline-none appearance-none">
+                        <option value="price_above">价格高于</option>
+                        <option value="price_below">价格低于</option>
+                        <option value="change_pct_above">涨幅大于</option>
+                        <option value="change_pct_below">跌幅大于</option>
+                        <option value="volume_above">成交量大于</option>
+                    </select>
+                </div>
+            </div>
+            <div>
+                <label class="block font-label-caps text-label-caps text-on-surface-variant mb-1">阈值</label>
+                <input id="threshold" type="number" step="0.01" placeholder="输入阈值"
+                    class="w-full bg-surface-raised border border-outline-variant rounded py-2 px-3 font-data-table text-data-table text-on-surface focus:border-primary-container outline-none"
+                    required>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block font-label-caps text-label-caps text-on-surface-variant mb-1">级别</label>
+                    <select id="level"
+                        class="w-full bg-surface-raised border border-outline-variant rounded py-2 px-3 font-body-md text-body-md text-on-surface focus:border-primary-container outline-none appearance-none">
+                        <option value="watch">关注</option>
+                        <option value="alert">告警</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-label-caps text-label-caps text-on-surface-variant mb-1">冷却时间（分钟）</label>
+                    <input id="cooldownMinutes" type="number" min="0" value="30"
+                        class="w-full bg-surface-raised border border-outline-variant rounded py-2 px-3 font-data-table text-data-table text-on-surface focus:border-primary-container outline-none">
+                </div>
+            </div>
+        </form>
+        <div class="p-card-padding border-t border-outline-variant flex justify-end gap-3 bg-surface-container-lowest rounded-b-xl">
+            <button id="cancelModalBtn" type="button" class="px-4 py-2 font-headline-md text-headline-md text-on-surface-variant hover:text-on-surface transition-colors">取消</button>
+            <button id="saveRuleBtn" type="button" class="px-4 py-2 bg-primary-container text-on-primary-container rounded font-headline-md text-headline-md hover:bg-primary hover:text-on-primary transition-colors">保存</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    // Load rules and history on page load
+    loadRules();
+    loadHistory();
+
+    // Modal elements
+    const modal = document.getElementById('ruleModal');
+    const modalContent = document.getElementById('modalContent');
+    const addBtn = document.getElementById('addRuleBtn');
+    const closeBtn = document.getElementById('closeModalBtn');
+    const cancelBtn = document.getElementById('cancelModalBtn');
+    const saveBtn = document.getElementById('saveRuleBtn');
+    const form = document.getElementById('ruleForm');
+    const modalTitle = document.getElementById('modalTitle');
+
+    addBtn.addEventListener('click', () => openModal());
+    closeBtn.addEventListener('click', closeModal);
+    cancelBtn.addEventListener('click', closeModal);
+    saveBtn.addEventListener('click', saveRule);
+    modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+    function openModal(rule) {
+        modalTitle.textContent = rule ? '编辑规则' : '新建规则';
+        document.getElementById('ruleId').value = rule ? rule.id : '';
+        document.getElementById('stockCode').value = rule ? rule.stock_code : '';
+        document.getElementById('conditionType').value = rule ? rule.condition_type : 'price_above';
+        document.getElementById('threshold').value = rule ? rule.threshold : '';
+        document.getElementById('level').value = rule ? rule.level : 'watch';
+        document.getElementById('cooldownMinutes').value = rule ? rule.cooldown_minutes : 30;
+        document.getElementById('stockCode').disabled = !!rule;
+
+        modal.classList.remove('hidden');
+        requestAnimationFrame(() => {
+            modal.classList.remove('opacity-0');
+            modalContent.classList.remove('scale-95');
+            modalContent.classList.add('scale-100');
+        });
+    }
+
+    function closeModal() {
+        modal.classList.add('opacity-0');
+        modalContent.classList.remove('scale-100');
+        modalContent.classList.add('scale-95');
+        setTimeout(() => modal.classList.add('hidden'), 200);
+        form.reset();
+    }
+
+    async function saveRule() {
+        const ruleId = document.getElementById('ruleId').value;
+        const payload = {
+            stock_code: document.getElementById('stockCode').value.trim(),
+            condition_type: document.getElementById('conditionType').value,
+            threshold: parseFloat(document.getElementById('threshold').value),
+            level: document.getElementById('level').value,
+            cooldown_minutes: parseInt(document.getElementById('cooldownMinutes').value) || 30,
+        };
+
+        const method = ruleId ? 'PUT' : 'POST';
+        const url = ruleId ? `/alerts/${ruleId}` : '/alerts';
+
+        try {
+            const res = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                alert(err.detail || '保存失败');
+                return;
+            }
+            closeModal();
+            loadRules();
+        } catch (e) {
+            alert('网络错误');
+        }
+    }
+
+    async function loadRules() {
+        try {
+            const res = await fetch('/alerts');
+            const rules = await res.json();
+            renderRules(rules);
+        } catch (e) {
+            console.error('Failed to load rules', e);
+        }
+    }
+
+    function renderRules(rules) {
+        const tbody = document.getElementById('rulesTableBody');
+        const empty = document.getElementById('emptyRules');
+        const countEl = document.getElementById('ruleCount');
+        const activeCount = rules.filter(r => r.status === 'active').length;
+        countEl.textContent = `${activeCount} 个生效`;
+
+        if (!rules.length) {
+            tbody.innerHTML = '';
+            empty.classList.remove('hidden');
+            return;
+        }
+        empty.classList.add('hidden');
+
+        const conditionLabels = {
+            price_above: '价格高于',
+            price_below: '价格低于',
+            change_pct_above: '涨幅大于',
+            change_pct_below: '跌幅大于',
+            volume_above: '成交量大于',
+        };
+        const levelClasses = {
+            watch: 'border-primary text-primary',
+            alert: 'border-market-up bg-market-up/10 text-market-up',
+        };
+        const levelLabels = { watch: '关注', alert: '告警' };
+
+        tbody.innerHTML = rules.map(rule => {
+            const isActive = rule.status === 'active';
+            const toggleClass = isActive ? 'bg-primary-container' : 'bg-surface-raised';
+            const knobClass = isActive ? 'right-1 bg-on-primary-container' : 'left-1 bg-outline';
+            return `<tr class="h-table-row-height border-b border-outline-variant hover:bg-surface-container-low transition-colors">
+                <td class="px-4"><span class="text-secondary">${rule.stock_code}</span></td>
+                <td class="px-4 text-on-surface-variant">${conditionLabels[rule.condition_type] || rule.condition_type}</td>
+                <td class="px-4 text-right ${rule.condition_type.includes('below') ? 'text-market-down' : 'text-market-up'}">${rule.threshold}</td>
+                <td class="px-4 text-center"><span class="inline-block px-2 py-0.5 rounded border text-[10px] uppercase tracking-wider ${levelClasses[rule.level] || 'border-outline'}">${levelLabels[rule.level] || rule.level}</span></td>
+                <td class="px-4 text-center text-on-surface-variant">${rule.cooldown_minutes}m</td>
+                <td class="px-4 text-center">
+                    <button class="toggle-btn w-8 h-4 rounded-full ${toggleClass} relative transition-colors duration-200" data-id="${rule.id}" aria-pressed="${isActive}">
+                        <span class="absolute top-0.5 w-3 h-3 rounded-full transition-transform ${knobClass}"></span>
+                    </button>
+                </td>
+                <td class="px-4 text-right">
+                    <button class="text-outline hover:text-primary transition-colors mr-2" onclick="editRule(${rule.id})" title="编辑">
+                        <span class="material-symbols-outlined text-[18px]">edit</span>
+                    </button>
+                    <button class="text-outline hover:text-error transition-colors" onclick="deleteRule(${rule.id})" title="删除">
+                        <span class="material-symbols-outlined text-[18px]">delete</span>
+                    </button>
+                </td>
+            </tr>`;
+        }).join('');
+
+        // Bind toggle buttons
+        document.querySelectorAll('.toggle-btn').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                const id = this.dataset.id;
+                try {
+                    const res = await fetch(`/alerts/${id}/toggle`, { method: 'PATCH' });
+                    if (res.ok) loadRules();
+                } catch (e) { console.error(e); }
+            });
+        });
+    }
+
+    async function loadHistory() {
+        try {
+            // Alert triggers are not exposed via a public endpoint; skip for now
+            const container = document.getElementById('alertHistory');
+            const empty = document.getElementById('emptyHistory');
+            container.innerHTML = '';
+            empty.classList.remove('hidden');
+        } catch (e) {
+            console.error('Failed to load history', e);
+        }
+    }
+
+    window.editRule = async function(id) {
+        try {
+            const res = await fetch(`/alerts/${id}`);
+            const rule = await res.json();
+            openModal(rule);
+        } catch (e) { console.error(e); }
+    };
+
+    window.deleteRule = async function(id) {
+        if (!confirm('确定要删除这条规则吗？')) return;
+        try {
+            const res = await fetch(`/alerts/${id}`, { method: 'DELETE' });
+            if (res.ok) loadRules();
+        } catch (e) { console.error(e); }
+    };
+})();
+</script>
+{% endblock %}

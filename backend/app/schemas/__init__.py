@@ -7,6 +7,11 @@ from backend.app.schemas.alert import (
 )
 from backend.app.schemas.data_fetch import DataFetchRequest, DataFetchResult
 from backend.app.schemas.group import GroupCreate, GroupResponse, GroupUpdate
+from backend.app.schemas.settings import (
+    SettingCategory,
+    SettingRequest,
+    SettingResponse,
+)
 from backend.app.schemas.push import (
     PushChannelStatus,
     PushLogResponse,
@@ -44,6 +49,9 @@ __all__ = [
     "PushLogResponse",
     "PushMessageRequest",
     "Quote",
+    "SettingCategory",
+    "SettingRequest",
+    "SettingResponse",
     "StockBase",
     "StockResponse",
     "StockSearchResult",

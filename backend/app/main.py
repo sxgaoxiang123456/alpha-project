@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
+from pathlib import Path
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from fastapi import FastAPI, Request
@@ -21,7 +22,9 @@ from backend.app.database import SessionLocal, init_db
 from backend.app.models.group import Group
 from backend.app.models.historical_quote import HistoricalQuote
 from backend.app.models.watchlist import WatchlistItem
+from backend.app.routers.dashboard import router as dashboard_router
 from backend.app.routers.groups import router as groups_router
+from backend.app.routers.settings import router as settings_router
 from backend.app.routers.import_export import router as import_export_router
 from backend.app.routers.alerts import router as alerts_router
 from backend.app.routers.push import router as push_router
@@ -35,6 +38,14 @@ from backend.app.services.market_index import MarketIndexService
 from backend.app.services.quote_service import QuoteService
 
 settings = get_settings()
+
+
+def _get_encryption_key() -> bytes | None:
+    """从应用配置读取加密密钥。"""
+    key = settings.encryption_key
+    if key is None:
+        return None
+    return key.encode() if isinstance(key, str) else key
 
 
 from backend.app.core.trading_calendar import is_trading_day
@@ -174,10 +185,27 @@ async def lifespan(app: FastAPI):
 
     def _push_service_factory():
         from backend.app.services.push_service import PushService
+        from backend.app.services.settings_service import SettingsService
+        from backend.app.services.telegram_client import TelegramClient
 
         push_db = SessionLocal()
         _push_db_sessions.append(push_db)
-        return PushService(db=push_db, feishu_client=None, telegram_client=None)
+
+        settings_service = SettingsService(push_db, encryption_key=_get_encryption_key())
+        telegram_token = settings_service.get_setting("telegram_token")
+        telegram_chat_id = settings_service.get_setting("telegram_chat_id")
+
+        telegram_client = None
+        if telegram_token and telegram_chat_id:
+            telegram_client = TelegramClient(
+                bot_token=telegram_token,
+                chat_id=telegram_chat_id,
+            )
+
+        # NOTE: FeishuClient requires app_id/app_secret/chat_id (lark-cli),
+        # but settings page only collects lark_webhook (webhook URL).
+        # Feishu push requires aligning settings UI with FeishuClient constructor.
+        return PushService(db=push_db, feishu_client=None, telegram_client=telegram_client)
 
     quote_scheduler = QuoteScheduler(
         quote_service=QuoteService(
@@ -219,9 +247,14 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-app.mount("/static", StaticFiles(directory="frontend/public"), name="static")
-templates = Jinja2Templates(directory="frontend/src/templates")
+_PROJECT_ROOT = Path(__file__).parent.parent.parent
+_FRONTEND_DIR = _PROJECT_ROOT / "frontend"
 
+app.mount("/static", StaticFiles(directory=str(_FRONTEND_DIR / "public")), name="static")
+templates = Jinja2Templates(directory=str(_FRONTEND_DIR / "src" / "templates"))
+
+app.include_router(dashboard_router)
+app.include_router(settings_router)
 app.include_router(alerts_router)
 app.include_router(watchlist_router)
 app.include_router(import_export_router)
@@ -229,11 +262,6 @@ app.include_router(groups_router)
 app.include_router(system_router)
 app.include_router(quotes_router)
 app.include_router(push_router)
-
-
-@app.get("/", response_class=HTMLResponse)
-def dashboard_page(request: Request):
-    return templates.TemplateResponse("watchlist/list.html", {"request": request, "items": [], "groups": []})
 
 
 @app.get("/watchlist-page", response_class=HTMLResponse)
@@ -249,14 +277,19 @@ def watchlist_page(request: Request):
         for g in groups:
             group_counts[g.id] = db.query(WatchlistItem).filter_by(group_id=g.id).count()
     return templates.TemplateResponse(
+        request,
         "watchlist/list.html",
         {
-            "request": request,
             "items": items,
             "groups": groups,
             "group_counts": group_counts,
         },
     )
+
+
+@app.get("/alerts-page", response_class=HTMLResponse)
+def alerts_page(request: Request):
+    return templates.TemplateResponse(request, "alerts.html", {})
 
 
 @app.get("/health")

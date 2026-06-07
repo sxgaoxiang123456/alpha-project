@@ -86,17 +86,68 @@
             -webkit-font-feature-settings: 'liga';
             -webkit-font-smoothing: antialiased;
         }
+
+        /* 侧边栏折叠状态 */
+        .sidebar-collapsed #side-nav {
+            width: 64px;
+        }
+        .sidebar-collapsed #side-nav .side-nav-text {
+            opacity: 0;
+            width: 0;
+        }
+        .sidebar-collapsed #main-content {
+            margin-left: 64px;
+        }
+        .sidebar-collapsed #sidebar-toggle .material-symbols-outlined {
+            transform: rotate(180deg);
+        }
+
+        /* 主内容区过渡 */
+        #main-content {
+            transition: margin-left 0.3s ease;
+        }
+
+        /* 隐藏滚动条但保留滚动功能 */
+        #main-content::-webkit-scrollbar {
+            display: none;
+        }
+        #main-content {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
-<body class="bg-background text-on-surface font-body-md h-screen overflow-hidden flex">
+<body class="bg-background text-on-surface font-body-md h-screen overflow-hidden">
+    {% with active_route=request.url.path %}
     {% include "components/side_nav.html" %}
-    <main class="flex-1 ml-64 flex flex-col h-screen bg-background relative overflow-hidden">
+    {% endwith %}
+    <main id="main-content" class="ml-64 flex flex-col h-screen bg-background min-w-0 overflow-auto">
         {% include "components/top_nav.html" %}
-        <div class="flex-1 overflow-y-auto p-8 relative">
+        <div class="flex-1 min-h-0 overflow-auto p-8 relative min-w-0">
             {% block content %}{% endblock %}
         </div>
     </main>
+    <script>
+        // 侧边栏折叠/展开
+        (function() {
+            const toggle = document.getElementById('sidebar-toggle');
+            const body = document.body;
+            const STORAGE_KEY = 'sidebar-collapsed';
+
+            // 恢复状态
+            if (localStorage.getItem(STORAGE_KEY) === 'true') {
+                body.classList.add('sidebar-collapsed');
+            }
+
+            if (toggle) {
+                toggle.addEventListener('click', function() {
+                    body.classList.toggle('sidebar-collapsed');
+                    localStorage.setItem(STORAGE_KEY, body.classList.contains('sidebar-collapsed'));
+                });
+            }
+        })();
+    </script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>
