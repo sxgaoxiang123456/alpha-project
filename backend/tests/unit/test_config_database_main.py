@@ -55,6 +55,56 @@ def test_database_exposes_engine_session_base_and_init_db(monkeypatch, tmp_path)
     database.engine.dispose()
 
 
+class TestFeishuEnvConfig:
+    def test_feishu_env_fields_read_from_environment(self, monkeypatch):
+        monkeypatch.setenv("FEISHU_APP_ID", "cli_test_app")
+        monkeypatch.setenv("FEISHU_APP_SECRET", "cli_test_secret")
+        monkeypatch.setenv("FEISHU_CHAT_ID", "oc_testchat")
+        config = import_fresh("backend.app.config", "backend.app.config")
+        settings = config.Settings(_env_file=None)
+
+        assert settings.feishu_app_id == "cli_test_app"
+        assert settings.feishu_app_secret == "cli_test_secret"
+        assert settings.feishu_chat_id == "oc_testchat"
+
+    def test_feishu_brand_defaults_to_feishu(self, monkeypatch):
+        monkeypatch.delenv("FEISHU_BRAND", raising=False)
+        config = import_fresh("backend.app.config", "backend.app.config")
+        settings = config.Settings(_env_file=None)
+
+        assert settings.feishu_brand == "feishu"
+
+    def test_feishu_config_complete_when_all_present(self, monkeypatch):
+        monkeypatch.setenv("FEISHU_APP_ID", "test")
+        monkeypatch.setenv("FEISHU_APP_SECRET", "test")
+        monkeypatch.setenv("FEISHU_CHAT_ID", "test")
+        config = import_fresh("backend.app.config", "backend.app.config")
+        settings = config.Settings(_env_file=None)
+
+        assert settings.feishu_config_complete is True
+
+    def test_feishu_config_incomplete_when_missing(self, monkeypatch):
+        monkeypatch.setenv("FEISHU_APP_ID", "test")
+        monkeypatch.delenv("FEISHU_APP_SECRET", raising=False)
+        monkeypatch.delenv("FEISHU_CHAT_ID", raising=False)
+        config = import_fresh("backend.app.config", "backend.app.config")
+        settings = config.Settings(_env_file=None)
+
+        assert settings.feishu_config_complete is False
+
+    def test_feishu_fields_none_by_default(self, monkeypatch):
+        monkeypatch.delenv("FEISHU_APP_ID", raising=False)
+        monkeypatch.delenv("FEISHU_APP_SECRET", raising=False)
+        monkeypatch.delenv("FEISHU_CHAT_ID", raising=False)
+        config = import_fresh("backend.app.config", "backend.app.config")
+        settings = config.Settings(_env_file=None)
+
+        assert settings.feishu_app_id is None
+        assert settings.feishu_app_secret is None
+        assert settings.feishu_chat_id is None
+        assert settings.feishu_config_complete is False
+
+
 def test_fastapi_app_serves_health_and_docs(monkeypatch, tmp_path):
     database_path = tmp_path / "backend.db"
     monkeypatch.setenv("DATABASE_URL", f"sqlite:///{database_path}")
