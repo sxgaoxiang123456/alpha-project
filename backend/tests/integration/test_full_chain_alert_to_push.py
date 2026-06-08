@@ -192,3 +192,74 @@ class TestAlertPushChain:
         assert len(logs) >= 1, "链路应贯通：预警触发后应生成 PushLog"
 
         session.close()
+
+
+class TestFeishuPrimaryDispatch:
+    """Feishu env 配置 → 主通道分发 (007 US1)。
+
+    验证：当 Feishu env 配置完整时，push_service_factory 创建
+    FeishuClient 作为主通道，Telegram 为备用通道。
+    """
+
+    def test_factory_creates_feishu_primary_with_env_config(self, db_engine, monkeypatch):
+        """完整 env 配置 → PushService 以 Feishu 为主通道。"""
+        monkeypatch.setenv("FEISHU_APP_ID", "integration_test_app")
+        monkeypatch.setenv("FEISHU_APP_SECRET", "integration_test_secret")
+        monkeypatch.setenv("FEISHU_CHAT_ID", "oc_integration")
+
+        import importlib
+        import sys
+
+        modules_to_clear = [
+            "backend.app.main",
+            "backend.app.config",
+            "backend.app.routers",
+            "backend.app.dependencies",
+            "backend.app.models",
+            "backend.app.database",
+        ]
+        for name in modules_to_clear:
+            for loaded_name in list(sys.modules):
+                if loaded_name == name or loaded_name.startswith(f"{name}."):
+                    sys.modules.pop(loaded_name, None)
+
+        main = importlib.import_module("backend.app.main")
+        try:
+            push_service = main._push_service_factory()
+            assert push_service.feishu is not None, "env 完整时应创建 FeishuClient"
+            assert push_service.feishu.app_id == "integration_test_app"
+        finally:
+            database = sys.modules.get("backend.app.database")
+            if database is not None:
+                database.engine.dispose()
+
+    def test_factory_no_feishu_without_env_config(self, db_engine, monkeypatch):
+        """不完整 env → PushService 无 FeishuClient。"""
+        monkeypatch.delenv("FEISHU_APP_ID", raising=False)
+        monkeypatch.delenv("FEISHU_APP_SECRET", raising=False)
+        monkeypatch.delenv("FEISHU_CHAT_ID", raising=False)
+
+        import importlib
+        import sys
+
+        modules_to_clear = [
+            "backend.app.main",
+            "backend.app.config",
+            "backend.app.routers",
+            "backend.app.dependencies",
+            "backend.app.models",
+            "backend.app.database",
+        ]
+        for name in modules_to_clear:
+            for loaded_name in list(sys.modules):
+                if loaded_name == name or loaded_name.startswith(f"{name}."):
+                    sys.modules.pop(loaded_name, None)
+
+        main = importlib.import_module("backend.app.main")
+        try:
+            push_service = main._push_service_factory()
+            assert push_service.feishu is None, "env 不完整时不应创建 FeishuClient"
+        finally:
+            database = sys.modules.get("backend.app.database")
+            if database is not None:
+                database.engine.dispose()

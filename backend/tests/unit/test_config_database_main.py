@@ -105,6 +105,120 @@ class TestFeishuEnvConfig:
         assert settings.feishu_config_complete is False
 
 
+class TestPushServiceFactory:
+    def test_factory_creates_feishu_client_when_env_complete(self, monkeypatch, tmp_path):
+        database_path = tmp_path / "factory.db"
+        monkeypatch.setenv("DATABASE_URL", f"sqlite:///{database_path}")
+        monkeypatch.setenv("FEISHU_APP_ID", "cli_test_app")
+        monkeypatch.setenv("FEISHU_APP_SECRET", "cli_test_secret")
+        monkeypatch.setenv("FEISHU_CHAT_ID", "oc_testchat")
+        main = import_fresh(
+            "backend.app.main",
+            "backend.app.main",
+            "backend.app.config",
+            "backend.app.database",
+            "backend.app.dependencies",
+            "backend.app.models",
+            "backend.app.routers",
+            "backend.models",
+        )
+        try:
+            main.init_db()
+            push_service = main._push_service_factory()
+            assert push_service.feishu is not None, "完整 env 应创建 FeishuClient"
+            assert push_service.feishu.app_id == "cli_test_app"
+            assert push_service.feishu.chat_id == "oc_testchat"
+        finally:
+            database = sys.modules.get("backend.app.database")
+            if database is not None:
+                database.engine.dispose()
+
+    def test_factory_no_feishu_client_when_env_incomplete(self, monkeypatch, tmp_path):
+        database_path = tmp_path / "factory_incomplete.db"
+        monkeypatch.setenv("DATABASE_URL", f"sqlite:///{database_path}")
+        monkeypatch.setenv("FEISHU_APP_ID", "cli_test_app")
+        monkeypatch.delenv("FEISHU_APP_SECRET", raising=False)
+        monkeypatch.delenv("FEISHU_CHAT_ID", raising=False)
+        main = import_fresh(
+            "backend.app.main",
+            "backend.app.main",
+            "backend.app.config",
+            "backend.app.database",
+            "backend.app.dependencies",
+            "backend.app.models",
+            "backend.app.routers",
+            "backend.models",
+        )
+        try:
+            main.init_db()
+            push_service = main._push_service_factory()
+            assert push_service.feishu is None, "不完整 env 不应创建 FeishuClient"
+        finally:
+            database = sys.modules.get("backend.app.database")
+            if database is not None:
+                database.engine.dispose()
+
+    def test_factory_defaults_brand_to_feishu(self, monkeypatch, tmp_path):
+        database_path = tmp_path / "factory_brand.db"
+        monkeypatch.setenv("DATABASE_URL", f"sqlite:///{database_path}")
+        monkeypatch.setenv("FEISHU_APP_ID", "cli_test_app")
+        monkeypatch.setenv("FEISHU_APP_SECRET", "cli_test_secret")
+        monkeypatch.setenv("FEISHU_CHAT_ID", "oc_testchat")
+        monkeypatch.delenv("FEISHU_BRAND", raising=False)
+        main = import_fresh(
+            "backend.app.main",
+            "backend.app.main",
+            "backend.app.config",
+            "backend.app.database",
+            "backend.app.dependencies",
+            "backend.app.models",
+            "backend.app.routers",
+            "backend.models",
+        )
+        try:
+            main.init_db()
+            push_service = main._push_service_factory()
+            assert push_service.feishu is not None
+            assert push_service.feishu.brand == "feishu", "FEISHU_BRAND 缺失应默认 feishu"
+        finally:
+            database = sys.modules.get("backend.app.database")
+            if database is not None:
+                database.engine.dispose()
+
+    def test_factory_ignores_lark_webhook(self, monkeypatch, tmp_path):
+        database_path = tmp_path / "factory_webhook.db"
+        monkeypatch.setenv("DATABASE_URL", f"sqlite:///{database_path}")
+        monkeypatch.setenv("FEISHU_APP_ID", "cli_test_app")
+        monkeypatch.setenv("FEISHU_APP_SECRET", "cli_test_secret")
+        monkeypatch.setenv("FEISHU_CHAT_ID", "oc_testchat")
+        main = import_fresh(
+            "backend.app.main",
+            "backend.app.main",
+            "backend.app.config",
+            "backend.app.database",
+            "backend.app.dependencies",
+            "backend.app.models",
+            "backend.app.routers",
+            "backend.models",
+        )
+        try:
+            main.init_db()
+            # 插入历史 lark_webhook 验证不被 factory 用作 Feishu 配置来源
+            db = main.SessionLocal()
+            from backend.app.models.app_setting import AppSetting
+            db.add(AppSetting(key="lark_webhook", value="https://old-webhook.example.com", category="lark"))
+            db.commit()
+            db.close()
+
+            push_service = main._push_service_factory()
+            assert push_service.feishu is not None, "env 完整时应用 env 创建 FeishuClient"
+            assert push_service.feishu.app_id == "cli_test_app"
+        finally:
+            database = sys.modules.get("backend.app.database")
+            if database is not None:
+                database.engine.dispose()
+
+
 def test_fastapi_app_serves_health_and_docs(monkeypatch, tmp_path):
     database_path = tmp_path / "backend.db"
     monkeypatch.setenv("DATABASE_URL", f"sqlite:///{database_path}")

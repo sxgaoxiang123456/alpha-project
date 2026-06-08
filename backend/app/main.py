@@ -48,6 +48,42 @@ def _get_encryption_key() -> bytes | None:
     return key.encode() if isinstance(key, str) else key
 
 
+_push_db_sessions = []
+
+
+def _push_service_factory():
+    """推送服务工厂：按 env 飞书配置 + DB Telegram 配置组装 PushService。"""
+    from backend.app.services.feishu_client import FeishuClient
+    from backend.app.services.push_service import PushService
+    from backend.app.services.settings_service import SettingsService
+    from backend.app.services.telegram_client import TelegramClient
+
+    push_db = SessionLocal()
+    _push_db_sessions.append(push_db)
+
+    feishu_client = None
+    if settings.feishu_config_complete:
+        feishu_client = FeishuClient(
+            app_id=settings.feishu_app_id,       # type: ignore[arg-type]
+            app_secret=settings.feishu_app_secret,  # type: ignore[arg-type]
+            brand=settings.feishu_brand,
+            chat_id=settings.feishu_chat_id,     # type: ignore[arg-type]
+        )
+
+    settings_service = SettingsService(push_db, encryption_key=_get_encryption_key())
+    telegram_token = settings_service.get_setting("telegram_token")
+    telegram_chat_id = settings_service.get_setting("telegram_chat_id")
+
+    telegram_client = None
+    if telegram_token and telegram_chat_id:
+        telegram_client = TelegramClient(
+            bot_token=telegram_token,
+            chat_id=telegram_chat_id,
+        )
+
+    return PushService(db=push_db, feishu_client=feishu_client, telegram_client=telegram_client)
+
+
 from backend.app.core.trading_calendar import is_trading_day
 
 
@@ -180,32 +216,6 @@ async def lifespan(app: FastAPI):
             _logger.exception("预警检测异常")
         finally:
             alert_db.close()
-
-    _push_db_sessions = []
-
-    def _push_service_factory():
-        from backend.app.services.push_service import PushService
-        from backend.app.services.settings_service import SettingsService
-        from backend.app.services.telegram_client import TelegramClient
-
-        push_db = SessionLocal()
-        _push_db_sessions.append(push_db)
-
-        settings_service = SettingsService(push_db, encryption_key=_get_encryption_key())
-        telegram_token = settings_service.get_setting("telegram_token")
-        telegram_chat_id = settings_service.get_setting("telegram_chat_id")
-
-        telegram_client = None
-        if telegram_token and telegram_chat_id:
-            telegram_client = TelegramClient(
-                bot_token=telegram_token,
-                chat_id=telegram_chat_id,
-            )
-
-        # NOTE: FeishuClient requires app_id/app_secret/chat_id (lark-cli),
-        # but settings page only collects lark_webhook (webhook URL).
-        # Feishu push requires aligning settings UI with FeishuClient constructor.
-        return PushService(db=push_db, feishu_client=None, telegram_client=telegram_client)
 
     quote_scheduler = QuoteScheduler(
         quote_service=QuoteService(
