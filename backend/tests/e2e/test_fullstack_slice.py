@@ -88,7 +88,7 @@ def fullstack_url(tmp_path_factory):
     url = f"http://127.0.0.1:{port}"
     for _ in range(30):
         try:
-            if requests.get(url, timeout=2).status_code == 200:
+            if requests.get(f"{url}/health", timeout=2).status_code == 200:
                 break
         except Exception:
             pass

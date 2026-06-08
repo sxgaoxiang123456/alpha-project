@@ -55,7 +55,8 @@ def _mock_cache_service():
 
 
 class TestDashboardService:
-    def test_parallel_calls_aggregation(self):
+    @pytest.mark.asyncio
+    async def test_parallel_calls_aggregation(self):
         """验证并行调用 5 个上游服务，聚合结果完整。"""
         db = _make_db()
         market_svc = _mock_market_service()
@@ -70,7 +71,7 @@ class TestDashboardService:
             timeout_seconds=0.1,
         )
 
-        result = asyncio.run(service.build_dashboard_view())
+        result = await service.build_dashboard_view()
 
         assert isinstance(result, DashboardViewResponse)
         assert len(result.market_indices) == 1
@@ -85,7 +86,8 @@ class TestDashboardService:
         quote_svc.get_watchlist_quotes.assert_called_once()
         cache_svc.get.assert_called_once()
 
-    def test_timeout_degradation(self):
+    @pytest.mark.asyncio
+    async def test_timeout_degradation(self):
         """验证单个服务超时后降级，不影响整体响应。"""
         db = _make_db()
         market_svc = _mock_market_service()
@@ -108,7 +110,7 @@ class TestDashboardService:
             timeout_seconds=0.1,
         )
 
-        result = asyncio.run(service.build_dashboard_view())
+        result = await service.build_dashboard_view()
 
         # 大盘数据正常返回
         assert len(result.market_indices) == 1
@@ -117,7 +119,8 @@ class TestDashboardService:
         # 整体响应仍成功
         assert isinstance(result, DashboardViewResponse)
 
-    def test_all_empty_data(self):
+    @pytest.mark.asyncio
+    async def test_all_empty_data(self):
         """验证无自选股、无预警时的空数据聚合。"""
         db = _make_db()
         market_svc = MagicMock()
@@ -135,7 +138,7 @@ class TestDashboardService:
             timeout_seconds=0.1,
         )
 
-        result = asyncio.run(service.build_dashboard_view())
+        result = await service.build_dashboard_view()
 
         assert result.market_indices == []
         assert result.watchlist == []

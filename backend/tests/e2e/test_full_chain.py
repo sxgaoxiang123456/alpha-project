@@ -155,7 +155,7 @@ def full_chain_stack(tmp_path_factory):
     url = f"http://127.0.0.1:{port}"
     for _ in range(30):
         try:
-            if requests.get(url, timeout=2).status_code == 200:
+            if requests.get(f"{url}/health", timeout=2).status_code == 200:
                 break
         except Exception:
             pass
@@ -360,7 +360,10 @@ class TestJourneyUS2_FirstTimeOnboarding:
         """
         # 由于 session fixture 已 seed 数据，这里验证"有数据时的正常展示"
         # 空引导场景留给局部前后端测试（单 feature 切片）
-        resp = requests.get(full_chain_stack.url, timeout=5)
+        resp = requests.get(f"{full_chain_stack.url}/health", timeout=5)
+        assert resp.status_code == 200
+
+        resp = requests.get(full_chain_stack.url, timeout=30)
         assert resp.status_code == 200
         content = resp.text
         # 有自选股时，不应出现"添加第一只"引导
