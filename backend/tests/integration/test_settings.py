@@ -137,6 +137,85 @@ class TestFeishuNoWebhook:
         assert "test_app" not in response.text
 
 
+class TestLarkWebhookDBLayer:
+    """007 真库数据层回归: lark_webhook 不在 _FORM_FIELDS 中。
+
+    保护未来误恢复 lark_webhook 到 _FORM_FIELDS 的风险——即使
+    DB 中有历史 webhook 记录，settings 路由也不应将其返回给前端。
+    """
+
+    def test_load_settings_ignores_db_webhook(self, monkeypatch, tmp_path):
+        """DB 有 lark_webhook → GET /settings 不返回给前端。"""
+        monkeypatch.setenv("ENCRYPTION_KEY", "xK2G9Exlb3MWj_kX5vH6rMSkGH354JLkAmOY4AdIWW4=")
+        app, db_path = _fresh_app(monkeypatch, tmp_path)
+
+        # 先通过 TestClient 触发 lifespan（建表）
+        with TestClient(app) as client:
+            client.get("/settings")  # 触发 lifespan → init_db
+
+        # 直接写入 DB（模拟历史遗留）
+        import importlib as _il
+        import sys as _s
+        for name in list(_s.modules):
+            if name.startswith("backend.app.database"):
+                _s.modules.pop(name, None)
+        database = _il.import_module("backend.app.database")
+        try:
+            db = database.SessionLocal()
+            from backend.app.models.app_setting import AppSetting
+            db.add(AppSetting(key="lark_webhook", value="https://old.example.com",
+                              category="lark", is_encrypted=False))
+            db.commit()
+            db.close()
+        finally:
+            database.engine.dispose()
+
+        # 验证 lark_webhook 不出现在设置页
+        with TestClient(app) as client:
+            response = client.get("/settings")
+        assert response.status_code == 200
+        assert "https://old.example.com" not in response.text
+
+    def test_factory_ignores_db_webhook_when_env_incomplete(self, monkeypatch, tmp_path):
+        """DB 有 lark_webhook + env 不完整 → factory 不创建 FeishuClient。"""
+        db_path = tmp_path / "factory_db.db"
+        monkeypatch.setenv("DATABASE_URL", f"sqlite:///{db_path}")
+        monkeypatch.delenv("FEISHU_APP_ID", raising=False)
+        monkeypatch.delenv("FEISHU_APP_SECRET", raising=False)
+        monkeypatch.delenv("FEISHU_CHAT_ID", raising=False)
+
+        import importlib as _il
+        import sys as _s
+        modules_to_clear = [
+            "backend.app.main", "backend.app.config",
+            "backend.app.routers", "backend.app.dependencies",
+            "backend.app.models", "backend.app.database",
+        ]
+        for name in modules_to_clear:
+            for loaded_name in list(_s.modules):
+                if loaded_name == name or loaded_name.startswith(f"{name}."):
+                    _s.modules.pop(loaded_name, None)
+
+        main = _il.import_module("backend.app.main")
+        try:
+            main.init_db()
+            db = main.SessionLocal()
+            from backend.app.models.app_setting import AppSetting
+            db.add(AppSetting(key="lark_webhook", value="https://old.example.com",
+                              category="lark", is_encrypted=False))
+            db.commit()
+            db.close()
+
+            push_service = main._push_service_factory()
+            assert push_service.feishu is None, (
+                "真库回归: DB 有 lark_webhook 但 env 不完整时 feishu 应为 None"
+            )
+        finally:
+            database = _s.modules.get("backend.app.database")
+            if database is not None:
+                database.engine.dispose()
+
+
 class TestSettingsPage:
     def test_settings_page_returns_200(self, monkeypatch, tmp_path):
         """GET /settings 返回 HTTP 200。"""
