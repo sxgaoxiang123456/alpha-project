@@ -23,10 +23,6 @@ _FORM_FIELDS = {
     "alert_cooldown": ("alert_cooldown", SettingCategory.PREFERENCE, False),
 }
 
-# lark_webhook 不再作为活跃表单字段，仅忽略提交
-_IGNORED_FORM_FIELDS = {"lark_webhook"}
-
-
 def _get_encryption_key() -> bytes | None:
     """从应用配置读取加密密钥。"""
     key = get_settings().encryption_key
@@ -50,10 +46,22 @@ def _build_feishu_status() -> dict:
     """构建飞书主通道只读状态（不暴露敏感值）。"""
     app_settings = get_settings()
     is_complete = app_settings.feishu_config_complete
+    missing_hint = None
+    if not is_complete:
+        missing = []
+        if not app_settings.feishu_app_id:
+            missing.append("应用标识")
+        if not app_settings.feishu_app_secret:
+            missing.append("应用密钥")
+        if not app_settings.feishu_chat_id:
+            missing.append("群聊标识")
+        if missing:
+            missing_hint = "缺少: " + "、".join(missing)
     return {
         "source_label": ".env / 环境变量",
         "is_complete": is_complete,
         "status_label": "已完整配置" if is_complete else "未完整配置",
+        "missing_hint": missing_hint,
         "restart_hint": "修改 .env 后需重启服务或重新加载配置才能生效",
     }
 

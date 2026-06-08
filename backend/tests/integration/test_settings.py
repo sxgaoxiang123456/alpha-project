@@ -121,6 +121,21 @@ class TestFeishuNoWebhook:
         assert response.status_code == 200
         assert "重启" in response.text
 
+    def test_settings_page_shows_missing_hint_when_incomplete(self, monkeypatch, tmp_path):
+        """GET /settings 部分配置时展示缺失字段提示。"""
+        monkeypatch.setenv("FEISHU_APP_ID", "test_app")
+        monkeypatch.delenv("FEISHU_APP_SECRET", raising=False)
+        monkeypatch.delenv("FEISHU_CHAT_ID", raising=False)
+        app, _ = _fresh_app(monkeypatch, tmp_path)
+        with TestClient(app) as client:
+            response = client.get("/settings")
+        assert response.status_code == 200
+        assert "未完整配置" in response.text
+        assert "应用密钥" in response.text
+        assert "群聊标识" in response.text
+        # 不应展示密钥值
+        assert "test_app" not in response.text
+
 
 class TestSettingsPage:
     def test_settings_page_returns_200(self, monkeypatch, tmp_path):

@@ -76,6 +76,9 @@
                             <span class="font-headline-md text-headline-md text-sm text-on-surface">{{ feishu_status.status_label }}</span>
                         </div>
                         <p class="text-xs text-on-surface-variant">配置来源：{{ feishu_status.source_label }}</p>
+                        {% if feishu_status.missing_hint %}
+                        <p class="text-xs text-market-down">{{ feishu_status.missing_hint }}</p>
+                        {% endif %}
                         <p class="text-xs text-on-surface-variant">{{ feishu_status.restart_hint }}</p>
                     </div>
                 </div>

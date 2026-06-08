@@ -68,6 +68,8 @@ class FeishuClient:
         # stdout 为空或无法解析，退到 stderr / returncode
         if result.returncode != 0:
             error_msg = result.stderr.strip() or "Unknown subprocess error"
+            if self.app_secret and self.app_secret in error_msg:
+                error_msg = error_msg.replace(self.app_secret, "***")
             return {
                 "success": False,
                 "error_type": "network_error",
