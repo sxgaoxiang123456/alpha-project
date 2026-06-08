@@ -263,3 +263,60 @@ class TestFeishuPrimaryDispatch:
             database = sys.modules.get("backend.app.database")
             if database is not None:
                 database.engine.dispose()
+
+
+class TestMissingFeishuConfigRegression:
+    """007 US3: 缺失飞书配置时本地日志兜底回归。"""
+
+    def test_push_log_created_when_feishu_unavailable(self, db_engine):
+        """飞书不可用时推送日志仍应生成。"""
+        from backend.app.models.push_log import PushLog
+        from backend.app.schemas.push import PushMessageRequest
+        from backend.app.services.push_service import PushService
+
+        from sqlalchemy.orm import sessionmaker
+        SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=db_engine)
+        session = SessionLocal()
+
+        # feishu_client=None 模拟配置缺失场景
+        service = PushService(db=session, feishu_client=None, telegram_client=None)
+        message = PushMessageRequest(
+            message_type="alert",
+            priority="high",
+            content={"stock_code": "600519"},
+        )
+        msg_id = service.send(message)
+
+        log = session.query(PushLog).filter(PushLog.message_id == msg_id).first()
+        assert log is not None, "飞书配置缺失时仍应记录 PushLog"
+        assert log.status == "failed"
+        assert log.error_reason is not None
+
+        session.close()
+
+    def test_push_log_not_affected_by_feishu_config_change(self, db_engine):
+        """飞书配置调整不影响 PushLog 模型写入。"""
+        from backend.app.models.push_log import PushLog
+        from backend.app.schemas.push import PushMessageRequest
+        from backend.app.services.push_service import PushService
+
+        from sqlalchemy.orm import sessionmaker
+        SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=db_engine)
+        session = SessionLocal()
+
+        feishu = MockFeishuClient()
+        service = PushService(db=session, feishu_client=feishu, telegram_client=None)
+        message = PushMessageRequest(
+            message_type="briefing",
+            priority="normal",
+            content={"date": "2026-06-05", "market_indices": {"上证指数": 3050.25}},
+        )
+        msg_id = service.send(message)
+
+        log = session.query(PushLog).filter(PushLog.message_id == msg_id).first()
+        assert log is not None
+        assert log.message_type == "briefing"
+        assert log.channel == "feishu"
+        assert log.status == "sent"
+
+        session.close()
