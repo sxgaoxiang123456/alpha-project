@@ -2,7 +2,7 @@
 
 ## 当前任务
 
-Step 4 · Code Review（强制门禁）
+✅ 已完成 — v0.1.0-007-lark-cli-config merge 入 develop
 
 ## Phase 进度
 

@@ -20,7 +20,7 @@
 
 **Purpose**: Prepare the implementation environment without changing feature behavior.
 
-- [ ] T001 [BE] Verify backend environment using `backend/setup.sh` before implementation work in `backend/`
+- [x] T001 [BE] Verify backend environment using `backend/setup.sh` before implementation work in `backend/`
 
 ---
 
@@ -30,8 +30,8 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T002 [P] [BE] Add failing tests for Feishu env fields, optional `FEISHU_BRAND` default `feishu`, and completeness rules in `backend/tests/unit/test_config_database_main.py`
-- [ ] T003 [BE] Add Feishu runtime config fields, optional brand default, and completeness helper in `backend/app/config.py`
+- [x] T002 [P] [BE] Add failing tests for Feishu env fields, optional `FEISHU_BRAND` default `feishu`, and completeness rules in `backend/tests/unit/test_config_database_main.py`
+- [x] T003 [BE] Add Feishu runtime config fields, optional brand default, and completeness helper in `backend/app/config.py`
 
 **Checkpoint**: Runtime config can represent complete/incomplete Feishu `.env` state without exposing secret values.
 
@@ -47,13 +47,13 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation.**
 
-- [ ] T004 [US1] [BE] Add failing `_push_service_factory()` wiring tests for complete required env, missing required env, missing optional `FEISHU_BRAND` defaulting to `feishu`, and ignored `lark_webhook` in `backend/tests/unit/test_config_database_main.py`
-- [ ] T005 [P] [US1] [BE] Add failing alert-to-push integration test for Feishu-primary dispatch in `backend/tests/integration/test_full_chain_alert_to_push.py`
+- [x] T004 [US1] [BE] Add failing `_push_service_factory()` wiring tests for complete required env, missing required env, missing optional `FEISHU_BRAND` defaulting to `feishu`, and ignored `lark_webhook` in `backend/tests/unit/test_config_database_main.py`
+- [x] T005 [P] [US1] [BE] Add failing alert-to-push integration test for Feishu-primary dispatch in `backend/tests/integration/test_full_chain_alert_to_push.py`
 
 ### Implementation for User Story 1
 
-- [ ] T006 [US1] [BE] Instantiate `FeishuClient` from complete required Feishu env config, default `FEISHU_BRAND` to `feishu`, and preserve Telegram wiring in `backend/app/main.py`
-- [ ] T007 [US1] [INT] Run US1 focused checks from `backend/tests/unit/test_config_database_main.py` and `backend/tests/integration/test_full_chain_alert_to_push.py`
+- [x] T006 [US1] [BE] Instantiate `FeishuClient` from complete required Feishu env config, default `FEISHU_BRAND` to `feishu`, and preserve Telegram wiring in `backend/app/main.py`
+- [x] T007 [US1] [INT] Run US1 focused checks from `backend/tests/unit/test_config_database_main.py` and `backend/tests/integration/test_full_chain_alert_to_push.py`
 
 **Checkpoint**: User Story 1 works independently: Feishu env config controls primary-channel creation and historical webhook config is ignored.
 
@@ -69,13 +69,13 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation.**
 
-- [ ] T008 [P] [US2] [BE] Add failing GET/POST settings tests for no webhook input, env status text, no secret output, and ignored `lark_webhook` in `backend/tests/integration/test_settings.py`
+- [x] T008 [P] [US2] [BE] Add failing GET/POST settings tests for no webhook input, env status text, no secret output, and ignored `lark_webhook` in `backend/tests/integration/test_settings.py`
 
 ### Implementation for User Story 2
 
-- [ ] T009 [US2] [BE] Remove active Feishu webhook save handling and add non-sensitive Feishu status context in `backend/app/routers/settings.py`
-- [ ] T010 [US2] [FE] Replace Feishu webhook input with read-only `.env` status and restart/reload hint in `frontend/src/templates/settings.html`
-- [ ] T011 [US2] [INT] Run settings-page validation from `backend/tests/integration/test_settings.py` and inspect rendered template behavior in `frontend/src/templates/settings.html`
+- [x] T009 [US2] [BE] Remove active Feishu webhook save handling and add non-sensitive Feishu status context in `backend/app/routers/settings.py`
+- [x] T010 [US2] [FE] Replace Feishu webhook input with read-only `.env` status and restart/reload hint in `frontend/src/templates/settings.html`
+- [x] T011 [US2] [INT] Run settings-page validation from `backend/tests/integration/test_settings.py` and inspect rendered template behavior in `frontend/src/templates/settings.html`
 
 **Checkpoint**: User Story 2 works independently: settings UI points users to `.env`, does not expose secrets, and does not save webhook values.
 
@@ -91,14 +91,14 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation.**
 
-- [ ] T012 [P] [US3] [BE] Add failing `lark-cli` unavailable and secret-redaction tests in `backend/tests/unit/test_feishu_client.py`
-- [ ] T013 [P] [US3] [BE] Add failing Feishu-failure Telegram-fallback and push-log reason regression tests in `backend/tests/unit/test_push_service.py`
-- [ ] T014 [P] [US3] [INT] Add regression coverage for missing Feishu config and local log fallback in `backend/tests/e2e/test_full_chain.py`
+- [x] T012 [P] [US3] [BE] Add failing `lark-cli` unavailable and secret-redaction tests in `backend/tests/unit/test_feishu_client.py`
+- [x] T013 [P] [US3] [BE] Add failing Feishu-failure Telegram-fallback and push-log reason regression tests in `backend/tests/unit/test_push_service.py`
+- [x] T014 [P] [US3] [INT] Add regression coverage for missing Feishu config and local log fallback in `backend/tests/e2e/test_full_chain.py`
 
 ### Implementation for User Story 3
 
-- [ ] T015 [US3] [BE] Preserve or minimally adjust Feishu client failure classification without leaking secrets in `backend/app/services/feishu_client.py`
-- [ ] T016 [US3] [INT] Run fallback/log regression checks from `backend/tests/unit/test_feishu_client.py`, `backend/tests/unit/test_push_service.py`, and `backend/tests/e2e/test_full_chain.py`
+- [x] T015 [US3] [BE] Preserve or minimally adjust Feishu client failure classification without leaking secrets in `backend/app/services/feishu_client.py`
+- [x] T016 [US3] [INT] Run fallback/log regression checks from `backend/tests/unit/test_feishu_client.py`, `backend/tests/unit/test_push_service.py`, and `backend/tests/e2e/test_full_chain.py`
 
 **Checkpoint**: User Story 3 works independently: Feishu failures are diagnosable, Telegram fallback remains available, and logs do not leak secrets.
 
@@ -108,8 +108,8 @@
 
 **Purpose**: Update user-facing deployment documentation and run the final regression loop.
 
-- [ ] T017 [INT] Update Feishu/Telegram push-channel configuration documentation in `README.md`
-- [ ] T018 [INT] Run full backend regression suite defined by `backend/tests/` and verify quickstart expectations in `specs/007-lark-cli-config/quickstart.md`
+- [x] T017 [INT] Update Feishu/Telegram push-channel configuration documentation in `README.md`
+- [x] T018 [INT] Run full backend regression suite defined by `backend/tests/` and verify quickstart expectations in `specs/007-lark-cli-config/quickstart.md`
 
 ---
 
