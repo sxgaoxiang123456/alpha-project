@@ -124,8 +124,8 @@ class TestFeishuNoWebhook:
     def test_settings_page_shows_missing_hint_when_incomplete(self, monkeypatch, tmp_path):
         """GET /settings 部分配置时展示缺失字段提示。"""
         monkeypatch.setenv("FEISHU_APP_ID", "test_app")
-        monkeypatch.delenv("FEISHU_APP_SECRET", raising=False)
-        monkeypatch.delenv("FEISHU_CHAT_ID", raising=False)
+        monkeypatch.setenv("FEISHU_APP_SECRET", "")
+        monkeypatch.setenv("FEISHU_CHAT_ID", "")
         app, _ = _fresh_app(monkeypatch, tmp_path)
         with TestClient(app) as client:
             response = client.get("/settings")
@@ -180,9 +180,9 @@ class TestLarkWebhookDBLayer:
         """DB 有 lark_webhook + env 不完整 → factory 不创建 FeishuClient。"""
         db_path = tmp_path / "factory_db.db"
         monkeypatch.setenv("DATABASE_URL", f"sqlite:///{db_path}")
-        monkeypatch.delenv("FEISHU_APP_ID", raising=False)
-        monkeypatch.delenv("FEISHU_APP_SECRET", raising=False)
-        monkeypatch.delenv("FEISHU_CHAT_ID", raising=False)
+        monkeypatch.setenv("FEISHU_APP_ID", "")
+        monkeypatch.setenv("FEISHU_APP_SECRET", "")
+        monkeypatch.setenv("FEISHU_CHAT_ID", "")
 
         import importlib as _il
         import sys as _s

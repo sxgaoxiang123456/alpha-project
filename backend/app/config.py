@@ -1,7 +1,7 @@
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -38,6 +38,12 @@ class Settings(BaseSettings):
 
     # 加密配置
     encryption_key: str | None = None
+
+    @field_validator("feishu_brand", mode="before")
+    @classmethod
+    def _default_brand(cls, v: str | None) -> str:
+        """空字符串等价于未设置，回退到 'feishu'。"""
+        return v if v else "feishu"
 
     @property
     def feishu_config_complete(self) -> bool:

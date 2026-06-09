@@ -137,8 +137,8 @@ class TestPushServiceFactory:
         database_path = tmp_path / "factory_incomplete.db"
         monkeypatch.setenv("DATABASE_URL", f"sqlite:///{database_path}")
         monkeypatch.setenv("FEISHU_APP_ID", "cli_test_app")
-        monkeypatch.delenv("FEISHU_APP_SECRET", raising=False)
-        monkeypatch.delenv("FEISHU_CHAT_ID", raising=False)
+        monkeypatch.setenv("FEISHU_APP_SECRET", "")
+        monkeypatch.setenv("FEISHU_CHAT_ID", "")
         main = import_fresh(
             "backend.app.main",
             "backend.app.main",
@@ -164,7 +164,7 @@ class TestPushServiceFactory:
         monkeypatch.setenv("FEISHU_APP_ID", "cli_test_app")
         monkeypatch.setenv("FEISHU_APP_SECRET", "cli_test_secret")
         monkeypatch.setenv("FEISHU_CHAT_ID", "oc_testchat")
-        monkeypatch.delenv("FEISHU_BRAND", raising=False)
+        monkeypatch.setenv("FEISHU_BRAND", "")
         main = import_fresh(
             "backend.app.main",
             "backend.app.main",

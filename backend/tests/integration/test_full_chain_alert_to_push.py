@@ -235,9 +235,9 @@ class TestFeishuPrimaryDispatch:
 
     def test_factory_no_feishu_without_env_config(self, db_engine, monkeypatch):
         """不完整 env → PushService 无 FeishuClient。"""
-        monkeypatch.delenv("FEISHU_APP_ID", raising=False)
-        monkeypatch.delenv("FEISHU_APP_SECRET", raising=False)
-        monkeypatch.delenv("FEISHU_CHAT_ID", raising=False)
+        monkeypatch.setenv("FEISHU_APP_ID", "")   # 空值覆盖 .env 文件
+        monkeypatch.setenv("FEISHU_APP_SECRET", "")
+        monkeypatch.setenv("FEISHU_CHAT_ID", "")
 
         import importlib
         import sys
@@ -502,12 +502,15 @@ class TestJourneyP0_AlertToFeishuPrimary:
             assert log.channel == "feishu", f"journey H3: {log.channel} ≠ feishu"
 
             # H4: lark-cli subprocess 被调用（跨通道投递验证）
-            assert mock_run.call_count >= 1, (
-                "journey H4: subprocess.run 未被调用"
+            # _ensure_config 产生 config show + config init 调用，
+            # 取最后一个（api POST）验证
+            api_calls = [c for c in mock_run.call_args_list
+                          if "api" in str(c[0][0])]
+            assert len(api_calls) >= 1, (
+                "journey H4: lark-cli api 未被调用"
             )
-            call_cmd = " ".join(mock_run.call_args_list[0][0][0])
-            assert "--app-id" in call_cmd
-            assert "journey_app" in call_cmd
+            call_cmd = " ".join(api_calls[-1][0][0])
+            assert "--as" in call_cmd and "bot" in call_cmd
             assert "oc_journey" in call_cmd
 
             db.close()
@@ -526,9 +529,9 @@ class TestJourneyP0_AlertToFeishuPrimary:
         """
         from sqlalchemy.orm import sessionmaker
 
-        monkeypatch.delenv("FEISHU_APP_ID", raising=False)
-        monkeypatch.delenv("FEISHU_APP_SECRET", raising=False)
-        monkeypatch.delenv("FEISHU_CHAT_ID", raising=False)
+        monkeypatch.setenv("FEISHU_APP_ID", "")
+        monkeypatch.setenv("FEISHU_APP_SECRET", "")
+        monkeypatch.setenv("FEISHU_CHAT_ID", "")
 
         import importlib
         import sys
