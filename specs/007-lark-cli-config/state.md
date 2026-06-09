@@ -2,18 +2,23 @@
 
 ## 当前任务
 
-✅ 已完成 — v0.1.0-007-lark-cli-config merge 入 develop
+✅ **全部完成 — 已 merge 入 develop，飞书群收到真实卡片消息**
 
 ## Phase 进度
 
 | Phase | 状态 | 备注 |
 |:---|:---|:---|
-| Phase 1: Setup | ✅ 已完成 | 459 单元+集成 + 36 E2E 全绿 |
-| Phase 2: Foundational | ✅ 已完成 | config.py Feishu 字段 + 完整性判断 |
+| Phase 1: Setup | ✅ 已完成 | 基线 459 单元+集成 + 36 E2E 全绿 |
+| Phase 2: Foundational | ✅ 已完成 | config.py Feishu 字段 + feishu_brand validator |
 | Phase 3: US1 | ✅ 已完成 | factory 按 env 创建 FeishuClient |
-| Phase 4: US2 | ✅ 已完成 | 设置页移除 webhook，展示只读 env 状态 |
+| Phase 4: US2 | ✅ 已完成 | 设置页移除 webhook，展示 .env 只读状态 + missing_hint |
 | Phase 5: US3 | ✅ 已完成 | 降级/日志/脱敏回归 |
-| Phase 6: Polish | ✅ 已完成 | README + 全量回归 519 全绿 |
+| Phase 6: Polish | ✅ 已完成 | README + 全量回归 |
+| test-routing-advisor | ✅ 已完成 | 路由报告 → full-chain-testing → backend-testing 闭环 |
+| full-chain J001 | ✅ 已完成 | F3→F4→F5→飞书 P0 旅程安全网 3 tests |
+| backend gaps | ✅ 已完成 | 真库 webhook 回归 + stderr 脱敏验证 |
+| lark-cli v1.0.1 适配 | ✅ 已完成 | --as bot + 路径去重 + receive_id_type 修复 |
+| 飞书真实发送 | ✅ 已完成 | start.sh 重启后飞书群收到卡片 |
 
 ## Task 状态
 
@@ -38,4 +43,4 @@
 
 ---
 
-创建时间: 2026-06-08
+创建时间: 2026-06-08 | 完成时间: 2026-06-09
