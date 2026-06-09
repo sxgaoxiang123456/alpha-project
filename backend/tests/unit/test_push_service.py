@@ -406,3 +406,67 @@ class TestPushServiceFormatting:
 
         assert len(result) <= 500
         assert "...（内容已截断，查看详情）" in result
+
+
+class TestPushServiceFeishuFallback:
+    """007 US3: Feishu 主通道失败 + Telegram 降级 + 日志不泄露密钥。"""
+
+    def test_feishu_auth_error_fallback_to_telegram_preserves_reason(self, db_session):
+        from backend.app.schemas.push import PushMessageRequest
+        from backend.app.services.push_service import PushService
+
+        feishu = _make_feishu_client(
+            success=False, error_type="auth_error", error_message="authentication failed"
+        )
+        telegram = _make_telegram_client(success=True)
+        service = PushService(
+            db=db_session, feishu_client=feishu, telegram_client=telegram
+        )
+
+        message = PushMessageRequest(
+            message_type="alert",
+            content={"stock_code": "600519"},
+        )
+        msg_id = service.send(message)
+
+        log = _get_log(db_session, msg_id)
+        assert log.status == "fallback"
+        assert log.channel == "telegram"
+
+    def test_feishu_none_telegram_available_still_works(self, db_session):
+        """feishu_client=None 时 Telegram 仍可使用（fallback 语义）。"""
+        from backend.app.schemas.push import PushMessageRequest
+        from backend.app.services.push_service import PushService
+
+        telegram = _make_telegram_client(success=True)
+        service = PushService(db=db_session, feishu_client=None, telegram_client=telegram)
+
+        message = PushMessageRequest(
+            message_type="alert",
+            content={"stock_code": "600519"},
+        )
+        msg_id = service.send(message)
+
+        log = _get_log(db_session, msg_id)
+        # 飞书通道状态默认 active 但无客户端 → Telegram 成功记为 fallback
+        assert log.channel == "telegram"
+        assert log.status in ("sent", "fallback")
+
+    def test_both_channels_none_records_failed_without_secret(self, db_session):
+        """双通道均为 None 时，失败记录不包含密钥。"""
+        from backend.app.schemas.push import PushMessageRequest
+        from backend.app.services.push_service import PushService
+
+        service = PushService(db=db_session, feishu_client=None, telegram_client=None)
+
+        message = PushMessageRequest(
+            message_type="alert",
+            content={"stock_code": "600519"},
+        )
+        msg_id = service.send(message)
+
+        log = _get_log(db_session, msg_id)
+        assert log.status == "failed"
+        # 无通道可用时 error_reason 不应为 None
+        assert log.error_reason is not None
+        assert "secret" not in (log.error_reason or "").lower()

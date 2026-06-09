@@ -65,16 +65,22 @@
                 <h2 class="font-headline-md text-headline-md">推送通道</h2>
             </div>
             <div class="space-y-6">
-                <!-- Feishu -->
-                <div class="space-y-2">
-                    <label class="font-label-caps text-label-caps text-on-surface-variant block">飞书 Webhook 地址</label>
-                    <div class="flex gap-2">
-                        <input name="lark_webhook" type="password" value="{{ settings.lark_webhook or '' }}"
-                            class="flex-1 bg-surface-raised border border-outline-variant rounded py-1.5 px-3 font-data-table text-data-table text-on-surface focus:border-primary-container outline-none"
-                            placeholder="https://open.feishu.cn/open-apis/bot/v2/hook/...">
-                        <button type="button" class="px-3 py-1.5 bg-surface-variant hover:bg-surface-bright border border-outline-variant rounded font-headline-md text-sm transition-colors whitespace-nowrap">测试</button>
+                <!-- Feishu: 只读 .env 状态 -->
+                <div class="space-y-3">
+                    <label class="font-label-caps text-label-caps text-on-surface-variant block">飞书主通道</label>
+                    <div class="bg-surface-raised border border-outline-variant rounded p-4 space-y-2">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-sm {% if feishu_status.is_complete %}text-market-up{% else %}text-market-down{% endif %}">
+                                {% if feishu_status.is_complete %}check_circle{% else %}warning{% endif %}
+                            </span>
+                            <span class="font-headline-md text-headline-md text-sm text-on-surface">{{ feishu_status.status_label }}</span>
+                        </div>
+                        <p class="text-xs text-on-surface-variant">配置来源：{{ feishu_status.source_label }}</p>
+                        {% if feishu_status.missing_hint %}
+                        <p class="text-xs text-market-down">{{ feishu_status.missing_hint }}</p>
+                        {% endif %}
+                        <p class="text-xs text-on-surface-variant">{{ feishu_status.restart_hint }}</p>
                     </div>
-                    <p class="text-xs text-on-surface-variant">用于在飞书群组接收实时 AI 信号告警。</p>
                 </div>
                 <!-- Telegram -->
                 <div class="space-y-4">

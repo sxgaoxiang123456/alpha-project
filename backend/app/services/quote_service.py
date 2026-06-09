@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from collections.abc import Mapping
 from datetime import UTC, datetime
@@ -75,14 +74,11 @@ class QuoteService:
         actual_timestamp: datetime,
     ) -> None:
         try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:
-            asyncio.run(self._persist_historical_quotes(data, actual_timestamp))
-            return
+            self._persist_historical_quotes(data, actual_timestamp)
+        except Exception:
+            logger.exception("历史行情落盘失败")
 
-        loop.create_task(self._persist_historical_quotes(data, actual_timestamp))
-
-    async def _persist_historical_quotes(
+    def _persist_historical_quotes(
         self,
         data: Mapping[str, Any],
         actual_timestamp: datetime,

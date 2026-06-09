@@ -1,4 +1,3 @@
-import asyncio
 import html
 import json
 import time
@@ -19,10 +18,7 @@ class PushService:
         self.telegram = telegram_client
 
     def send(self, message: PushMessageRequest) -> str:
-        """提交推送请求，异步执行发送，返回 message_id。
-
-        调用方不等待发送完成，发送结果通过 PushLog 查询。
-        """
+        """提交推送请求，同步执行发送，返回 message_id。"""
         message_id = str(uuid.uuid4())
 
         log = PushLog(
@@ -34,19 +30,8 @@ class PushService:
         self.db.add(log)
         self.db.commit()
 
-        try:
-            loop = asyncio.get_running_loop()
-            loop.create_task(self._execute_send_async(message_id, message))
-        except RuntimeError:
-            self._execute_send(message_id, message)
+        self._execute_send(message_id, message)
         return message_id
-
-    async def _execute_send_async(self, message_id: str, message: PushMessageRequest):
-        """异步包装，实际调用同步发送逻辑。"""
-        try:
-            await asyncio.to_thread(self._execute_send, message_id, message)
-        except Exception:
-            self._mark_failed(message_id)
 
     def _execute_send(self, message_id: str, message: PushMessageRequest):
         """同步执行发送逻辑：通道检查 → 主通道尝试 → 重试 → 降级 → 日志更新。"""

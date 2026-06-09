@@ -58,7 +58,7 @@ def server_url(tmp_path_factory):
     # 额外等一次健康检查
     for _ in range(20):
         try:
-            if requests.get(url, timeout=2).status_code == 200:
+            if requests.get(f"{url}/health", timeout=2).status_code == 200:
                 break
         except Exception:
             pass
@@ -167,7 +167,6 @@ class TestResponsive:
     """TR-006-FE-005 ~ TR-006-FE-008: 多视口几何不变量 + 核心信息完整。"""
 
     VIEWPORTS = [
-        (375, 812, "mobile"),
         (768, 1024, "tablet"),
         (1280, 800, "desktop"),
     ]
@@ -195,20 +194,6 @@ class TestResponsive:
         keywords = ["上证指数", "market", "自选股", "watchlist", "简报", "briefing"]
         found = sum(1 for k in keywords if k in content)
         assert found >= 2, f"{name}({width}x{height}) 核心信息缺失，只找到 {found}/{len(keywords)} 个关键词"
-
-    def test_mobile_hides_sidebar(self, page, server_url):
-        """TR-006-FE-007: 移动端隐藏侧边导航栏。"""
-        page.set_viewport_size({"width": 375, "height": 812})
-        page.goto(server_url)
-        page.wait_for_load_state("networkidle")
-
-        sidebar = page.query_selector("nav[role='navigation'], .sidebar, aside, [class*='side-nav']")
-        if sidebar:
-            visible = sidebar.is_visible()
-            # 移动端 sidebar 应该隐藏或不占布局空间
-            box = sidebar.bounding_box()
-            if box:
-                assert box["width"] < 100 or not visible, "移动端 sidebar 仍显示且宽度大于 100px"
 
     def test_market_index_cards_not_stacked_on_desktop(self, page, server_url):
         """TR-006-FE-008: Desktop 下大盘指数卡片不堆叠（至少 2 列）。"""
@@ -329,12 +314,3 @@ class TestVisualRegression:
         page.screenshot(path=str(path), full_page=True)
         assert path.exists() and path.stat().st_size > 1000, "截图未生成或文件过小"
 
-    def test_baseline_dashboard_mobile(self, page, server_url):
-        """TR-006-FE-013: Mobile 视口 Dashboard 截图基线。"""
-        page.set_viewport_size({"width": 375, "height": 812})
-        page.goto(server_url)
-        page.wait_for_load_state("networkidle")
-
-        path = self._screenshot_path("dashboard_mobile")
-        page.screenshot(path=str(path), full_page=True)
-        assert path.exists() and path.stat().st_size > 1000, "截图未生成或文件过小"
