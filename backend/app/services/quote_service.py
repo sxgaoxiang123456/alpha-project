@@ -43,14 +43,21 @@ class QuoteService:
         if not codes:
             return []
 
-        result = self.facade.fetch_realtime(codes)
-        data = result.data or {}
+        try:
+            result = self.facade.fetch_realtime(codes)
+            data = result.data or {}
+            source_status = result.status
+        except Exception:
+            logger.exception("实时行情获取失败，降级返回基础列表")
+            data = {}
+            source_status = "unavailable"
+
         timestamp = actual_timestamp or datetime.now(UTC)
         quotes = [
             self.cleaner.clean_quote(
                 code,
                 data.get(code),
-                source_status=result.status,
+                source_status=source_status,
                 actual_timestamp=timestamp,
             )
             for code in codes

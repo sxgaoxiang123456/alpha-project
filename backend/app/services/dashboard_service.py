@@ -61,7 +61,7 @@ class DashboardService:
         # 并行调用外部上游服务（可能涉及网络 I/O）
         external_results = await asyncio.gather(
             self._with_timeout(self._run_in_thread(self._get_market_indices), [], "market_indices"),
-            self._with_timeout(self._run_in_thread(self._get_watchlist_data), [], "watchlist"),
+            self._with_timeout(self._run_in_thread(self._get_watchlist_data), self._get_watchlist_fallback(), "watchlist"),
             self._with_timeout(self._run_in_thread(self._get_briefing), None, "briefing"),
             return_exceptions=True,
         )
@@ -126,16 +126,58 @@ class DashboardService:
             for idx in indices
         ]
 
+    def _get_watchlist_fallback(self) -> list[StockCardData]:
+        """行情获取超时/失败时的降级数据：从数据库返回基础列表（无行情）。"""
+        from backend.app.models.stock import Stock
+        from backend.app.models.watchlist import WatchlistItem
+
+        items = (
+            self.db.query(WatchlistItem)
+            .order_by(WatchlistItem.id)
+            .all()
+        )
+        if not items:
+            return []
+
+        codes = [item.stock_code for item in items]
+        db_stocks = {
+            s.code: s.name
+            for s in self.db.query(Stock).filter(Stock.code.in_(codes)).all()
+        }
+
+        return [
+            StockCardData(
+                code=item.stock_code,
+                name=db_stocks.get(item.stock_code, item.stock_code),
+                current_price=None,
+                change_percent=None,
+                change_amount=None,
+                updated_at=None,
+            )
+            for item in items
+        ]
+
     def _get_watchlist_data(self) -> list[StockCardData]:
-        """获取自选股行情数据。"""
+        """获取自选股行情数据。
+
+        行情获取失败时，clean_quote 会把 stock_name 回退为 stock_code；
+        这里用数据库中的 stocks 表做名称兜底，确保列表始终展示正确名称。
+        """
         quotes = self.quote_service.get_watchlist_quotes()
+        if not quotes:
+            return []
+
+        codes = [q.stock_code for q in quotes]
+        from backend.app.models.stock import Stock
+        db_stocks = {s.code: s.name for s in self.db.query(Stock).filter(Stock.code.in_(codes)).all()}
+
         return [
             StockCardData(
                 code=q.stock_code,
-                name=q.stock_name,
-                current_price=float(q.current_price or 0),
-                change_percent=float(q.change_percent or 0),
-                change_amount=float(q.change_amount or 0),
+                name=db_stocks.get(q.stock_code, q.stock_name),
+                current_price=float(q.current_price) if q.current_price is not None else None,
+                change_percent=float(q.change_percent) if q.change_percent is not None else None,
+                change_amount=float(q.change_amount) if q.change_amount is not None else None,
                 updated_at=q.updated_at,
             )
             for q in quotes
