@@ -6,7 +6,7 @@ import logging
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, sessionmaker
 
 from backend.app.config import get_settings
 from backend.app.models.alert_trigger import AlertTrigger
@@ -44,12 +44,16 @@ class DashboardService:
         quote_service: Any,
         cache_service: Any,
         timeout_seconds: float | None = None,
+        session_factory: Any | None = None,
+        redis_cache: Any | None = None,
     ):
         self.db = db
         self.market_index_service = market_index_service
         self.quote_service = quote_service
         self.cache_service = cache_service
         self.timeout_seconds = timeout_seconds or self.DEFAULT_TIMEOUT_SECONDS
+        self._session_factory = session_factory or sessionmaker(bind=db.get_bind())
+        self.redis_cache = redis_cache
 
     async def build_dashboard_view(self) -> DashboardViewResponse:
         """聚合 Dashboard 首页全部数据。
@@ -70,10 +74,16 @@ class DashboardService:
         market_indices = market_indices if isinstance(market_indices, list) else []
         watchlist = watchlist if isinstance(watchlist, list) else []
 
-        # 数据库查询顺序执行（同一个 session 不支持并发）
-        alerts = self._get_today_alerts()
-        push_history = self._get_push_history()
-        channel_status = self._get_channel_status()
+        # 数据库查询并行执行（独立 session + asyncio.gather）
+        db_results = await asyncio.gather(
+            self._with_timeout(self._run_in_thread(self._get_today_alerts_parallel), [], "alerts"),
+            self._with_timeout(self._run_in_thread(self._get_push_history_parallel), [], "push_history"),
+            self._with_timeout(self._run_in_thread(self._get_channel_status_parallel), [], "channel_status"),
+            return_exceptions=True,
+        )
+        alerts = db_results[0] if isinstance(db_results[0], list) else []
+        push_history = db_results[1] if isinstance(db_results[1], list) else []
+        channel_status = db_results[2] if isinstance(db_results[2], list) else []
 
         # 检测是否有数据源降级
         degraded = any(
@@ -113,8 +123,8 @@ class DashboardService:
         return asyncio.to_thread(func)
 
     def _get_market_indices(self) -> list[MarketSnapshot]:
-        """获取大盘指数快照。"""
-        indices = self.market_index_service.get_indices()
+        """获取大盘指数快照（优先读 Redis 缓存）。"""
+        indices = self.market_index_service.get_indices(use_cache=True)
         return [
             MarketSnapshot(
                 name=idx.index_name,
@@ -163,7 +173,7 @@ class DashboardService:
         行情获取失败时，clean_quote 会把 stock_name 回退为 stock_code；
         这里用数据库中的 stocks 表做名称兜底，确保列表始终展示正确名称。
         """
-        quotes = self.quote_service.get_watchlist_quotes()
+        quotes = self.quote_service.get_watchlist_quotes(use_cache=True)
         if not quotes:
             return []
 
@@ -184,13 +194,25 @@ class DashboardService:
         ]
 
     def _get_briefing(self) -> BriefingData | None:
-        """获取最新 AI 简报。"""
+        """获取最新 AI 简报（优先读 Redis，miss 时回退 SQLite cache）。"""
+        # 优先读 Redis
+        if self.redis_cache is not None:
+            cached = self.redis_cache.get("latest_briefing")
+            if cached is not None:
+                insights = cached.get("insights", []) if isinstance(cached, dict) else []
+                return BriefingData(
+                    insights=insights if isinstance(insights, list) else [str(insights)],
+                )
+
         raw = self.cache_service.get("latest_briefing")
         if not raw:
             return BriefingData(insights=[])
         try:
             data = json.loads(raw) if isinstance(raw, str) else raw
             insights = data.get("insights", [])
+            # 写入 Redis 缓存
+            if self.redis_cache is not None:
+                self.redis_cache.set("latest_briefing", data, ttl_seconds=300)
             return BriefingData(
                 insights=insights if isinstance(insights, list) else [str(insights)],
             )
@@ -257,3 +279,66 @@ class DashboardService:
             )
             for c in channels
         ]
+
+    # ---- 并行查询方法（使用独立 session） ----
+
+    def _get_today_alerts_parallel(self) -> list[AlertSummary]:
+        """获取今日预警汇总（独立 session 版本，用于并行查询）。"""
+        from datetime import date
+
+        today = datetime.now(UTC).date()
+        start_of_day = datetime(today.year, today.month, today.day, tzinfo=UTC)
+        with self._session_factory() as session:
+            triggers = (
+                session.query(AlertTrigger)
+                .filter(AlertTrigger.triggered_at >= start_of_day)
+                .order_by(AlertTrigger.triggered_at.desc())
+                .limit(50)
+                .all()
+            )
+            return [
+                AlertSummary(
+                    stock_code=t.stock_code,
+                    stock_name=t.stock_code,
+                    condition=f"{t.condition_type} {t.trigger_value}",
+                    level=t.level,
+                    triggered_at=t.triggered_at,
+                )
+                for t in triggers
+            ]
+
+    def _get_push_history_parallel(self, limit: int = 100) -> list[PushHistoryItem]:
+        """获取最近推送历史（独立 session 版本，用于并行查询）。"""
+        with self._session_factory() as session:
+            logs = (
+                session.query(PushLog)
+                .order_by(PushLog.created_at.desc())
+                .limit(limit)
+                .all()
+            )
+            return [
+                PushHistoryItem(
+                    message_type=log.message_type,
+                    title=log.message_id,
+                    sent_at=log.created_at,
+                    channel=log.channel,
+                    status=PushStatus(log.status) if log.status in {"success", "failed", "pending"} else PushStatus.FAILED,
+                    failure_reason=log.error_reason,
+                )
+                for log in logs
+            ]
+
+    def _get_channel_status_parallel(self) -> list[ChannelStatusItem]:
+        """获取推送通道健康状态（独立 session 版本，用于并行查询）。"""
+        with self._session_factory() as session:
+            channels = session.query(PushChannel).all()
+            return [
+                ChannelStatusItem(
+                    name=c.name,
+                    status=ChannelHealth(c.status) if c.status in {"active", "degraded", "unavailable"} else ChannelHealth.UNAVAILABLE,
+                    rate_limited=c.rate_limited,
+                    last_updated=c.updated_at,
+                    message="限流中" if c.rate_limited else None,
+                )
+                for c in channels
+            ]

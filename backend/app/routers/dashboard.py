@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
+from backend.app.core.redis_cache import RedisCache
 from backend.app.dependencies import get_db
 from backend.app.services.dashboard_service import DashboardService
 from backend.app.services.market_index import MarketIndexService
@@ -16,14 +17,18 @@ router = APIRouter(tags=["dashboard"])
 
 def _get_dashboard_service(db: Session) -> DashboardService:
     """构造 DashboardService，注入上游依赖。"""
+    from backend.app.main import _redis_client
+
     facade_module = __import__("backend.app.services.data_source_facade", fromlist=["DataSourceFacade"])
     facade = facade_module.DataSourceFacade(db)
     cache = CacheService(db)
+    redis_cache = RedisCache(client=_redis_client)
     return DashboardService(
         db=db,
-        market_index_service=MarketIndexService(facade=facade, cache=cache),
-        quote_service=QuoteService(db=db, facade=facade, cache=cache),
+        market_index_service=MarketIndexService(facade=facade, cache=cache, redis_cache=redis_cache),
+        quote_service=QuoteService(db=db, facade=facade, cache=cache, redis_cache=redis_cache),
         cache_service=cache,
+        redis_cache=redis_cache,
     )
 
 
