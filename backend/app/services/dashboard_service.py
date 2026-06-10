@@ -104,6 +104,31 @@ class DashboardService:
             degradation_message="数据更新延迟，展示缓存数据" if degraded else None,
         )
 
+    async def get_market_data(self) -> dict[str, Any]:
+        """仅获取行情数据（大盘指数 + 自选股），用于 Partial 刷新。
+
+        不查询预警、推送历史、通道状态、简报等不随每次刷新变化的数据。
+        """
+        external_results = await asyncio.gather(
+            self._with_timeout(self._run_in_thread(self._get_market_indices), [], "market_indices"),
+            self._with_timeout(self._run_in_thread(self._get_watchlist_data), self._get_watchlist_fallback(), "watchlist"),
+            return_exceptions=True,
+        )
+        market_indices = external_results[0] if isinstance(external_results[0], list) else []
+        watchlist = external_results[1] if isinstance(external_results[1], list) else []
+
+        degraded = any(
+            getattr(idx, "source_status", "") == "unavailable"
+            for idx in market_indices
+        ) or not market_indices
+
+        return {
+            "market_indices": market_indices,
+            "watchlist": watchlist,
+            "degraded": degraded,
+            "last_refresh": datetime.now(UTC).isoformat(),
+        }
+
     async def _with_timeout(
         self, coro: Any, fallback: Any, name: str
     ) -> Any:

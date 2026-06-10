@@ -1,6 +1,9 @@
 """Dashboard 路由 — 首页渲染与行情 Partial HTML。"""
 
-from fastapi import APIRouter, Depends, Request
+import hashlib
+import json
+
+from fastapi import APIRouter, Depends, Request, Response
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
@@ -50,24 +53,67 @@ async def dashboard_page(request: Request, db: Session = Depends(get_db)):
     )
 
 
-@router.get("/market_data", response_class=HTMLResponse)
+def _compute_etag(market_data: dict) -> str:
+    """基于行情数据核心字段计算 ETag（MD5 hash）。
+
+    只包含大盘指数点位/涨跌幅和自选股价格/涨跌幅，不包含时间戳和模板结构。
+    """
+    try:
+        # 提取核心字段
+        indices = market_data.get("market_indices", [])
+        watchlist = market_data.get("watchlist", [])
+        core = {
+            "indices": [
+                {"p": float(idx.get("current_value", 0)), "c": float(idx.get("change_percent", 0))}
+                for idx in indices
+            ],
+            "watchlist": [
+                {"p": float(stock.get("current_price", 0)), "c": float(stock.get("change_percent", 0))}
+                for stock in watchlist
+            ],
+        }
+        payload = json.dumps(core, sort_keys=True, ensure_ascii=False, default=str)
+        return hashlib.md5(payload.encode("utf-8")).hexdigest()
+    except Exception:
+        # ETag 计算异常时降级为空字符串（不触发 304）
+        return ""
+
+
+@router.get("/market_data")
 async def market_data_partial(request: Request, db: Session = Depends(get_db)):
-    """行情数据 Partial HTML — 用于 AJAX 刷新。"""
+    """行情数据 Partial HTML — 用于 AJAX 刷新，支持 ETag/304。
+
+    只返回大盘指数 + 自选股行情，不查询预警/推送历史/通道状态/简报。
+    数据无变化时返回 304，不重新渲染模板。
+    """
     from backend.app.main import templates
 
     service = _get_dashboard_service(db)
-    view = await service.build_dashboard_view()
+    data = await service.get_market_data()
 
-    # Pydantic model 转 dict 传入模板
-    def _dump(obj):
-        return obj.model_dump(mode="json") if hasattr(obj, "model_dump") else obj
+    # 计算 ETag
+    etag = _compute_etag(data)
 
-    return templates.TemplateResponse(
+    # 检查 If-None-Match
+    client_etag = request.headers.get("if-none-match")
+    if client_etag and client_etag == etag and etag:
+        return Response(status_code=304, headers={"etag": etag})
+
+    # 渲染 Partial HTML
+    market_indices = data.get("market_indices", [])
+    watchlist = data.get("watchlist", [])
+
+    html = templates.TemplateResponse(
         request,
         "components/market_data.html",
         {
-            "market_indices": [_dump(m) for m in view.market_indices],
-            "watchlist": [_dump(s) for s in view.watchlist],
-            "briefing": _dump(view.briefing) if view.briefing else None,
+            "market_indices": market_indices,
+            "watchlist": watchlist,
+            "degraded": data.get("degraded", False),
+            "last_refresh": data.get("last_refresh"),
         },
     )
+
+    # 添加 ETag 头
+    html.headers["etag"] = etag
+    return html
