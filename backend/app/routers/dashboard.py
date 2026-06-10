@@ -81,7 +81,7 @@ def _compute_etag(market_data: dict) -> str:
             ],
         }
         payload = json.dumps(core, sort_keys=True, ensure_ascii=False, default=str)
-        return hashlib.md5(payload.encode("utf-8")).hexdigest()
+        return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:32]
     except Exception:
         # ETag 计算异常时降级为空字符串（不触发 304）
         return ""

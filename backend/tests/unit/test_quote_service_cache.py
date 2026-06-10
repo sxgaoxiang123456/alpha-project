@@ -77,7 +77,7 @@ class TestQuoteServiceCacheHit:
         _make_db_with_watchlist(db)
         facade = _mock_facade()
         # 预置 Redis 缓存
-        redis_cache.set("quotes:watchlist:600519,600000", [
+        redis_cache.set("quotes:watchlist:600000,600519", [
             {
                 "stock_code": "600519",
                 "stock_name": "贵州茅台",
@@ -158,7 +158,7 @@ class TestQuoteServiceCacheMiss:
         facade.fetch_realtime.assert_called_once()
         assert len(quotes) == 2
         # 验证 Redis 被写入
-        cached = redis_cache.get("quotes:watchlist:600519,600000")
+        cached = redis_cache.get("quotes:watchlist:600000,600519")
         assert cached is not None
         assert len(cached) == 2
 
@@ -171,7 +171,7 @@ class TestQuoteServiceCacheDisabled:
         _make_db_with_watchlist(db)
         facade = _mock_facade()
         # 预置 Redis 缓存
-        redis_cache.set("quotes:watchlist:600519,600000", [{"stock_code": "cached"}])
+        redis_cache.set("quotes:watchlist:600000,600519", [{"stock_code": "cached"}])
 
         service = QuoteService(
             db=db,
@@ -188,7 +188,7 @@ class TestQuoteServiceCacheDisabled:
         """默认不传参时 use_cache=False，行为不变。"""
         _make_db_with_watchlist(db)
         facade = _mock_facade()
-        redis_cache.set("quotes:watchlist:600519,600000", [{"stock_code": "cached"}])
+        redis_cache.set("quotes:watchlist:600000,600519", [{"stock_code": "cached"}])
 
         service = QuoteService(
             db=db,

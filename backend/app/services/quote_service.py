@@ -50,7 +50,7 @@ class QuoteService:
 
         # use_cache=True 时优先读 Redis
         if use_cache and self.redis_cache is not None:
-            cache_key = f"quotes:watchlist:{','.join(codes)}"
+            cache_key = f"quotes:watchlist:{','.join(sorted(codes))}"
             cached = self.redis_cache.get(cache_key)
             if cached is not None:
                 logger.debug("Redis cache hit: %s", cache_key)
@@ -100,7 +100,7 @@ class QuoteService:
 
         # 写入 Redis cache（新增）
         if use_cache and self.redis_cache is not None and quotes:
-            cache_key = f"quotes:watchlist:{','.join(codes)}"
+            cache_key = f"quotes:watchlist:{','.join(sorted(codes))}"
             self.redis_cache.set(
                 cache_key,
                 [
@@ -128,10 +128,16 @@ class QuoteService:
         data: Mapping[str, Any],
         actual_timestamp: datetime,
     ) -> None:
+        import threading
         try:
-            self._persist_historical_quotes(data, actual_timestamp)
+            t = threading.Thread(
+                target=self._persist_historical_quotes,
+                args=(data, actual_timestamp),
+                daemon=True,
+            )
+            t.start()
         except Exception:
-            logger.exception("历史行情落盘失败")
+            logger.exception("历史行情落盘调度失败")
 
     def _persist_historical_quotes(
         self,

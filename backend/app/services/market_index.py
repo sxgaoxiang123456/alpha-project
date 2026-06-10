@@ -43,7 +43,7 @@ class MarketIndexService:
                         turnover=Decimal(str(idx.get("turnover", 0))),
                         updated_at=datetime.fromisoformat(idx["updated_at"]) if idx.get("updated_at") else timestamp,
                         source_status=idx.get("source_status", "cached"),
-                        actual_timestamp=timestamp,
+                        actual_timestamp=datetime.fromisoformat(idx["actual_timestamp"]) if idx.get("actual_timestamp") else timestamp,
                     )
                     for idx in cached
                 ]
@@ -77,6 +77,7 @@ class MarketIndexService:
                         "turnover": str(idx.turnover) if idx.turnover is not None else "0",
                         "updated_at": idx.updated_at.isoformat() if idx.updated_at else timestamp.isoformat(),
                         "source_status": idx.source_status,
+                        "actual_timestamp": idx.actual_timestamp.isoformat() if idx.actual_timestamp else timestamp.isoformat(),
                     }
                     for idx in indices
                 ],
