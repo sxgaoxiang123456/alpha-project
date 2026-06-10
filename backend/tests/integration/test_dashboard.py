@@ -84,12 +84,16 @@ class TestDashboardPage:
         assert response.status_code == 200
 
     def test_dashboard_contains_market_section(self, monkeypatch, tmp_path):
-        """页面包含大盘指数模块。"""
+        """页面包含大盘指数模块（骨架屏占位 + /market_data 提供真实数据）。"""
         app, _ = _fresh_app(monkeypatch, tmp_path)
         monkeypatch.setattr("backend.app.routers.dashboard._get_dashboard_service", lambda db: _mock_dashboard_service())
         with TestClient(app) as client:
             response = client.get("/")
-        assert "上证指数" in response.text
+        # 首屏服务端渲染骨架屏占位
+        assert "skeleton-screen" in response.text
+        # 真实大盘数据由 /market_data 返回
+        market_data = client.get("/market_data")
+        assert "上证指数" in market_data.text
 
     def test_dashboard_contains_watchlist_section(self, monkeypatch, tmp_path):
         """页面包含自选股模块。"""

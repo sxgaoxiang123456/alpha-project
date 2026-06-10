@@ -22,8 +22,17 @@
 
     <!-- Refreshable Market Data Area -->
     <div id="market-data-container" class="contents">
-        {% with market_indices=view.market_indices, watchlist=view.watchlist, briefing=view.briefing %}
-        {% include "components/market_data_refreshable.html" %}
+        {% if view.watchlist %}
+            {% include "components/skeleton_screen.html" %}
+        {% else %}
+            {% include "components/onboarding.html" %}
+        {% endif %}
+    </div>
+
+    <!-- AI Briefing（服务端直接渲染，不参与 JS 刷新） -->
+    <div class="col-span-12 lg:col-span-4 flex flex-col">
+        {% with briefing=view.briefing %}
+        {% include "components/briefing_card.html" %}
         {% endwith %}
     </div>
 
