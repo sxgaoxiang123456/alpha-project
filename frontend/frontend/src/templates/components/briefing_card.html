@@ -1,0 +1,30 @@
+<div class="bg-surface-base border border-primary-container/30 rounded flex-1 flex flex-col relative overflow-hidden">
+<!-- Subtle AI Background Glow -->
+<div class="absolute -top-20 -right-20 w-64 h-64 bg-primary-container/10 rounded-full blur-3xl pointer-events-none"></div>
+<div class="p-card-padding border-b border-outline-variant bg-surface-raised/30 flex justify-between items-center z-10">
+<h2 class="font-headline-md text-headline-md text-primary-fixed flex items-center gap-2">
+<span class="material-symbols-outlined">memory</span>每日 AI 简报
+</h2>
+<span class="font-label-caps text-label-caps bg-primary-container text-on-primary-container px-2 py-0.5 rounded">NEW</span>
+</div>
+<div class="p-card-padding flex-1 flex flex-col gap-4 z-10">
+{% if briefing and briefing.insights %}
+<div class="space-y-4">
+{% for insight in briefing.insights %}
+<div class="bg-surface-raised p-4 rounded border border-outline-variant/50 border-l-4 border-l-primary-container">
+<p class="font-body-md text-body-md text-on-surface-variant">{{ insight }}</p>
+</div>
+{% endfor %}
+</div>
+<div class="mt-auto pt-4">
+<button class="w-full py-3 px-4 border border-primary text-primary font-headline-md text-headline-md rounded hover:bg-primary/10 transition-colors flex items-center justify-center gap-2">
+查看完整简报 <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+{% else %}
+<div class="flex-1 flex items-center justify-center">
+<p class="font-body-md text-body-md text-on-surface-variant">今日暂无简报</p>
+</div>
+{% endif %}
+</div>
+</div>

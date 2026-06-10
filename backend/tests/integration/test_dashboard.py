@@ -45,7 +45,7 @@ def _fresh_app(monkeypatch, tmp_path):
 def _mock_dashboard_service(watchlist=None):
     """返回固定 mock 数据的 DashboardService。"""
     svc = MagicMock()
-    svc.build_dashboard_view = AsyncMock(return_value=DashboardViewResponse(
+    view = DashboardViewResponse(
         market_indices=[
             MarketSnapshot(name="上证指数", current_value=3000.0, change_percent=1.23, change_amount=36.5),
         ],
@@ -63,7 +63,14 @@ def _mock_dashboard_service(watchlist=None):
             ChannelStatusItem(name="飞书", status=ChannelHealth.ACTIVE),
             ChannelStatusItem(name="Telegram", status=ChannelHealth.DEGRADED, rate_limited=True),
         ],
-    ))
+    )
+    svc.build_dashboard_view = AsyncMock(return_value=view)
+    svc.get_market_data = AsyncMock(return_value={
+        "market_indices": view.market_indices,
+        "watchlist": view.watchlist,
+        "degraded": False,
+        "last_refresh": datetime.now(UTC).isoformat(),
+    })
     return svc
 
 

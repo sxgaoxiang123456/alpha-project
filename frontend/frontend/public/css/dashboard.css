@@ -1,0 +1,49 @@
+/* Dashboard 响应式样式补充 */
+
+/* 移动端：隐藏固定侧边栏，主体全宽 */
+@media (max-width: 767px) {
+    .md\\:ml-64 {
+        margin-left: 0 !important;
+    }
+
+    .max-w-\\[1280px\\] {
+        max-width: 100%;
+    }
+
+    /* 卡片内边距缩小 */
+    .p-card-padding {
+        padding: 12px;
+    }
+
+    /* 表格横向滚动优化 */
+    .overflow-x-auto {
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* 快捷操作按钮网格调整为 2 列 */
+    .grid-cols-2.sm\\:grid-cols-4 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+/* 平板端：适度调整 */
+@media (min-width: 768px) and (max-width: 1023px) {
+    .max-w-\\[1280px\\] {
+        max-width: 100%;
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+}
+
+/* 减少动画偏好 */
+@media (prefers-reduced-motion: reduce) {
+    .animate-pulse {
+        animation: none;
+    }
+
+    .transition-colors,
+    .transition-transform,
+    .transition-all {
+        transition-duration: 0.01ms !important;
+    }
+}

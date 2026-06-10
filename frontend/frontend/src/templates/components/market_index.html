@@ -1,0 +1,20 @@
+<div class="col-span-12 grid grid-cols-1 md:grid-cols-3 gap-container-gap mb-4">
+{% for idx in market_indices %}
+<div class="bg-surface-base border border-outline-variant rounded p-card-padding flex flex-col justify-between">
+<div class="flex justify-between items-start mb-4">
+<h2 class="font-headline-md text-headline-md text-on-surface">{{ idx.name }}</h2>
+<span class="font-data-table text-data-table {% if idx.change_percent >= 0 %}text-market-up bg-market-up/10{% else %}text-market-down bg-market-down/10{% endif %} px-2 py-1 rounded">
+    {% if idx.change_percent >= 0 %}+{% endif %}{{ "%.2f"|format(idx.change_percent) }}%
+</span>
+</div>
+<div>
+<div class="font-display-price text-display-price {% if idx.change_percent >= 0 %}text-market-up{% else %}text-market-down{% endif %}">
+    {{ "{:,.2f}".format(idx.current_value) }}
+</div>
+<div class="font-data-table text-data-table {% if idx.change_percent >= 0 %}text-market-up{% else %}text-market-down{% endif %} mt-1">
+    {% if idx.change_amount >= 0 %}+{% endif %}{{ "%.2f"|format(idx.change_amount) }}
+</div>
+</div>
+</div>
+{% endfor %}
+</div>

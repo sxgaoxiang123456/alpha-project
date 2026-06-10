@@ -59,16 +59,24 @@ def _compute_etag(market_data: dict) -> str:
     只包含大盘指数点位/涨跌幅和自选股价格/涨跌幅，不包含时间戳和模板结构。
     """
     try:
-        # 提取核心字段
+        # 提取核心字段（支持 dict 和 Pydantic 模型）
         indices = market_data.get("market_indices", [])
         watchlist = market_data.get("watchlist", [])
+
+        def _get(obj, key, default=0):
+            if hasattr(obj, key):
+                return getattr(obj, key, default)
+            if isinstance(obj, dict):
+                return obj.get(key, default)
+            return default
+
         core = {
             "indices": [
-                {"p": float(idx.get("current_value", 0)), "c": float(idx.get("change_percent", 0))}
+                {"p": float(_get(idx, "current_value", 0)), "c": float(_get(idx, "change_percent", 0))}
                 for idx in indices
             ],
             "watchlist": [
-                {"p": float(stock.get("current_price", 0)), "c": float(stock.get("change_percent", 0))}
+                {"p": float(_get(stock, "current_price", 0)), "c": float(_get(stock, "change_percent", 0))}
                 for stock in watchlist
             ],
         }
