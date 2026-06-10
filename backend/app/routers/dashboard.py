@@ -113,7 +113,7 @@ async def market_data_partial(request: Request, db: Session = Depends(get_db)):
 
     html = templates.TemplateResponse(
         request,
-        "components/market_data.html",
+        "components/market_data_partial.html",
         {
             "market_indices": market_indices,
             "watchlist": watchlist,
