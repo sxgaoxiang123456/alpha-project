@@ -26,6 +26,9 @@ logger = logging.getLogger(__name__)
 class DataSourceFacade:
     """数据源门面，封装多源容灾逻辑。"""
 
+    _primary_instance: DataSource | None = None
+    _fallback_instance: DataSource | None = None
+
     def __init__(
         self,
         db: Session,
@@ -33,10 +36,22 @@ class DataSourceFacade:
         fallback: DataSource | None = None,
     ):
         self.db = db
-        self._primary = primary or AkShareDataSource()
-        self._fallback = fallback or BaoStockDataSource()
+        self._primary = primary or self.__class__._get_primary()
+        self._fallback = fallback or self.__class__._get_fallback()
         self._circuit_breaker = CircuitBreaker(db)
         self._cache = CacheService(db)
+
+    @classmethod
+    def _get_primary(cls) -> DataSource:
+        if cls._primary_instance is None:
+            cls._primary_instance = AkShareDataSource()
+        return cls._primary_instance
+
+    @classmethod
+    def _get_fallback(cls) -> DataSource:
+        if cls._fallback_instance is None:
+            cls._fallback_instance = BaoStockDataSource()
+        return cls._fallback_instance
 
     def fetch_realtime(self, codes: list[str]) -> DataFetchResult:
         """获取实时行情，内部自动处理切换/缓存/熔断。"""

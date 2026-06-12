@@ -45,7 +45,7 @@ def _fresh_app(monkeypatch, tmp_path):
 def _mock_dashboard_service(watchlist=None):
     """返回固定 mock 数据的 DashboardService。"""
     svc = MagicMock()
-    svc.build_dashboard_view = AsyncMock(return_value=DashboardViewResponse(
+    view = DashboardViewResponse(
         market_indices=[
             MarketSnapshot(name="上证指数", current_value=3000.0, change_percent=1.23, change_amount=36.5),
         ],
@@ -63,7 +63,14 @@ def _mock_dashboard_service(watchlist=None):
             ChannelStatusItem(name="飞书", status=ChannelHealth.ACTIVE),
             ChannelStatusItem(name="Telegram", status=ChannelHealth.DEGRADED, rate_limited=True),
         ],
-    ))
+    )
+    svc.build_dashboard_view = AsyncMock(return_value=view)
+    svc.get_market_data = AsyncMock(return_value={
+        "market_indices": view.market_indices,
+        "watchlist": view.watchlist,
+        "degraded": False,
+        "last_refresh": datetime.now(UTC).isoformat(),
+    })
     return svc
 
 
@@ -77,12 +84,16 @@ class TestDashboardPage:
         assert response.status_code == 200
 
     def test_dashboard_contains_market_section(self, monkeypatch, tmp_path):
-        """页面包含大盘指数模块。"""
+        """页面包含大盘指数模块（骨架屏占位 + /market_data 提供真实数据）。"""
         app, _ = _fresh_app(monkeypatch, tmp_path)
         monkeypatch.setattr("backend.app.routers.dashboard._get_dashboard_service", lambda db: _mock_dashboard_service())
         with TestClient(app) as client:
             response = client.get("/")
-        assert "上证指数" in response.text
+        # 首屏服务端渲染骨架屏占位
+        assert "skeleton-screen" in response.text
+        # 真实大盘数据由 /market_data 返回
+        market_data = client.get("/market_data")
+        assert "上证指数" in market_data.text
 
     def test_dashboard_contains_watchlist_section(self, monkeypatch, tmp_path):
         """页面包含自选股模块。"""

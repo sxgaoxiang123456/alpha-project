@@ -15,7 +15,9 @@ from backend.app.services.dashboard_service import DashboardService
 
 
 def _make_db():
-    engine = create_engine("sqlite:///:memory:")
+    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
+    # 确保所有模型表被注册
+    import backend.app.models  # noqa: F401
     Base.metadata.create_all(bind=engine)
     Session = sessionmaker(bind=engine)
     return Session()

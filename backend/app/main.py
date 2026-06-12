@@ -39,6 +39,25 @@ from backend.app.services.quote_service import QuoteService
 
 settings = get_settings()
 
+# Redis 客户端（懒加载，Redis 不可用时降级为 None）
+_redis_client = None
+
+try:
+    import redis as _redis_lib
+
+    _redis_client = _redis_lib.from_url(
+        settings.redis_url,
+        decode_responses=True,
+        socket_connect_timeout=2,
+        socket_timeout=2,
+    )
+    _redis_client.ping()
+except Exception:
+    import logging
+
+    logging.getLogger(__name__).warning("Redis 连接失败，缓存降级为 SQLite")
+    _redis_client = None
+
 
 def _get_encryption_key() -> bytes | None:
     """从应用配置读取加密密钥。"""

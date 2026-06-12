@@ -18,15 +18,38 @@ class MarketIndexService:
     }
     CACHE_TTL_SECONDS = 300
 
-    def __init__(self, facade: Any, cache: Any, ttl_seconds: int = CACHE_TTL_SECONDS):
+    def __init__(self, facade: Any, cache: Any, ttl_seconds: int = CACHE_TTL_SECONDS, redis_cache: Any | None = None):
         self.facade = facade
         self.cache = cache
         self.ttl_seconds = ttl_seconds
+        self.redis_cache = redis_cache
 
-    def get_indices(self, *, actual_timestamp: datetime | None = None) -> list[MarketIndex]:
+    def get_indices(self, *, actual_timestamp: datetime | None = None, use_cache: bool = False) -> list[MarketIndex]:
+        timestamp = actual_timestamp or datetime.now(UTC)
+
+        # use_cache=True 时优先读 Redis
+        if use_cache and self.redis_cache is not None:
+            cache_key = "quotes:market"
+            cached = self.redis_cache.get(cache_key)
+            if cached is not None:
+                logger.debug("Redis cache hit: %s", cache_key)
+                return [
+                    MarketIndex(
+                        index_code=idx["index_code"],
+                        index_name=idx.get("index_name", idx["index_code"]),
+                        current_point=Decimal(str(idx.get("current_point", 0))),
+                        change_percent=Decimal(str(idx.get("change_percent", 0))),
+                        change_amount=Decimal(str(idx.get("change_amount", 0))),
+                        turnover=Decimal(str(idx.get("turnover", 0))),
+                        updated_at=datetime.fromisoformat(idx["updated_at"]) if idx.get("updated_at") else timestamp,
+                        source_status=idx.get("source_status", "cached"),
+                        actual_timestamp=datetime.fromisoformat(idx["actual_timestamp"]) if idx.get("actual_timestamp") else timestamp,
+                    )
+                    for idx in cached
+                ]
+
         result = self.facade.fetch_realtime(list(self.INDEX_CODES))
         data = result.data or {}
-        timestamp = actual_timestamp or datetime.now(UTC)
         indices = [
             self._build_index(code, data[code], result.status, timestamp)
             for code in self.INDEX_CODES
@@ -38,6 +61,27 @@ class MarketIndexService:
                 f"market_index:{index.index_code}",
                 index.model_dump_json(),
                 ttl_seconds=self.ttl_seconds,
+            )
+
+        # 写入 Redis cache（新增）
+        if use_cache and self.redis_cache is not None and indices:
+            self.redis_cache.set(
+                "quotes:market",
+                [
+                    {
+                        "index_code": idx.index_code,
+                        "index_name": idx.index_name,
+                        "current_point": str(idx.current_point) if idx.current_point is not None else "0",
+                        "change_percent": str(idx.change_percent) if idx.change_percent is not None else "0",
+                        "change_amount": str(idx.change_amount) if idx.change_amount is not None else "0",
+                        "turnover": str(idx.turnover) if idx.turnover is not None else "0",
+                        "updated_at": idx.updated_at.isoformat() if idx.updated_at else timestamp.isoformat(),
+                        "source_status": idx.source_status,
+                        "actual_timestamp": idx.actual_timestamp.isoformat() if idx.actual_timestamp else timestamp.isoformat(),
+                    }
+                    for idx in indices
+                ],
+                ttl_seconds=60,
             )
 
         return indices

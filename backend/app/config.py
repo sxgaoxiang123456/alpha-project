@@ -30,6 +30,9 @@ class Settings(BaseSettings):
     quote_cache_ttl_seconds: int = Field(default=300, gt=0)
     trading_calendar: str = "cn_stock"
 
+    # Redis 配置
+    redis_url: str = "redis://localhost:6379/0"
+
     # 飞书主通道配置（只读 .env，不入库）
     feishu_app_id: str | None = None
     feishu_app_secret: str | None = None

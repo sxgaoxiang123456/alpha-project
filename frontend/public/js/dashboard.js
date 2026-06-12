@@ -13,25 +13,44 @@
     let timerId = null;
     let isPaused = false;
     let lastContent = '';
+    let lastEtag = '';
+    let isFirstLoad = true;
 
     const marketContainer = document.getElementById('market-data-container');
     if (!marketContainer) return;
 
     function fetchMarketData() {
-        fetch('/market_data')
+        const headers = {};
+        if (lastEtag) {
+            headers['If-None-Match'] = lastEtag;
+        }
+
+        fetch('/market_data', { headers })
             .then(function (response) {
+                if (response.status === 304) {
+                    const etag = response.headers.get('etag');
+                    if (etag) lastEtag = etag;
+                    return null;
+                }
                 if (!response.ok) throw new Error('HTTP ' + response.status);
+                const etag = response.headers.get('etag');
+                if (etag) lastEtag = etag;
                 return response.text();
             })
             .then(function (html) {
+                if (html === null) return;
                 if (html !== lastContent) {
                     marketContainer.innerHTML = html;
                     lastContent = html;
+                    isFirstLoad = false;
                 }
                 checkDegradation();
             })
             .catch(function (err) {
                 console.warn('[Dashboard] 刷新失败:', err);
+                if (isFirstLoad) {
+                    isFirstLoad = false;
+                }
             });
     }
 

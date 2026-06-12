@@ -77,7 +77,7 @@ class TestVisualCompliance:
         monkeypatch.setattr("backend.app.routers.dashboard._get_dashboard_service", lambda db: _mock_dashboard_service())
         with TestClient(app) as client:
             response = client.get("/")
-        assert "bg-surface-base" in response.text
+        assert "bg-surface-raised" in response.text  # 骨架屏使用 surface-raised
         assert "text-on-surface" in response.text
         assert "font-headline-md" in response.text
 
