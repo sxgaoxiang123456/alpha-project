@@ -36,9 +36,11 @@ Dashboard 性能优化 feature 全部完成。16 个 task（T1-T16）+ Step 4 co
 
 ## 测试状态
 
-- 单元测试：524 passed, 0 failed
-- 集成测试：全部通过
-- E2E 测试：未跑（按规则单独跑，避免事件循环污染）
+- 单元 + 集成测试：`542 passed, 0 failed`
+- E2E 测试：`47 passed, 1 skipped`
+- 合计：`589 passed, 1 skipped`
+
+> 注：E2E 中 `test_market_container_stable_size` 因 `#market-data-container` 使用 `contents` 布局无法获取 bounding_box，属已知限制；其余全部通过。
 
 ## 已知问题（Deferred）
 
@@ -46,12 +48,21 @@ Dashboard 性能优化 feature 全部完成。16 个 task（T1-T16）+ Step 4 co
 2. docker-compose.yml Redis maxmemory=100mb 对高负载可能不足
 3. quote_service 缓存命中时未二次运行 DataCleaner（依赖写入方保证数据清洗）
 
+## 收尾修复
+
+1. **ETag/304 接缝测试兼容实时行情**（commit `becb006`）
+   - 真实行情在两次 `/market_data` 请求之间可能变化，导致原有断言要求"必须 304"出现偶发失败。
+   - 将 `test_304_response_has_no_body`、`test_if_none_match_header_forwarded` 改为分支断言：
+     - 304 时验证 body 为空且 ETag 不变；
+     - 200 时验证 body 非空且 ETag 已变化。
+   - `test_304_does_not_update_dom` 改为：若 DOM 变化则必须存在 200 响应，避免把 200 导致的正常更新误判为 304 错误。
+
 ## 分支状态
 
 - Feature 分支：`feat-008-redis-adjust`（已 merge 到 develop）
 - Tag：`v0.1.0-008-redis-adjust`
-- Develop 分支：ahead of origin/develop by 7 commits
+- Develop 分支：ahead of origin/develop by 1 commit
 
 ## 最后更新
 
-2026-06-10
+2026-06-12
