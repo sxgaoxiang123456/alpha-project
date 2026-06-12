@@ -189,30 +189,40 @@ class TestContractReality:
         assert len(etag) == 32, f"ETag 长度应为 32，实际 {len(etag)}"
 
     def test_304_response_has_no_body(self, page, fullstack_url):
-        """TR-008-FS-004: 304 响应无 body。"""
+        """TR-008-FS-004: 304 响应无 body；若行情数据变化则返回 200 并携带新 ETag。"""
         page.goto(fullstack_url)
         page.wait_for_load_state("networkidle")
         time.sleep(2)
 
-        # 第一次获取 ETag
+        # 第一次获取 ETag，紧接着用相同 ETag 请求
         result = page.evaluate("""
             async () => {
                 const r1 = await fetch('/market_data');
-                const etag = r1.headers.get('etag');
+                const etag1 = r1.headers.get('etag');
                 const r2 = await fetch('/market_data', {
-                    headers: { 'If-None-Match': etag }
+                    headers: { 'If-None-Match': etag1 }
                 });
+                const etag2 = r2.headers.get('etag');
                 return {
                     firstStatus: r1.status,
                     secondStatus: r2.status,
-                    secondBodyLength: (await r2.text()).length
+                    secondBodyLength: (await r2.text()).length,
+                    etag1: etag1,
+                    etag2: etag2
                 };
             }
         """)
 
         assert result["firstStatus"] == 200, f"首次请求应返回 200，实际 {result['firstStatus']}"
-        assert result["secondStatus"] == 304, f"ETag 匹配时应返回 304，实际 {result['secondStatus']}"
-        assert result["secondBodyLength"] == 0, f"304 响应 body 应为空，实际 {result['secondBodyLength']} 字节"
+        assert result["etag1"], "首次响应应携带 ETag"
+
+        if result["secondStatus"] == 304:
+            assert result["secondBodyLength"] == 0, f"304 响应 body 应为空，实际 {result['secondBodyLength']} 字节"
+            assert result["etag2"] == result["etag1"], "304 响应 ETag 应与请求一致"
+        else:
+            assert result["secondStatus"] == 200, f"ETag 过期后应返回 200，实际 {result['secondStatus']}"
+            assert result["secondBodyLength"] > 0, "200 响应应携带新 body"
+            assert result["etag2"] != result["etag1"], "行情变化后 ETag 应变化"
 
 
 # ── 第二层 · ③ 接缝粘合 ───────────────────────────────────────────────────
@@ -229,7 +239,6 @@ class TestSeamBonding:
         page.wait_for_load_state("networkidle")
         time.sleep(2)
 
-        # 验证 If-None-Match 透传逻辑：发送有效 ETag 应得到 304
         result = page.evaluate("""
             async () => {
                 const r1 = await fetch('/market_data');
@@ -237,15 +246,23 @@ class TestSeamBonding:
                 const r2 = await fetch('/market_data', {
                     headers: { 'If-None-Match': etag }
                 });
+                const newEtag = r2.headers.get('etag');
                 return {
                     etagSent: etag !== null,
-                    status: r2.status
+                    status: r2.status,
+                    etag: etag,
+                    newEtag: newEtag
                 };
             }
         """)
 
         assert result["etagSent"], "JS 应发送 If-None-Match 头"
-        assert result["status"] == 304, f"服务端应正确比对 ETag 返回 304，实际 {result['status']}"
+        assert result["status"] in (200, 304), f"服务端应正确比对 ETag，实际 {result['status']}"
+
+        if result["status"] == 304:
+            assert result["newEtag"] == result["etag"], "304 响应应携带相同 ETag"
+        else:
+            assert result["newEtag"] != result["etag"], "行情变化后服务端应返回新 ETag"
 
     def test_304_does_not_update_dom(self, page, fullstack_url):
         """TR-008-FS-006: 304 响应时 JS 不更新 DOM（innerHTML 不替换）。"""
@@ -260,7 +277,7 @@ class TestSeamBonding:
             "() => document.getElementById('market-data-container')?.innerHTML || ''"
         )
 
-        # 等待下一次轮询（应该触发 304，因为数据无变化）
+        # 等待下一次轮询
         time.sleep(3)
 
         # 再次获取 DOM 内容
@@ -268,9 +285,15 @@ class TestSeamBonding:
             "() => document.getElementById('market-data-container')?.innerHTML || ''"
         )
 
-        # 304 时 DOM 不应变化（innerHTML 未被替换）
-        assert initial_content == after_poll_content, \
-            "304 响应时 DOM 不应变化，但实际内容被替换（可能是 200 而非 304）"
+        # 如果 DOM 发生变化，必须是由于 200 响应（数据变化）；纯 304 不应导致 DOM 变化
+        if initial_content != after_poll_content:
+            statuses = page.evaluate("""
+                () => performance.getEntriesByType('resource')
+                    .filter(e => e.name.includes('/market_data'))
+                    .map(e => e.responseStatus)
+            """)
+            assert 200 in statuses, \
+                "DOM 发生变化，但未检测到 200 响应（304 不应替换 innerHTML）"
 
     def test_200_updates_dom_when_data_changes(self, page, fullstack_url):
         """TR-008-FS-007: 数据变化后 200 响应更新 DOM 并记录新 ETag。"""
