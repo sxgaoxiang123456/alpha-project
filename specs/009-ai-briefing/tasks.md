@@ -17,7 +17,7 @@
 
 **Purpose**: 创建 Prompt 模板文件和目录结构
 
-- [ ] T001 [BE] Create `backend/app/templates/prompts/briefing.j2` with system role, data input slots and structured output instructions  
+- [x] T001 [BE] Create `backend/app/templates/prompts/briefing.j2` with system role, data input slots and structured output instructions  
   `[FR-005 来源] | [依赖: 无] | [验证: 模板文件可渲染，输出包含大盘/异动/解读占位符]`
 
 ---
@@ -27,13 +27,13 @@
 **Purpose**: 核心基础设施：schema、Prompt 加载、LLM 客户端  
 **⚠️ CRITICAL**: 本阶段完成前不可开始 user story 实现
 
-- [ ] T002 [BE] [P] Create `backend/app/schemas/briefing.py` with `BriefingResponse`, `TopMover`, `BriefingGenerateRequest` schemas  
+- [x] T002 [BE] [P] Create `backend/app/schemas/briefing.py` with `BriefingResponse`, `TopMover`, `BriefingGenerateRequest` schemas  
   `[FR-006 来源] | [依赖: 无] | [验证: schema 实例化通过，必填字段校验生效]`
 
-- [ ] T003 [BE] [P] Create `backend/app/services/prompt_loader.py` to load and render `briefing.j2` with provided market data  
+- [x] T003 [BE] [P] Create `backend/app/services/prompt_loader.py` to load and render `briefing.j2` with provided market data  
   `[FR-005 来源] | [依赖: T001] | [验证: 给定测试数据，输出字符串包含大盘指数和异动 TOP 5]`
 
-- [ ] T004 [BE] Create `backend/app/services/briefing_llm_client.py` with timeout (30s), retry (2 times, 5s interval), structured output parsing and degradation flag  
+- [x] T004 [BE] Create `backend/app/services/briefing_llm_client.py` with timeout (30s), retry (2 times, 5s interval), structured output parsing and degradation flag  
   `[FR-005/FR-008/FR-011 来源] | [依赖: T003] | [验证: mock LLM 成功返回解析后的 dict；mock 失败 3 次返回 is_degraded=True]`
 
 **Checkpoint**: Foundation ready — LLM 客户端可独立运行并返回结构化结果或降级标记
