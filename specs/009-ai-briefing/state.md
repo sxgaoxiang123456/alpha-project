@@ -1,7 +1,7 @@
 # 实施进度 · F7 AI 早盘简报
 
 ## 当前任务
-[>] Code Review 修复 #6 · 全量测试通过并 merge 回 develop
+[x] F7 AI 早盘简报 — 已完成并 merge 回 develop
 
 ## 已完成
 - [x] T001 · 创建 `backend/app/templates/prompts/briefing.j2` Prompt 模板
@@ -26,6 +26,7 @@
 - [x] CR-Fix #3 · 清理 briefing 推送 metadata 冗余
 - [x] CR-Fix #4 · 简化 briefing.js 大盘指数处理
 - [x] CR-Fix #5 · 使用 threading.Event 优化 wait_for_quote_refresh
+- [x] CR-Fix #6 · 全量测试通过并 merge 回 develop
 
 ## 阻塞项
 （无）
