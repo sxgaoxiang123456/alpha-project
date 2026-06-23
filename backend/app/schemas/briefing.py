@@ -4,7 +4,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 from backend.app.schemas.stock import validate_stock_code
 
-_MOVE_TYPES = {"volume_spike", "price_surge", "price_drop"}
+_MOVE_TYPES = {"volume_spike", "price_surge", "price_drop", "normal"}
 
 
 class TopMover(BaseModel):

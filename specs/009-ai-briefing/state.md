@@ -1,7 +1,7 @@
 # 实施进度 · F7 AI 早盘简报
 
 ## 当前任务
-[>] T017 · 全量测试与 quickstart.md 手动触发验证 已完成
+[>] Code Review 修复 #6 · 全量测试通过并 merge 回 develop
 
 ## 已完成
 - [x] T001 · 创建 `backend/app/templates/prompts/briefing.j2` Prompt 模板
@@ -21,6 +21,11 @@
 - [x] T015 · 更新 frontend dashboard 手动刷新按钮
 - [x] T016 · 更新 briefing_card.html 展示 insights/top_movers 与 A-share 红绿语义
 - [x] T017 · 全量测试通过 + curl 手动触发验证
+- [x] CR-Fix #1 · BriefingService 60s 总超时强制降级
+- [x] CR-Fix #2 · top_mover_service 异动阈值判定
+- [x] CR-Fix #3 · 清理 briefing 推送 metadata 冗余
+- [x] CR-Fix #4 · 简化 briefing.js 大盘指数处理
+- [x] CR-Fix #5 · 使用 threading.Event 优化 wait_for_quote_refresh
 
 ## 阻塞项
 （无）

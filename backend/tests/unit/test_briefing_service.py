@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from unittest import mock
 
@@ -181,3 +181,46 @@ class TestBriefingService:
         service.generate(current_date=datetime(2026, 6, 23).date())
 
         assert "latest_briefing" in cache
+
+    def test_generate_degraded_when_total_timeout_exceeded(self, db_session):
+        from backend.app.services.briefing_llm_client import LLMResult
+        from backend.app.services.briefing_service import BriefingService
+
+        t0 = datetime(2026, 6, 23, 8, 50, tzinfo=UTC)
+        t_after_timeout = t0 + timedelta(seconds=61)
+        call_times = iter([t0, t_after_timeout, t_after_timeout])
+
+        service = BriefingService(
+            db=db_session,
+            market_index_service=FakeMarketIndexService(),
+            quote_service=FakeQuoteService(),
+            top_mover_service=FakeTopMoverService(),
+            prompt_loader=FakePromptLoader(),
+            llm_client=FakeLLMClient(degraded=False),
+            is_trading_day=lambda d: True,
+        )
+        service.llm_client.generate = mock.Mock(return_value=LLMResult(is_degraded=False, data={"insights": []}))
+
+        class _FakeDatetime:
+            def __init__(self, values):
+                self._values = iter(values)
+
+            def now(self, tz=None):
+                return next(self._values)
+
+            def __call__(self, *args, **kwargs):
+                return datetime(*args, **kwargs)
+
+        fake_datetime = _FakeDatetime([t0, t_after_timeout, t_after_timeout, t_after_timeout])
+
+        with mock.patch(
+            "backend.app.services.briefing_service.datetime",
+            fake_datetime,
+        ):
+            result = service.generate(current_date=t0.date())
+
+        assert isinstance(result, BriefingResponse)
+        assert result.is_degraded is True
+        assert "60" in (result.degraded_reason or "")
+        assert result.insights == []
+        service.llm_client.generate.assert_not_called()

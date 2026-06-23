@@ -1,5 +1,7 @@
 from datetime import date
 from unittest.mock import Mock
+import threading
+import time
 
 from freezegun import freeze_time
 
@@ -164,3 +166,40 @@ def test_register_briefing_job_adds_850_cron_job():
         id="briefing_push",
         replace_existing=True,
     )
+
+
+def test_wait_for_quote_refresh_returns_true_after_refresh_completes():
+    quote_service = Mock()
+    quote_service.get_watchlist_quotes.side_effect = lambda: time.sleep(0.1)
+    market_index_service = Mock()
+    scheduler = QuoteScheduler(
+        quote_service=quote_service,
+        market_index_service=market_index_service,
+        is_trading_day=lambda current_date: True,
+    )
+
+    thread = threading.Thread(target=scheduler.refresh_if_trading_day, kwargs={"current_date": date(2026, 6, 4)})
+    thread.start()
+    time.sleep(0.05)
+
+    assert scheduler.wait_for_quote_refresh(timeout_seconds=2) is True
+    thread.join(timeout=2)
+    assert not thread.is_alive()
+
+
+def test_wait_for_quote_refresh_returns_false_on_timeout():
+    quote_service = Mock()
+    quote_service.get_watchlist_quotes.side_effect = lambda: time.sleep(1.0)
+    market_index_service = Mock()
+    scheduler = QuoteScheduler(
+        quote_service=quote_service,
+        market_index_service=market_index_service,
+        is_trading_day=lambda current_date: True,
+    )
+
+    thread = threading.Thread(target=scheduler.refresh_if_trading_day, kwargs={"current_date": date(2026, 6, 4)})
+    thread.start()
+    time.sleep(0.05)
+
+    assert scheduler.wait_for_quote_refresh(timeout_seconds=0.1) is False
+    thread.join(timeout=2)

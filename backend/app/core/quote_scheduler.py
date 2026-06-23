@@ -1,5 +1,5 @@
 import logging
-import time
+import threading
 from collections.abc import Callable
 from datetime import date
 from typing import Any
@@ -24,7 +24,8 @@ class QuoteScheduler:
         self.on_quotes_refreshed = on_quotes_refreshed
         self.push_service_factory = push_service_factory
         self.briefing_service_factory = briefing_service_factory
-        self._quote_refresh_in_progress = False
+        self._quote_refresh_done = threading.Event()
+        self._quote_refresh_done.set()
 
     def refresh_if_trading_day(self, *, current_date: date | None = None) -> None:
         today = current_date or date.today()
@@ -33,7 +34,7 @@ class QuoteScheduler:
             return
 
         logger.info("开始行情定时刷新")
-        self._quote_refresh_in_progress = True
+        self._quote_refresh_done.clear()
         try:
             self.quote_service.get_watchlist_quotes()
             self.market_index_service.get_indices()
@@ -45,15 +46,11 @@ class QuoteScheduler:
                 except Exception:
                     logger.exception("预警检测回调异常")
         finally:
-            self._quote_refresh_in_progress = False
+            self._quote_refresh_done.set()
 
     def wait_for_quote_refresh(self, timeout_seconds: int = 15) -> bool:
         """等待正在执行的行情刷新完成，超时返回 False。"""
-        elapsed = 0.0
-        while self._quote_refresh_in_progress and elapsed < timeout_seconds:
-            time.sleep(0.5)
-            elapsed += 0.5
-        return not self._quote_refresh_in_progress
+        return self._quote_refresh_done.wait(timeout=timeout_seconds)
 
     def send_briefing_if_trading_day(self, *, current_date: date | None = None) -> None:
         """交易日 8:50 生成并推送早盘简报。"""

@@ -136,16 +136,14 @@ class TopMoverService:
         return total / len(history)
 
     def _classify_move(self, volume_spike_ratio: float, change_percent: float) -> tuple[str, float]:
-        """根据量价特征分类异动类型并返回代表数值。"""
+        """根据量价特征分类异动类型并返回代表数值。未达阈值时标记为 normal。"""
         if volume_spike_ratio >= self.VOLUME_SPIKE_THRESHOLD:
             return "volume_spike", volume_spike_ratio
         if change_percent >= self.PRICE_CHANGE_THRESHOLD:
             return "price_surge", change_percent
         if change_percent <= -self.PRICE_CHANGE_THRESHOLD:
             return "price_drop", change_percent
-        if change_percent >= 0:
-            return "price_surge", change_percent
-        return "price_drop", change_percent
+        return "normal", change_percent
 
     def _build_insight(
         self, move_type: str, value: float, data_sufficient: bool
@@ -158,4 +156,4 @@ class TopMoverService:
             return f"涨幅 {value:.2f}%，短期异动{suffix}"
         if move_type == "price_drop":
             return f"跌幅 {abs(value):.2f}%，短期异动{suffix}"
-        return f"异动值 {value:.2f}{suffix}"
+        return f"当前涨跌幅 {value:.2f}%，未达异动阈值{suffix}"

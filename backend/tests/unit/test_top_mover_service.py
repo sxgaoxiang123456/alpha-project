@@ -157,6 +157,17 @@ class TestTopMoverService:
 
         assert len(movers) == 5
 
+    def test_classify_move_uses_thresholds(self, db_session):
+        from backend.app.services.top_mover_service import TopMoverService
+
+        service = TopMoverService(db=db_session)
+
+        assert service._classify_move(3.0, 1.0) == ("volume_spike", 3.0)
+        assert service._classify_move(1.0, 5.0) == ("price_surge", 5.0)
+        assert service._classify_move(1.0, -5.0) == ("price_drop", -5.0)
+        assert service._classify_move(1.0, 1.0) == ("normal", 1.0)
+        assert service._classify_move(1.0, -1.0) == ("normal", -1.0)
+
     @staticmethod
     def _seed_stock_and_watchlist(db, code, name):
         if db.query(Group).count() == 0:

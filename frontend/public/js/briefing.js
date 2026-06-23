@@ -63,8 +63,8 @@
 
         const indicesHtml = briefing.market_indices
             ? Object.entries(briefing.market_indices).map(function ([name, data]) {
-                  const current = typeof data === 'number' ? data : data.current;
-                  const change = typeof data === 'number' ? 0 : data.change_pct;
+                  const current = data.current || 0;
+                  const change = data.change_pct || 0;
                   const colorClass = change > 0 ? 'text-market-up' : change < 0 ? 'text-market-down' : 'text-on-surface-variant';
                   const sign = change > 0 ? '+' : '';
                   return '<div class="flex flex-col">' +
@@ -125,8 +125,8 @@
 
         const indicesRows = briefing.market_indices
             ? Object.entries(briefing.market_indices).map(function ([name, data]) {
-                  const current = typeof data === 'number' ? data : data.current;
-                  const change = typeof data === 'number' ? 0 : data.change_pct;
+                  const current = data.current || 0;
+                  const change = data.change_pct || 0;
                   const colorClass = change > 0 ? 'text-market-up' : change < 0 ? 'text-market-down' : 'text-on-surface-variant';
                   const sign = change > 0 ? '+' : '';
                   return '<tr class="border-b border-outline-variant/30">' +

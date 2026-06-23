@@ -68,7 +68,7 @@ class PushService:
             if fallback_result is not None
             else primary_result
         )
-        metadata = message.content.get("metadata") if isinstance(message.content, dict) else None
+        metadata = self._extract_log_metadata(message)
         self._update_log(
             message_id, used_channel, primary_result, fallback_result, elapsed_ms, channel_status,
             metadata=metadata,
@@ -250,6 +250,17 @@ class PushService:
             log.status = "failed"
             log.error_reason = "Async execution exception"
             self.db.commit()
+
+    def _extract_log_metadata(self, message: PushMessageRequest) -> dict | None:
+        """从消息内容中提取需要写入 PushLog 的元数据。"""
+        if not isinstance(message.content, dict):
+            return None
+        if message.message_type == "briefing":
+            return {
+                "is_degraded": message.content.get("is_degraded"),
+                "degraded_reason": message.content.get("degraded_reason"),
+            }
+        return message.content.get("metadata")
 
     # ---------- 格式化方法 (T7/T8) ----------
 

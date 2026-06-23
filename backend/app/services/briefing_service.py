@@ -94,19 +94,32 @@ class BriefingService:
             for idx in indices
         }
 
-        # 2. 渲染 Prompt
-        prompt = self.prompt_loader.render(
-            today=today.isoformat(),
-            market_indices={
-                name: {"current": snap.current, "change_pct": snap.change_pct}
-                for name, snap in market_indices.items()
-            },
-            top_movers=[m.model_dump() for m in top_movers],
-            alert_history=alert_history,
-        )
+        # FR-011: 总耗时超过 60 秒则中断并降级，避免阻塞后续任务
+        elapsed_before_llm = (datetime.now(UTC) - start_time).total_seconds()
+        if elapsed_before_llm > self.BRIEFING_TOTAL_TIMEOUT_SECONDS:
+            logger.warning(
+                "简报生成总耗时 %.2fs 超过 %ds，降级处理",
+                elapsed_before_llm,
+                self.BRIEFING_TOTAL_TIMEOUT_SECONDS,
+            )
+            llm_result = LLMResult(
+                is_degraded=True,
+                error_reason=f"简报生成总耗时超过 {self.BRIEFING_TOTAL_TIMEOUT_SECONDS} 秒",
+            )
+        else:
+            # 2. 渲染 Prompt
+            prompt = self.prompt_loader.render(
+                today=today.isoformat(),
+                market_indices={
+                    name: {"current": snap.current, "change_pct": snap.change_pct}
+                    for name, snap in market_indices.items()
+                },
+                top_movers=[m.model_dump() for m in top_movers],
+                alert_history=alert_history,
+            )
 
-        # 3. 调用 LLM
-        llm_result = self.llm_client.generate(prompt)
+            # 3. 调用 LLM
+            llm_result = self.llm_client.generate(prompt)
 
         # 4. 构建结果
         briefing = self._build_briefing(
@@ -209,10 +222,6 @@ class BriefingService:
                 "insights": briefing.insights,
                 "is_degraded": briefing.is_degraded,
                 "degraded_reason": briefing.degraded_reason,
-                "metadata": {
-                    "is_degraded": briefing.is_degraded,
-                    "degraded_reason": briefing.degraded_reason,
-                },
             }
             message = PushMessageRequest(
                 message_type="briefing",
