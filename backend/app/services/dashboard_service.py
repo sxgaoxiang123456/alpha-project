@@ -218,29 +218,39 @@ class DashboardService:
             for q in quotes
         ]
 
+    def _parse_briefing_data(self, data: Any) -> BriefingData:
+        """将缓存中的简报 dict 解析为 BriefingData。"""
+        if not isinstance(data, dict):
+            return BriefingData(insights=[])
+        insights = data.get("insights", [])
+        if not isinstance(insights, list):
+            insights = [str(insights)]
+        return BriefingData(
+            insights=insights,
+            generated_at=data.get("generated_at"),
+            market_indices=data.get("market_indices", {}),
+            top_movers=data.get("top_movers", []),
+            is_degraded=data.get("is_degraded", False),
+            degraded_reason=data.get("degraded_reason"),
+        )
+
     def _get_briefing(self) -> BriefingData | None:
         """获取最新 AI 简报（优先读 Redis，miss 时回退 SQLite cache）。"""
         # 优先读 Redis
         if self.redis_cache is not None:
             cached = self.redis_cache.get("latest_briefing")
             if cached is not None:
-                insights = cached.get("insights", []) if isinstance(cached, dict) else []
-                return BriefingData(
-                    insights=insights if isinstance(insights, list) else [str(insights)],
-                )
+                return self._parse_briefing_data(cached)
 
         raw = self.cache_service.get("latest_briefing")
         if not raw:
             return BriefingData(insights=[])
         try:
             data = json.loads(raw) if isinstance(raw, str) else raw
-            insights = data.get("insights", [])
             # 写入 Redis 缓存
             if self.redis_cache is not None:
                 self.redis_cache.set("latest_briefing", data, ttl_seconds=300)
-            return BriefingData(
-                insights=insights if isinstance(insights, list) else [str(insights)],
-            )
+            return self._parse_briefing_data(data)
         except Exception:
             logger.exception("简报解析失败")
             return BriefingData(insights=[])

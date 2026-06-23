@@ -102,7 +102,7 @@
 - [x] T014 [BE] [US4] Register `briefing_router` in `backend/app/main.py`  
   `[FR-010 来源] | [依赖: T012, T013] | [验证: 服务启动后 /api/briefing/generate 和 /api/briefing/latest 可访问]`
 
-- [ ] T015 [FE] [US4] Update `frontend/src/templates/dashboard.html` to add「重新生成简报」button with cooldown UI and wire JS to call `POST /api/briefing/generate`  
+- [x] T015 [FE] [US4] Update `frontend/src/templates/dashboard.html` to add「重新生成简报」button with cooldown UI and wire JS to call `POST /api/briefing/generate`  
   `[FR-010 来源] | [依赖: T014] | [验证: 点击按钮后页面显示刷新中/成功/冷却中状态]`
 
 **Checkpoint**: US4 验证通过——手动刷新可控、有冷却、有反馈
@@ -113,10 +113,10 @@
 
 **Purpose**: 前端展示完善与端到端回归
 
-- [ ] T016 [FE] [P] Update `frontend/src/templates/components/briefing_card.html` to display `insights` and `top_movers` with A-share red/green semantics  
+- [x] T016 [FE] [P] Update `frontend/src/templates/components/briefing_card.html` to display `insights` and `top_movers` with A-share red/green semantics  
   `[FR-006 来源] | [依赖: T015] | [验证: Dashboard 渲染最新简报，涨红跌绿，点击「查看详情」按钮可用]`
 
-- [ ] T017 [INT] Run full backend test suite (`tests/unit/`, `tests/integration/`) and validate `quickstart.md` manual trigger flow  
+- [x] T017 [INT] Run full backend test suite (`tests/unit/`, `tests/integration/`) and validate `quickstart.md` manual trigger flow  
   `[FR-001-FR-013] | [依赖: T007-T016] | [验证: pytest 全量通过；curl /api/briefing/generate 触发并在 /api/briefing/latest 看到结果]`
 
 **Checkpoint**: F7 全量功能可演示

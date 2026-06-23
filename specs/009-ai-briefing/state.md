@@ -1,7 +1,7 @@
 # 实施进度 · F7 AI 早盘简报
 
 ## 当前任务
-[>] T015 · 更新 frontend dashboard 手动刷新按钮
+[>] T017 · 全量测试与 quickstart.md 手动触发验证 已完成
 
 ## 已完成
 - [x] T001 · 创建 `backend/app/templates/prompts/briefing.j2` Prompt 模板
@@ -18,6 +18,9 @@
 - [x] T012 · 创建 `backend/app/routers/briefing.py` 手动刷新 API
 - [x] T013 · 创建 `GET /api/briefing/latest` 端点
 - [x] T014 · 在 `backend/app/main.py` 注册 `briefing_router`
+- [x] T015 · 更新 frontend dashboard 手动刷新按钮
+- [x] T016 · 更新 briefing_card.html 展示 insights/top_movers 与 A-share 红绿语义
+- [x] T017 · 全量测试通过 + curl 手动触发验证
 
 ## 阻塞项
 （无）

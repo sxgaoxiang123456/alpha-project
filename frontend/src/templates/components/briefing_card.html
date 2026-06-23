@@ -1,30 +1,183 @@
-<div class="bg-surface-base border border-primary-container/30 rounded flex-1 flex flex-col relative overflow-hidden">
-<!-- Subtle AI Background Glow -->
-<div class="absolute -top-20 -right-20 w-64 h-64 bg-primary-container/10 rounded-full blur-3xl pointer-events-none"></div>
-<div class="p-card-padding border-b border-outline-variant bg-surface-raised/30 flex justify-between items-center z-10">
-<h2 class="font-headline-md text-headline-md text-primary-fixed flex items-center gap-2">
-<span class="material-symbols-outlined">memory</span>每日 AI 简报
-</h2>
-<span class="font-label-caps text-label-caps bg-primary-container text-on-primary-container px-2 py-0.5 rounded">NEW</span>
+{% set has_briefing = briefing and briefing.insights %}
+
+<div id="briefing-card" class="bg-surface-base border border-primary-container/30 rounded flex-1 flex flex-col relative overflow-hidden">
+    <!-- Subtle AI Background Glow -->
+    <div class="absolute -top-20 -right-20 w-64 h-64 bg-primary-container/10 rounded-full blur-3xl pointer-events-none"></div>
+
+    <div class="p-card-padding border-b border-outline-variant bg-surface-raised/30 flex justify-between items-center z-10">
+        <h2 class="font-headline-md text-headline-md text-primary-fixed flex items-center gap-2">
+            <span class="material-symbols-outlined">memory</span>每日 AI 简报
+        </h2>
+        <div class="flex items-center gap-2">
+            <span class="font-label-caps text-label-caps bg-primary-container text-on-primary-container px-2 py-0.5 rounded">NEW</span>
+            <button id="briefing-generate-btn" type="button" class="p-2 rounded hover:bg-primary/10 text-primary transition-colors" title="重新生成简报">
+                <span class="material-symbols-outlined">refresh</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="p-card-padding flex-1 flex flex-col gap-4 z-10">
+        <div id="briefing-status" class="font-body-md text-body-md min-h-[20px] text-on-surface-variant"></div>
+
+        {% if has_briefing %}
+        <div id="briefing-content" class="space-y-4">
+            <!-- 大盘指数 -->
+            {% if briefing.market_indices %}
+            <div class="grid grid-cols-3 gap-2 bg-surface-raised/30 p-3 rounded border border-outline-variant/30">
+                {% for name, data in briefing.market_indices.items() %}
+                <div class="flex flex-col">
+                    <span class="font-label-caps text-label-caps text-on-surface-variant">{{ name }}</span>
+                    {% set current = data.current if data is mapping else data %}
+                    {% set change = data.change_pct if data is mapping else 0 %}
+                    {% set color_class = 'text-market-up' if change > 0 else ('text-market-down' if change < 0 else 'text-on-surface-variant') %}
+                    {% set sign = '+' if change > 0 else '' %}
+                    <span class="font-data-table text-data-table {{ color_class }}">
+                        {{ "%.2f"|format(current) }} <span class="text-xs">({{ sign }}{{ "%.2f"|format(change) }}%)</span>
+                    </span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- 异动 TOP5 -->
+            {% if briefing.top_movers %}
+            <div class="bg-surface-raised/30 p-3 rounded border border-outline-variant/30">
+                <h3 class="font-label-caps text-label-caps text-on-surface-variant mb-2">异动 TOP5</h3>
+                <div class="space-y-1">
+                    {% for mover in briefing.top_movers[:5] %}
+                    {% set color_class = 'text-market-up' if mover.change_percent > 0 else ('text-market-down' if mover.change_percent < 0 else 'text-on-surface-variant') %}
+                    {% set sign = '+' if mover.change_percent > 0 else '' %}
+                    <div class="flex justify-between items-center py-2 border-b border-outline-variant/30 last:border-0">
+                        <div class="flex flex-col">
+                            <span class="font-body-md text-body-md text-on-surface">{{ mover.stock_name }}</span>
+                            <span class="font-data-table text-data-table text-on-surface-variant">{{ mover.stock_code }}</span>
+                        </div>
+                        <span class="font-data-table text-data-table {{ color_class }}">{{ sign }}{{ "%.2f"|format(mover.change_percent) }}%</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- AI 解读 -->
+            {% if briefing.insights %}
+            <div class="space-y-2">
+                {% for insight in briefing.insights[:2] %}
+                <div class="bg-surface-raised p-3 rounded border border-outline-variant/50 border-l-4 border-l-primary-container">
+                    <p class="font-body-md text-body-md text-on-surface-variant">{{ insight }}</p>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- 降级提示 -->
+            {% if briefing.is_degraded %}
+            <div class="bg-error/10 border border-error rounded p-3 flex items-center gap-2">
+                <span class="material-symbols-outlined text-error">error</span>
+                <span class="font-body-md text-body-md text-error">{{ briefing.degraded_reason or '简报已降级，展示模板数据' }}</span>
+            </div>
+            {% endif %}
+        </div>
+        {% else %}
+        <div id="briefing-content" class="flex-1 flex items-center justify-center">
+            <p class="font-body-md text-body-md text-on-surface-variant">今日暂无简报</p>
+        </div>
+        {% endif %}
+
+        <div id="briefing-footer" class="mt-auto pt-4 {{ 'hidden' if not has_briefing }}">
+            <button id="briefing-modal-open" type="button" class="w-full py-3 px-4 border border-primary text-primary font-headline-md text-headline-md rounded hover:bg-primary/10 transition-colors flex items-center justify-center gap-2">
+                查看完整简报 <span class="material-symbols-outlined">arrow_forward</span>
+            </button>
+        </div>
+    </div>
 </div>
-<div class="p-card-padding flex-1 flex flex-col gap-4 z-10">
-{% if briefing and briefing.insights %}
-<div class="space-y-4">
-{% for insight in briefing.insights %}
-<div class="bg-surface-raised p-4 rounded border border-outline-variant/50 border-l-4 border-l-primary-container">
-<p class="font-body-md text-body-md text-on-surface-variant">{{ insight }}</p>
+
+<!-- 完整简报弹窗 -->
+<div id="briefing-modal" class="fixed inset-0 z-50 hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-surface-base border border-outline-variant rounded-lg w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl">
+        <div class="p-card-padding border-b border-outline-variant flex justify-between items-center">
+            <h3 class="font-headline-md text-headline-md text-primary-fixed">完整简报</h3>
+            <button id="briefing-modal-close" type="button" class="p-1 rounded hover:bg-surface-raised text-on-surface-variant">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <div id="briefing-modal-body" class="p-card-padding overflow-y-auto">
+            {% if has_briefing %}
+            <div class="space-y-6">
+                {% if briefing.market_indices %}
+                <div>
+                    <h4 class="font-headline-md text-headline-md text-primary-fixed mb-2">大盘指数</h4>
+                    <table class="w-full">
+                        <thead>
+                            <tr class="text-left font-label-caps text-label-caps text-on-surface-variant">
+                                <th class="py-2">指数</th>
+                                <th class="py-2 text-right">点位</th>
+                                <th class="py-2 text-right">涨跌幅</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for name, data in briefing.market_indices.items() %}
+                            {% set current = data.current if data is mapping else data %}
+                            {% set change = data.change_pct if data is mapping else 0 %}
+                            {% set color_class = 'text-market-up' if change > 0 else ('text-market-down' if change < 0 else 'text-on-surface-variant') %}
+                            {% set sign = '+' if change > 0 else '' %}
+                            <tr class="border-b border-outline-variant/30">
+                                <td class="py-2 font-body-md text-on-surface">{{ name }}</td>
+                                <td class="py-2 font-data-table text-right {{ color_class }}">{{ "%.2f"|format(current) }}</td>
+                                <td class="py-2 font-data-table text-right {{ color_class }}">{{ sign }}{{ "%.2f"|format(change) }}%</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+
+                {% if briefing.top_movers %}
+                <div>
+                    <h4 class="font-headline-md text-headline-md text-primary-fixed mb-2">异动 TOP5</h4>
+                    <table class="w-full">
+                        <thead>
+                            <tr class="text-left font-label-caps text-label-caps text-on-surface-variant">
+                                <th class="py-2">名称</th>
+                                <th class="py-2">代码</th>
+                                <th class="py-2">类型</th>
+                                <th class="py-2 text-right">涨跌幅</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for mover in briefing.top_movers %}
+                            {% set color_class = 'text-market-up' if mover.change_percent > 0 else ('text-market-down' if mover.change_percent < 0 else 'text-on-surface-variant') %}
+                            {% set sign = '+' if mover.change_percent > 0 else '' %}
+                            <tr class="border-b border-outline-variant/30">
+                                <td class="py-2 font-body-md text-on-surface">{{ mover.stock_name }}</td>
+                                <td class="py-2 font-data-table text-on-surface-variant">{{ mover.stock_code }}</td>
+                                <td class="py-2 font-data-table text-on-surface-variant">{{ mover.move_type or '-' }}</td>
+                                <td class="py-2 font-data-table text-right {{ color_class }}">{{ sign }}{{ "%.2f"|format(mover.change_percent) }}%</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+
+                {% if briefing.insights %}
+                <div>
+                    <h4 class="font-headline-md text-headline-md text-primary-fixed mb-2">AI 解读</h4>
+                    <ul class="list-disc list-inside space-y-2">
+                        {% for insight in briefing.insights %}
+                        <li class="font-body-md text-body-md text-on-surface-variant">{{ insight }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+            {% else %}
+            <p class="font-body-md text-body-md text-on-surface-variant">今日暂无简报</p>
+            {% endif %}
+        </div>
+    </div>
 </div>
-{% endfor %}
-</div>
-<div class="mt-auto pt-4">
-<button class="w-full py-3 px-4 border border-primary text-primary font-headline-md text-headline-md rounded hover:bg-primary/10 transition-colors flex items-center justify-center gap-2">
-查看完整简报 <span class="material-symbols-outlined">arrow_forward</span>
-</button>
-</div>
-{% else %}
-<div class="flex-1 flex items-center justify-center">
-<p class="font-body-md text-body-md text-on-surface-variant">今日暂无简报</p>
-</div>
-{% endif %}
-</div>
-</div>
+
+<script>
+    window.__initialBriefing__ = {{ (briefing or {}) | tojson }};
+</script>
