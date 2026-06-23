@@ -22,6 +22,7 @@ from backend.app.database import SessionLocal, init_db
 from backend.app.models.group import Group
 from backend.app.models.historical_quote import HistoricalQuote
 from backend.app.models.watchlist import WatchlistItem
+from backend.app.core.redis_cache import RedisCache
 from backend.app.routers.dashboard import router as dashboard_router
 from backend.app.routers.groups import router as groups_router
 from backend.app.routers.settings import router as settings_router
@@ -287,6 +288,7 @@ def _briefing_service_factory():
 
     facade = DataSourceFacade(briefing_db)
     cache = CacheService(briefing_db)
+    redis_cache = RedisCache(client=_redis_client)
 
     def _fallback_quotes_provider():
         watchlist_codes = {
@@ -334,6 +336,7 @@ def _briefing_service_factory():
         is_trading_day=is_trading_day,
         push_service=_push_service_factory(),
         cache_service=cache,
+        redis_cache=redis_cache,
         fallback_quotes_provider=_fallback_quotes_provider,
         quote_refresh_waiter=quote_scheduler.wait_for_quote_refresh if quote_scheduler else None,
     )

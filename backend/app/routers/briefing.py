@@ -47,15 +47,12 @@ def generate_briefing(
     if not trading_calendar.is_trading_day(date.today()):
         raise HTTPException(status_code=422, detail="今日非交易日，暂无简报")
 
-    cooldown_raw = cache.get(BRIEFING_MANUAL_COOLDOWN_KEY)
-    if cooldown_raw:
-        raise HTTPException(status_code=429, detail="简报刷新冷却中，请稍后再试")
-
-    cache.set(
+    if not cache.set_nx(
         BRIEFING_MANUAL_COOLDOWN_KEY,
         datetime.now(UTC).isoformat(),
         ttl_seconds=MANUAL_COOLDOWN_SECONDS,
-    )
+    ):
+        raise HTTPException(status_code=429, detail="简报刷新冷却中，请稍后再试")
 
     trigger_fn = sys.modules[__name__]._trigger_manual_briefing
     background_tasks.add_task(trigger_fn, request.app)

@@ -1,7 +1,7 @@
 # 实施进度 · F7 AI 早盘简报
 
 ## 当前任务
-[x] F7 AI 早盘简报 — 已完成并 merge 回 develop
+[x] F7 AI 早盘简报 — 已完成并 merge 回 develop，已 push 并打 tag `v0.1.0-009-ai-briefing`，已提交 MR 到 main
 
 ## 已完成
 - [x] T001 · 创建 `backend/app/templates/prompts/briefing.j2` Prompt 模板
@@ -27,6 +27,12 @@
 - [x] CR-Fix #4 · 简化 briefing.js 大盘指数处理
 - [x] CR-Fix #5 · 使用 threading.Event 优化 wait_for_quote_refresh
 - [x] CR-Fix #6 · 全量测试通过并 merge 回 develop
+- [x] 测试缺口补齐 · backend-testing（LLM 故障注入 / 并发限频）
+- [x] 测试缺口补齐 · frontend-testing（Vitest + MSW 地基 + 9 个单元/契约测试）
+- [x] 测试缺口补齐 · fullstack-slice-testing（手动刷新切片 4 条 E2E）
+- [x] 测试缺口补齐 · full-chain-testing（P0-1/P0-2/P0-3 全链路 3 条 E2E）
+- [x] 缺陷修复 · briefing_card.html 在 insights 为空时仍展示降级/模板简报
+- [x] 缺陷修复 · BriefingService 写入 SQLite 缓存时同步更新 Redis，避免 Dashboard 读到旧简报
 
 ## 阻塞项
 （无）

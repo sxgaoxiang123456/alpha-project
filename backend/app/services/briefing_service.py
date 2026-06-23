@@ -33,6 +33,7 @@ class BriefingService:
         is_trading_day: Callable[[date], bool],
         push_service: Any | None = None,
         cache_service: Any | None = None,
+        redis_cache: Any | None = None,
         fallback_quotes_provider: Callable[[], dict[str, dict[str, Any]] | None] = None,
         quote_refresh_waiter: Callable[[int], bool] | None = None,
     ):
@@ -45,6 +46,7 @@ class BriefingService:
         self.is_trading_day = is_trading_day
         self.push_service = push_service
         self.cache_service = cache_service
+        self.redis_cache = redis_cache
         self.fallback_quotes_provider = fallback_quotes_provider
         self.quote_refresh_waiter = quote_refresh_waiter
 
@@ -195,15 +197,19 @@ class BriefingService:
         )
 
     def _cache_briefing(self, briefing: BriefingResponse) -> None:
-        """缓存最新简报。"""
-        if self.cache_service is None:
+        """缓存最新简报（SQLite + Redis）。"""
+        if self.cache_service is None and self.redis_cache is None:
             return
         try:
-            self.cache_service.set(
-                "latest_briefing",
-                json.dumps(briefing.model_dump(mode="json"), ensure_ascii=False),
-                ttl_seconds=300,
-            )
+            payload = json.dumps(briefing.model_dump(mode="json"), ensure_ascii=False)
+            if self.cache_service is not None:
+                self.cache_service.set(
+                    "latest_briefing",
+                    payload,
+                    ttl_seconds=300,
+                )
+            if self.redis_cache is not None:
+                self.redis_cache.set("latest_briefing", briefing.model_dump(mode="json"), ttl_seconds=300)
         except Exception:
             logger.exception("简报缓存失败")
 

@@ -58,6 +58,37 @@ class TestCacheWrite:
         assert before + timedelta(minutes=59) < record.expires_at < after + timedelta(minutes=61)
 
 
+class TestCacheSetNx:
+    """set_nx 原子写入测试。"""
+
+    def test_set_nx_returns_true_when_key_absent(self, cache: CacheService):
+        result = cache.set_nx("nx_key", '{"price": 1800.0}', ttl_seconds=60)
+        assert result is True
+        assert cache.get("nx_key") == '{"price": 1800.0}'
+
+    def test_set_nx_returns_false_when_key_valid(self, cache: CacheService):
+        cache.set("nx_key", '{"price": 1800.0}', ttl_seconds=60)
+        result = cache.set_nx("nx_key", '{"price": 1900.0}', ttl_seconds=60)
+        assert result is False
+        assert cache.get("nx_key") == '{"price": 1800.0}'
+
+    def test_set_nx_returns_true_when_key_expired(self, cache: CacheService, db: Session):
+        from datetime import datetime, timedelta
+
+        expired_time = datetime.utcnow() - timedelta(hours=2)
+        db.add(CacheEntry(
+            key="expired_nx_key",
+            content='{"price": 100.0}',
+            cached_at=expired_time,
+            expires_at=expired_time + timedelta(hours=1),
+        ))
+        db.commit()
+
+        result = cache.set_nx("expired_nx_key", '{"price": 200.0}', ttl_seconds=60)
+        assert result is True
+        assert cache.get("expired_nx_key") == '{"price": 200.0}'
+
+
 class TestCacheRead:
     """缓存读取测试。"""
 
