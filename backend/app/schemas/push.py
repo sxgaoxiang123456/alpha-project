@@ -54,6 +54,7 @@ class PushLogResponse(BaseModel):
     status: str
     error_reason: str | None = None
     elapsed_ms: int | None = None
+    metadata_json: str | None = None
     created_at: datetime
 
 

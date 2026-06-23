@@ -31,11 +31,15 @@ from backend.app.routers.push import router as push_router
 from backend.app.routers.quotes import router as quotes_router
 from backend.app.routers.system import router as system_router
 from backend.app.routers.watchlist import router as watchlist_router
+from backend.app.services.briefing_llm_client import BriefingLLMClient
+from backend.app.services.briefing_service import BriefingService
 from backend.app.services.cache_service import CacheService
 from backend.app.services.data_source import AkShareDataSource, BaoStockDataSource
 from backend.app.services.data_source_facade import DataSourceFacade
 from backend.app.services.market_index import MarketIndexService
+from backend.app.services.prompt_loader import PromptLoader
 from backend.app.services.quote_service import QuoteService
+from backend.app.services.top_mover_service import TopMoverService
 
 settings = get_settings()
 
@@ -251,6 +255,7 @@ async def lifespan(app: FastAPI):
         is_trading_day=is_trading_day,
         on_quotes_refreshed=_run_alert_detection,
         push_service_factory=_push_service_factory,
+        briefing_service_factory=_briefing_service_factory,
     )
     register_quote_refresh_job(
         scheduler,
@@ -260,6 +265,7 @@ async def lifespan(app: FastAPI):
     register_briefing_job(scheduler, quote_scheduler)
     scheduler.start()
     app.state.scheduler = scheduler
+    app.state.briefing_service_factory = _briefing_service_factory
 
     yield
 
@@ -267,6 +273,68 @@ async def lifespan(app: FastAPI):
     for push_db in _push_db_sessions:
         if push_db.is_active:
             push_db.close()
+
+
+def _briefing_service_factory():
+    """简报服务工厂：按 env DeepSeek 配置组装 BriefingService。"""
+    from backend.app.models.stock import Stock
+    from backend.app.models.watchlist import WatchlistItem
+
+    briefing_db = SessionLocal()
+    _push_db_sessions.append(briefing_db)
+
+    facade = DataSourceFacade(briefing_db)
+    cache = CacheService(briefing_db)
+
+    def _fallback_quotes_provider():
+        watchlist_codes = {
+            row[0] for row in briefing_db.query(WatchlistItem.stock_code).all()
+        }
+        codes = [
+            row[0]
+            for row in briefing_db.query(Stock.code)
+            .filter(Stock.code.notin_(watchlist_codes) if watchlist_codes else True)
+            .limit(50)
+            .all()
+        ]
+        if not codes:
+            return {}
+        result = facade.fetch_realtime(codes)
+        return result.data or {}
+
+    llm_client = BriefingLLMClient(
+        api_key=settings.deepseek_api_key,
+        base_url=settings.deepseek_base_url,
+        model=settings.deepseek_model,
+        timeout_seconds=settings.deepseek_timeout_seconds,
+        retry_attempts=settings.deepseek_retry_attempts,
+        retry_interval_seconds=settings.deepseek_retry_interval_seconds,
+    )
+
+    quote_scheduler = app.state.scheduler
+
+    return BriefingService(
+        db=briefing_db,
+        market_index_service=MarketIndexService(
+            facade=facade,
+            cache=cache,
+            ttl_seconds=settings.quote_cache_ttl_seconds,
+        ),
+        quote_service=QuoteService(
+            db=briefing_db,
+            facade=facade,
+            cache=cache,
+            ttl_seconds=settings.quote_cache_ttl_seconds,
+        ),
+        top_mover_service=TopMoverService(db=briefing_db),
+        prompt_loader=PromptLoader(),
+        llm_client=llm_client,
+        is_trading_day=is_trading_day,
+        push_service=_push_service_factory(),
+        cache_service=cache,
+        fallback_quotes_provider=_fallback_quotes_provider,
+        quote_refresh_waiter=quote_scheduler.wait_for_quote_refresh if quote_scheduler else None,
+    )
 
 
 app = FastAPI(

@@ -68,8 +68,10 @@ class PushService:
             if fallback_result is not None
             else primary_result
         )
+        metadata = message.content.get("metadata") if isinstance(message.content, dict) else None
         self._update_log(
-            message_id, used_channel, primary_result, fallback_result, elapsed_ms, channel_status
+            message_id, used_channel, primary_result, fallback_result, elapsed_ms, channel_status,
+            metadata=metadata,
         )
 
         # 更新通道失败计数
@@ -113,6 +115,7 @@ class PushService:
         fallback_result: dict | None,
         elapsed_ms: int,
         primary_status: str,
+        metadata: dict | None = None,
     ):
         """更新推送日志状态。"""
         log = (
@@ -124,6 +127,8 @@ class PushService:
             return
 
         log.elapsed_ms = elapsed_ms
+        if metadata:
+            log.metadata_json = json.dumps(metadata, ensure_ascii=False)
 
         final_result = fallback_result if fallback_result is not None else primary_result
 
@@ -284,6 +289,9 @@ class PushService:
             "date": content.get("date", ""),
             "market_indices": content.get("market_indices", {}),
             "top_movers": content.get("top_movers", []),
+            "insights": content.get("insights", []),
+            "is_degraded": content.get("is_degraded", False),
+            "degraded_reason": content.get("degraded_reason"),
         }
 
     def _content_to_text(self, content: dict) -> str:
@@ -319,8 +327,14 @@ class PushService:
         date = html.escape(str(content.get("date", "")))
         indices = content.get("market_indices", {})
         top_movers = content.get("top_movers", [])
+        insights = content.get("insights", [])
+        is_degraded = content.get("is_degraded", False)
+        degraded_reason = content.get("degraded_reason")
 
         lines = [f"📊 早盘简报 {date}", ""]
+        if is_degraded:
+            lines.append(f"⚠️ 模板降级：{html.escape(str(degraded_reason))}")
+            lines.append("")
         lines.append("【大盘指数】")
         for name, value in indices.items():
             lines.append(f"  {html.escape(str(name))}: {html.escape(str(value))}")
@@ -332,6 +346,13 @@ class PushService:
                 f"({html.escape(str(mover.get('code', '')))}): "
                 f"{html.escape(str(mover.get('change_pct', '')))}%"
             )
+        if insights:
+            lines.append("")
+            lines.append("【AI 解读】")
+            for insight in insights:
+                lines.append(f"  • {html.escape(str(insight))}")
+        lines.append("")
+        lines.append("仅供参考，不构成投资建议")
         return "\n".join(lines)
 
     # ---------- 截断方法 (T9) ----------

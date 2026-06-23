@@ -45,16 +45,16 @@
 **Goal**: 每个交易日 8:50 自动生成并推送含大盘指数、异动 TOP 5 和 AI 解读的简报  
 **Independent Test**: 模拟交易日运行简报生成任务，飞书/Telegram 收到完整卡片/文本
 
-- [ ] T005 [BE] [US1] Create `backend/app/services/top_mover_service.py` to compute top 5 movers from watchlist first, then all-market fallback; handle insufficient history  
+- [x] T005 [BE] [US1] Create `backend/app/services/top_mover_service.py` to compute top 5 movers from watchlist first, then all-market fallback; handle insufficient history  
   `[FR-004 来源] | [依赖: T002] | [验证: 输入 10 只自选股返回 5 条 TopMover；输入 2 只自选股返回 2 自选 + 3 全市场]`
 
-- [ ] T006 [BE] [US1] Create `backend/app/services/briefing_service.py::generate()` orchestrating data fetch → top movers → LLM → briefing result  
+- [x] T006 [BE] [US1] Create `backend/app/services/briefing_service.py::generate()` orchestrating data fetch → top movers → LLM → briefing result  
   `[FR-001/FR-002/FR-003/FR-006 来源] | [依赖: T004, T005] | [验证: mock 交易日生成 briefing dict，包含 market_indices/top_movers/insights 且 is_degraded=False]`
 
-- [ ] T007 [BE] [US1] Update `backend/app/core/quote_scheduler.py` `send_briefing_if_trading_day()` to call `BriefingService.generate()` and pass result to `PushService`  
+- [x] T007 [BE] [US1] Update `backend/app/core/quote_scheduler.py` `send_briefing_if_trading_day()` to call `BriefingService.generate()` and pass result to `PushService`  
   `[FR-001/FR-007 来源] | [依赖: T006] | [验证: 启动服务后 8:50 定时任务执行，PushLog 新增 briefing 记录]`
 
-- [ ] T008 [BE] [US1] Ensure `backend/app/services/push_service.py` renders `briefing` message with market indices and top movers (extend if needed)  
+- [x] T008 [BE] [US1] Ensure `backend/app/services/push_service.py` renders `briefing` message with market indices and top movers (extend if needed)  
   `[FR-007 来源] | [依赖: T006] | [验证: PushMessageRequest(message_type="briefing") 成功渲染并发送（mock 通道）]`
 
 **Checkpoint**: US1 完整闭环——交易日自动生成、LLM 解读、推送成功
@@ -66,10 +66,10 @@
 **Goal**: LLM 连续失败时发送模板简报，状态标记降级  
 **Independent Test**: mock LLM 失败，确认仍收到模板简报且 PushLog 含降级标记
 
-- [ ] T009 [BE] [US2] Implement degradation path in `BriefingService.generate()`: when `BriefingLLMClient` returns degraded, build template-only briefing without AI insights  
+- [x] T009 [BE] [US2] Implement degradation path in `BriefingService.generate()`: when `BriefingLLMClient` returns degraded, build template-only briefing without AI insights  
   `[FR-008 来源] | [依赖: T006] | [验证: mock LLM 失败 3 次，返回 briefing.is_degraded=True 且 insights 为空/None，top_movers 仍完整]`
 
-- [ ] T010 [BE] [US2] Update `BriefingService` to pass degraded reason to `PushService` and log `degraded_reason` in `PushLog` metadata  
+- [x] T010 [BE] [US2] Update `BriefingService` to pass degraded reason to `PushService` and log `degraded_reason` in `PushLog` metadata  
   `[FR-009 来源] | [依赖: T009] | [验证: 降级简报推送后，PushLog 记录 status=sent 且 content 含 "模板降级" 或 degraded 标记]`
 
 **Checkpoint**: US2 验证通过——LLM 失败不影响简报触达
@@ -81,7 +81,7 @@
 **Goal**: 非交易日不调用 LLM、不推送、仅记录日志  
 **Independent Test**: 设置非交易日日期，确认 8:50 任务跳过
 
-- [ ] T011 [BE] [US3] Add non-trading-day guard in `BriefingService.generate()` and `send_briefing_if_trading_day()` to skip generation and write log  
+- [x] T011 [BE] [US3] Add non-trading-day guard in `BriefingService.generate()` and `send_briefing_if_trading_day()` to skip generation and write log  
   `[FR-002 来源] | [依赖: T006] | [验证: 非交易日调用 generate() 返回 None 且不调用 LLM，日志含 "非交易日跳过"]`
 
 **Checkpoint**: US3 验证通过——非交易日零 LLM 调用

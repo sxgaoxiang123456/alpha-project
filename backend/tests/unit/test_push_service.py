@@ -337,6 +337,10 @@ class TestPushServiceFormatting:
                     {"name": "比亚迪", "code": "002594", "change_pct": 4.8},
                     {"name": "宁德时代", "code": "300750", "change_pct": 3.5},
                 ],
+                "insights": ["科技股领涨"],
+                "is_degraded": True,
+                "degraded_reason": "LLM 调用失败",
+                "metadata": {"is_degraded": True, "degraded_reason": "LLM 调用失败"},
             },
         )
         formatted = service._format_content(message)
@@ -345,6 +349,35 @@ class TestPushServiceFormatting:
         assert formatted["date"] == "2026-06-05"
         assert "上证指数" in formatted["market_indices"]
         assert len(formatted["top_movers"]) == 4
+        assert formatted["insights"] == ["科技股领涨"]
+        assert formatted["is_degraded"] is True
+        assert formatted["degraded_reason"] == "LLM 调用失败"
+
+    def test_briefing_degraded_metadata_logged(self, db_session):
+        from backend.app.schemas.push import PushMessageRequest
+        from backend.app.services.push_service import PushService
+
+        feishu = _make_feishu_client(success=True)
+        service = PushService(db=db_session, feishu_client=feishu)
+        message = PushMessageRequest(
+            message_type="briefing",
+            content={
+                "date": "2026-06-05",
+                "market_indices": {},
+                "top_movers": [],
+                "insights": [],
+                "is_degraded": True,
+                "degraded_reason": "LLM 调用失败",
+                "metadata": {"is_degraded": True, "degraded_reason": "LLM 调用失败"},
+            },
+        )
+        msg_id = service.send(message)
+
+        log = _get_log(db_session, msg_id)
+        assert log.status == "sent"
+        assert log.metadata_json is not None
+        assert '"is_degraded": true' in log.metadata_json
+        assert "LLM 调用失败" in log.metadata_json
 
     def test_briefing_telegram_text_contains_indices_and_top3(self, db_session):
         from backend.app.services.push_service import PushService

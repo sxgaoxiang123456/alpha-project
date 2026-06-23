@@ -1,4 +1,5 @@
 import logging
+import time
 from collections.abc import Callable
 from datetime import date
 from typing import Any
@@ -15,12 +16,15 @@ class QuoteScheduler:
         is_trading_day: Callable[[date], bool],
         on_quotes_refreshed: Callable[[], None] | None = None,
         push_service_factory: Callable[[], Any] | None = None,
+        briefing_service_factory: Callable[[], Any] | None = None,
     ):
         self.quote_service = quote_service
         self.market_index_service = market_index_service
         self.is_trading_day = is_trading_day
         self.on_quotes_refreshed = on_quotes_refreshed
         self.push_service_factory = push_service_factory
+        self.briefing_service_factory = briefing_service_factory
+        self._quote_refresh_in_progress = False
 
     def refresh_if_trading_day(self, *, current_date: date | None = None) -> None:
         today = current_date or date.today()
@@ -29,55 +33,46 @@ class QuoteScheduler:
             return
 
         logger.info("开始行情定时刷新")
-        self.quote_service.get_watchlist_quotes()
-        self.market_index_service.get_indices()
-        logger.info("行情定时刷新完成")
+        self._quote_refresh_in_progress = True
+        try:
+            self.quote_service.get_watchlist_quotes()
+            self.market_index_service.get_indices()
+            logger.info("行情定时刷新完成")
 
-        if self.on_quotes_refreshed:
-            try:
-                self.on_quotes_refreshed()
-            except Exception:
-                logger.exception("预警检测回调异常")
+            if self.on_quotes_refreshed:
+                try:
+                    self.on_quotes_refreshed()
+                except Exception:
+                    logger.exception("预警检测回调异常")
+        finally:
+            self._quote_refresh_in_progress = False
+
+    def wait_for_quote_refresh(self, timeout_seconds: int = 15) -> bool:
+        """等待正在执行的行情刷新完成，超时返回 False。"""
+        elapsed = 0.0
+        while self._quote_refresh_in_progress and elapsed < timeout_seconds:
+            time.sleep(0.5)
+            elapsed += 0.5
+        return not self._quote_refresh_in_progress
 
     def send_briefing_if_trading_day(self, *, current_date: date | None = None) -> None:
-        """交易日 9:00 发送早盘简报推送。"""
+        """交易日 8:50 生成并推送早盘简报。"""
         today = current_date or date.today()
         if not self.is_trading_day(today):
             logger.debug("非交易日 %s，跳过简报推送", today)
             return
 
-        if self.push_service_factory is None:
-            logger.debug("PushService 未配置，跳过简报推送")
+        if self.briefing_service_factory is None:
+            logger.debug("BriefingService 未配置，跳过简报推送")
             return
 
         logger.info("开始生成早盘简报")
         try:
-            push_service = self.push_service_factory()
-            indices = self.market_index_service.get_indices()
-
-            from backend.app.schemas.push import PushMessageRequest
-
-            market_indices = {}
-            if indices:
-                for name, idx in indices.items():
-                    market_indices[name] = {
-                        "current": float(idx.current_value) if hasattr(idx, "current_value") else 0,
-                        "change_pct": float(idx.change_percent) if hasattr(idx, "change_percent") else 0,
-                    }
-
-            content = {
-                "date": today.isoformat(),
-                "market_indices": market_indices,
-                "top_movers": [],
-            }
-            message = PushMessageRequest(
-                message_type="briefing",
-                content=content,
-            )
-            push_service.send(message)
-            logger.info("早盘简报推送已提交")
+            briefing_service = self.briefing_service_factory()
+            briefing_service.generate(current_date=today)
+            logger.info("早盘简报生成已提交")
         except Exception:
-            logger.exception("简报推送异常")
+            logger.exception("早盘简报生成异常")
 
 
 def register_quote_refresh_job(
@@ -99,12 +94,12 @@ def register_briefing_job(
     scheduler: Any,
     quote_scheduler: QuoteScheduler,
 ) -> None:
-    """注册交易日 9:00 简报定时任务。"""
+    """注册交易日 8:50 简报定时任务。"""
     scheduler.add_job(
         quote_scheduler.send_briefing_if_trading_day,
         "cron",
-        hour=9,
-        minute=0,
+        hour=8,
+        minute=50,
         id="briefing_push",
         replace_existing=True,
     )
