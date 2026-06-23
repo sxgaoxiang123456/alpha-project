@@ -39,7 +39,7 @@ F8 自然语言设预警允许用户在 Dashboard/自选股页/预警规则页�
 | VIII. Tailwind + shadcn/ui | 输入框与候选弹窗复用现有组件 | ✅ |
 | XI. 中文界面 | 所有用户-facing 提示文案使用中文 | ✅ |
 | XII. 桌面端优先 | 输入入口仅在桌面端 1280px+ 布局中提供 | ✅ |
-| XIII. 年运营成本 | LLM 兜底调用量极低，使用 GPT-4o-mini / DeepSeek 低成本模型 | ✅ |
+| XIII. 年运营成本 | LLM 兜底调用量极低，统一使用 DeepSeek-V4-Flash 低成本模型 | ✅ |
 
 ---
 
@@ -172,15 +172,17 @@ flowchart TD
 
 | 依赖 | 版本 | 用途 | 来源 |
 |---|---|---|---|
-| httpx | 0.27+ | LLM HTTP 调用 | PyPI（F7 已引入） |
-| openai | 1.30+ | OpenAI SDK（可选） | PyPI（F7 已引入） |
+| httpx | 0.27+ | DeepSeek API HTTP 调用（F7 已引入） | PyPI |
+
+**说明**：v1.1 不额外引入 `openai` SDK，复用 F7 的 `httpx` 调用方式。
 
 ### 外部服务
 
 | 服务 | 用途 | 成本 |
 |---|---|---|
-| OpenAI GPT-4o-mini | LLM 兜底解析复杂/同义表达 | 按 token 计费，预计月均 < 5 元 |
-| DeepSeek-V3 | 降级 / 备选 LLM | 按 token 计费，成本更低 |
+| DeepSeek-V4-Flash | LLM 兜底解析复杂/同义表达 | 按 token 计费，预计月均 < 5 元 |
+
+**说明**：v1.1 统一使用 DeepSeek，不引入 OpenAI 备选；规则解析优先，LLM 兜底调用量极低。
 
 ---
 

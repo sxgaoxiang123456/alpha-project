@@ -62,17 +62,21 @@
 ## 4. LLM 选型
 
 ### Decision
-使用 **GPT-4o-mini** 作为兜底模型，**DeepSeek-V3** 作为备选。
+使用 **DeepSeek-V4-Flash** 作为兜底模型，通过 `https://api.deepseek.com` 调用。
 
 ### Rationale
-- GPT-4o-mini 在中文语义理解和结构化输出方面表现稳定，成本低。
-- DeepSeek-V3 成本更低，可作为降备选或成本敏感时的切换方案。
-- F7 已配置 `OPENAI_API_KEY` 和 `DEEPSEEK_API_KEY`，F8 直接复用同一套环境变量和客户端。
-- 自然语言设预警调用频率远低于简报生成，预计月均成本 < 5 元。
+- v1.1 统一使用 DeepSeek 方案，与 F7 共用同一套环境变量和 LLM 客户端
+- DeepSeek-V4-Flash 成本低、支持 JSON Output，适合结构化意图解析
+- F7 已配置 `DEEPSEEK_API_KEY`，F8 直接复用 `backend/.env` 中的同一变量
+- 自然语言设预警调用频率远低于简报生成，预计月均成本 < 5 元
+
+### Configuration
+- `DEEPSEEK_API_KEY` 配置于 `backend/.env`
+- 默认模型 `deepseek-v4-flash`，超时/重试参数与 F7 一致
 
 ### Alternatives considered
 - **本地小模型（如 Qwen2.5-7B）**：需要额外部署资源，增加运维复杂度；MVP 阶段无 GPU 资源。
-- **GPT-4o**：成本高于 GPT-4o-mini，解析任务不需要那么高的推理能力。
+- **OpenAI GPT-4o-mini**：国际模型，国内访问需代理，与 v1.1 统一 DeepSeek 决策冲突。
 
 ---
 

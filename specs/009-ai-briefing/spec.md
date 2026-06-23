@@ -284,7 +284,7 @@ F7 AI 早盘简报是一个在**每个交易日开盘前**自动生成的市场�
 
 - 用户已完成飞书或 Telegram 推送通道配置，否则简报仅生成不推送
 - 历史行情数据已按 MVP 设计异步落盘并保留 90 天
-- LLM API 密钥由用户在环境变量中配置，本功能仅负责调用
+- **LLM API 由用户在 `backend/.env` 中配置 `DEEPSEEK_API_KEY`，本功能仅负责调用 DeepSeek-V4-Flash**
 - 单用户架构不变，无需按用户隔离简报
 - 用户接受 AI 生成内容仅供参考，不构成投资建议
 
@@ -296,6 +296,7 @@ F7 AI 早盘简报是一个在**每个交易日开盘前**自动生成的市场�
 - 复用 MVP 的 `PushService` 及飞书/Telegram 客户端发送简报
 - 复用 MVP 的 `DataSourceFacade` 获取实时/历史行情
 - 复用 MVP 的交易日历判断逻辑
+- **新增依赖：配置 `backend/.env` 的 `DEEPSEEK_API_KEY`，调用 DeepSeek-V4-Flash 生成解读**
 
 ---
 

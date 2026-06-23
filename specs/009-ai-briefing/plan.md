@@ -39,7 +39,7 @@ F7 AI 早盘简报在交易日 8:50 自动聚合大盘指数、自选股行情�
 | VIII. Tailwind + shadcn/ui | 简报卡片样式复用现有组件 | ✅ |
 | XI. 中文界面 | 简报所有文案使用中文 | ✅ |
 | XII. 桌面端优先 | 手动刷新入口仅在桌面端 Dashboard 提供 | ✅ |
-| XIII. 年运营成本 | LLM 选用 GPT-4o-mini / DeepSeek 低成本模型 | ✅ |
+| XIII. 年运营成本 | LLM 统一选用 DeepSeek-V4-Flash 低成本模型 | ✅ |
 
 ---
 
@@ -183,15 +183,17 @@ flowchart TD
 
 | 依赖 | 版本 | 用途 | 来源 |
 |---|---|---|---|
-| httpx | 0.27+ | 同步 HTTP 调用 LLM API | PyPI |
-| openai | 1.30+ | OpenAI SDK（可选，也可用 httpx 直接调用） | PyPI |
+| httpx | 0.27+ | 同步 HTTP 调用 DeepSeek API | PyPI |
+
+**说明**：v1.1 不引入 `openai` SDK，直接通过 `httpx` 调用 DeepSeek 的 OpenAI 兼容接口。
 
 ### 3.3 外部服务
 
 | 服务 | 用途 | 成本 |
 |---|---|---|
-| OpenAI GPT-4o-mini | LLM 生成解读 | 按 token 计费，预计月均 < 10 元 |
-| DeepSeek-V3 | 降级 / 备选 LLM | 按 token 计费，成本更低 |
+| DeepSeek-V4-Flash | LLM 生成早盘简报解读 | 按 token 计费，预计月均 < 10 元 |
+
+**说明**：v1.1 统一使用 DeepSeek 方案，不配置 OpenAI 备选；LLM 失败时降级为模板简报，而非切换 provider。
 
 ---
 
