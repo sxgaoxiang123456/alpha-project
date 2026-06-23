@@ -61,6 +61,7 @@ class TestBriefingPushChain:
         """端到端：手动触发简报任务 → PushLog 生成 + 飞书 stub 被调用。"""
         from backend.app.core.quote_scheduler import QuoteScheduler
         from backend.app.models.push_log import PushLog
+        from backend.app.schemas.push import PushMessageRequest
         from backend.app.services.push_service import PushService
 
         SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=db_engine)
@@ -68,14 +69,32 @@ class TestBriefingPushChain:
         feishu = MockFeishuClient()
         push_db = SessionLocal()
 
-        def factory():
+        def push_factory():
             return PushService(db=push_db, feishu_client=feishu)
+
+        class BriefingServiceStub:
+            def generate(self, current_date, manual=False):
+                push_service = push_factory()
+                message = PushMessageRequest(
+                    message_type="briefing",
+                    content={
+                        "date": current_date.isoformat(),
+                        "market_indices": {
+                            "上证指数": {"current": 3050.25, "change_pct": 0.5},
+                            "深证成指": {"current": 9850.10, "change_pct": -0.3},
+                        },
+                        "top_movers": [],
+                        "insights": [],
+                        "is_degraded": False,
+                    },
+                )
+                push_service.send(message)
 
         scheduler = QuoteScheduler(
             quote_service=None,
             market_index_service=MockMarketIndex(),
             is_trading_day=lambda d: True,  # fake clock: 强制交易日
-            push_service_factory=factory,
+            briefing_service_factory=lambda: BriefingServiceStub(),
         )
 
         from datetime import date

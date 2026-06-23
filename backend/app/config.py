@@ -39,6 +39,14 @@ class Settings(BaseSettings):
     feishu_brand: str = "feishu"
     feishu_chat_id: str | None = None
 
+    # LLM 配置（v1.1 F7/F8 使用 DeepSeek-V4-Flash）
+    deepseek_api_key: str | None = None
+    deepseek_base_url: str = "https://api.deepseek.com"
+    deepseek_model: str = "deepseek-v4-flash"
+    deepseek_timeout_seconds: int = Field(default=30, ge=5, le=120)
+    deepseek_retry_attempts: int = Field(default=3, ge=1, le=5)
+    deepseek_retry_interval_seconds: int = Field(default=5, ge=1, le=30)
+
     # 加密配置
     encryption_key: str | None = None
 

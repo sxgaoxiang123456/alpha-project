@@ -139,6 +139,73 @@ def test_quote_scheduler_refresh_updates_cache_and_persists_history(tmp_path):
         engine.dispose()
 
 
+def test_quote_scheduler_send_briefing_calls_briefing_service_on_trading_day(tmp_path):
+    engine, Session = _session_factory(tmp_path)
+    try:
+        with Session() as session:
+            _seed_watchlist(session)
+            facade = FakeFacade()
+            scheduler, cache = _scheduler(session, Session, facade, lambda current_date: True)
+
+            briefing_calls = []
+
+            class FakeBriefingService:
+                def generate(self, *, current_date, manual=False):
+                    briefing_calls.append((current_date, manual))
+                    from backend.app.schemas.briefing import BriefingResponse
+                    from backend.app.schemas.briefing import TopMover
+                    return BriefingResponse(
+                        date=current_date.isoformat(),
+                        market_indices={},
+                        top_movers=[
+                            TopMover(
+                                stock_code="600519",
+                                stock_name="贵州茅台",
+                                move_type="price_surge",
+                                value=1.25,
+                                change_percent=1.25,
+                            )
+                        ],
+                        insights=["测试简报"],
+                    )
+
+            scheduler.briefing_service_factory = lambda: FakeBriefingService()
+
+            with freeze_time("2026-06-04 09:00:00"):
+                scheduler.send_briefing_if_trading_day()
+
+            assert len(briefing_calls) == 1
+            assert briefing_calls[0][0] == date(2026, 6, 4)
+            assert briefing_calls[0][1] is False
+    finally:
+        engine.dispose()
+
+
+def test_quote_scheduler_send_briefing_skips_on_non_trading_day(tmp_path):
+    engine, Session = _session_factory(tmp_path)
+    try:
+        with Session() as session:
+            _seed_watchlist(session)
+            facade = FakeFacade()
+            scheduler, cache = _scheduler(session, Session, facade, lambda current_date: False)
+
+            briefing_calls = []
+
+            class FakeBriefingService:
+                def generate(self, *, current_date, manual=False):
+                    briefing_calls.append((current_date, manual))
+                    return None
+
+            scheduler.briefing_service_factory = lambda: FakeBriefingService()
+
+            with freeze_time("2026-06-06 09:00:00"):
+                scheduler.send_briefing_if_trading_day()
+
+            assert briefing_calls == []
+    finally:
+        engine.dispose()
+
+
 def test_quote_scheduler_skips_integration_refresh_on_non_trading_day(tmp_path):
     engine, Session = _session_factory(tmp_path)
     try:

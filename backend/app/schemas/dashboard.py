@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from typing import List
+from typing import Any, List
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -70,10 +70,14 @@ class StockCardData(BaseModel):
 
 
 class BriefingData(BaseModel):
-    """AI 简报数据。"""
+    """AI 简报数据（Dashboard 渲染用）。"""
 
     insights: List[str] = Field(default_factory=list)
     generated_at: datetime | None = Field(default=None)
+    market_indices: dict[str, Any] = Field(default_factory=dict)
+    top_movers: List[Any] = Field(default_factory=list)
+    is_degraded: bool = Field(default=False)
+    degraded_reason: str | None = Field(default=None, max_length=256)
 
 
 class AlertSummary(BaseModel):

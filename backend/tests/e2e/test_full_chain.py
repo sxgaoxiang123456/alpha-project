@@ -419,11 +419,38 @@ class TestJourneyNonUI_BriefingGeneration:
             def _mock_push_factory():
                 return PushService(db=db, feishu_client=None, telegram_client=None)
 
+            # F7 之后，QuoteScheduler 通过 briefing_service_factory 编排简报生成
+            class _StubBriefingService:
+                def __init__(self, push_service):
+                    self.push_service = push_service
+
+                def generate(self, *, current_date=None):
+                    from datetime import date as _date
+
+                    message = PushMessageRequest(
+                        message_type="briefing",
+                        content={
+                            "date": (
+                                current_date.isoformat()
+                                if current_date
+                                else _date.today().isoformat()
+                            ),
+                            "market_indices": {},
+                            "top_movers": [],
+                            "insights": ["stub briefing"],
+                            "is_degraded": False,
+                        },
+                    )
+                    self.push_service.send(message)
+
+            def _mock_briefing_factory():
+                return _StubBriefingService(_mock_push_factory())
+
             scheduler = QuoteScheduler(
                 quote_service=None,  # send_briefing 不依赖 quote_service
                 market_index_service=_MockMarketIndexService(),
                 is_trading_day=lambda _d: True,  # mock 交易日
-                push_service_factory=_mock_push_factory,
+                briefing_service_factory=_mock_briefing_factory,
             )
 
             # 编排驱动：手动触发定时任务（不等 cron）

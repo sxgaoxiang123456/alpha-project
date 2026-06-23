@@ -1,4 +1,5 @@
 import asyncio
+import json
 import time
 from datetime import UTC, datetime
 from decimal import Decimal
@@ -147,3 +148,38 @@ class TestDashboardService:
         assert result.alerts == []
         assert result.push_history == []
         assert result.channel_status == []
+
+    @pytest.mark.asyncio
+    async def test_full_briefing_cache_parsed_for_dashboard(self):
+        """简报缓存包含大盘/异动/降级标记时，Dashboard 应完整解析。"""
+        db = _make_db()
+        market_svc = _mock_market_service()
+        quote_svc = _mock_quote_service()
+        cache_svc = MagicMock()
+        cache_svc.get = MagicMock(return_value=json.dumps({
+            "insights": ["科技股活跃"],
+            "market_indices": {"上证指数": {"current": 3050.12, "change_pct": 0.85}},
+            "top_movers": [
+                {"stock_code": "600000", "stock_name": "浦发银行", "change_percent": 2.5, "move_type": "price_surge"},
+            ],
+            "is_degraded": False,
+            "generated_at": datetime.now(UTC).isoformat(),
+        }))
+
+        service = DashboardService(
+            db=db,
+            market_index_service=market_svc,
+            quote_service=quote_svc,
+            cache_service=cache_svc,
+            timeout_seconds=0.1,
+        )
+
+        result = await service.build_dashboard_view()
+
+        assert result.briefing is not None
+        assert result.briefing.insights == ["科技股活跃"]
+        assert "上证指数" in result.briefing.market_indices
+        assert result.briefing.market_indices["上证指数"]["current"] == 3050.12
+        assert len(result.briefing.top_movers) == 1
+        assert result.briefing.top_movers[0]["stock_name"] == "浦发银行"
+        assert result.briefing.is_degraded is False

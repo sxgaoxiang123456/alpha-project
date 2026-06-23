@@ -1,0 +1,17 @@
+{
+  "name": "alpha-project-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AlphaProject frontend test harness",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@testing-library/dom": "^10.4.0",
+    "jsdom": "^26.0.0",
+    "msw": "^2.14.6",
+    "vitest": "^3.0.0"
+  }
+}
