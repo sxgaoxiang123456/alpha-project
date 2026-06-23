@@ -93,13 +93,13 @@
 **Goal**: Dashboard 提供手动刷新入口，30 秒冷却期  
 **Independent Test**: 点击按钮后 60 秒内收到新简报，30 秒内重复点击被拦截
 
-- [ ] T012 [BE] [P] [US4] Create `backend/app/routers/briefing.py` with `POST /api/briefing/generate` endpoint (validates cooldown, trading day, triggers background task)  
+- [x] T012 [BE] [P] [US4] Create `backend/app/routers/briefing.py` with `POST /api/briefing/generate` endpoint (validates cooldown, trading day, triggers background task)  
   `[FR-010/FR-012 来源] | [依赖: T006, T011] | [验证: 200 触发成功；429 冷却期；422 非交易日；测试覆盖]`
 
-- [ ] T013 [BE] [P] [US4] Add `GET /api/briefing/latest` endpoint in `backend/app/routers/briefing.py` to return cached latest briefing  
+- [x] T013 [BE] [P] [US4] Add `GET /api/briefing/latest` endpoint in `backend/app/routers/briefing.py` to return cached latest briefing  
   `[FR-010 来源] | [依赖: T006] | [验证: 缓存命中返回 briefing；未生成返回 404]`
 
-- [ ] T014 [BE] [US4] Register `briefing_router` in `backend/app/main.py`  
+- [x] T014 [BE] [US4] Register `briefing_router` in `backend/app/main.py`  
   `[FR-010 来源] | [依赖: T012, T013] | [验证: 服务启动后 /api/briefing/generate 和 /api/briefing/latest 可访问]`
 
 - [ ] T015 [FE] [US4] Update `frontend/src/templates/dashboard.html` to add「重新生成简报」button with cooldown UI and wire JS to call `POST /api/briefing/generate`  

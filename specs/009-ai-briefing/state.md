@@ -1,7 +1,7 @@
 # 实施进度 · F7 AI 早盘简报
 
 ## 当前任务
-[>] T012 · 创建 `backend/app/routers/briefing.py` 手动刷新 API
+[>] T015 · 更新 frontend dashboard 手动刷新按钮
 
 ## 已完成
 - [x] T001 · 创建 `backend/app/templates/prompts/briefing.j2` Prompt 模板
@@ -15,6 +15,9 @@
 - [x] T009 · 实现 LLM 失败降级路径
 - [x] T010 · PushLog metadata 记录降级原因
 - [x] T011 · 非交易日跳过简报生成
+- [x] T012 · 创建 `backend/app/routers/briefing.py` 手动刷新 API
+- [x] T013 · 创建 `GET /api/briefing/latest` 端点
+- [x] T014 · 在 `backend/app/main.py` 注册 `briefing_router`
 
 ## 阻塞项
 （无）

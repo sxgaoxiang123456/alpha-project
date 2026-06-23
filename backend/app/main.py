@@ -27,6 +27,7 @@ from backend.app.routers.groups import router as groups_router
 from backend.app.routers.settings import router as settings_router
 from backend.app.routers.import_export import router as import_export_router
 from backend.app.routers.alerts import router as alerts_router
+from backend.app.routers.briefing import router as briefing_router
 from backend.app.routers.push import router as push_router
 from backend.app.routers.quotes import router as quotes_router
 from backend.app.routers.system import router as system_router
@@ -265,6 +266,7 @@ async def lifespan(app: FastAPI):
     register_briefing_job(scheduler, quote_scheduler)
     scheduler.start()
     app.state.scheduler = scheduler
+    app.state.quote_scheduler = quote_scheduler
     app.state.briefing_service_factory = _briefing_service_factory
 
     yield
@@ -311,7 +313,7 @@ def _briefing_service_factory():
         retry_interval_seconds=settings.deepseek_retry_interval_seconds,
     )
 
-    quote_scheduler = app.state.scheduler
+    quote_scheduler = app.state.quote_scheduler
 
     return BriefingService(
         db=briefing_db,
@@ -353,6 +355,7 @@ templates = Jinja2Templates(directory=str(_FRONTEND_DIR / "src" / "templates"))
 app.include_router(dashboard_router)
 app.include_router(settings_router)
 app.include_router(alerts_router)
+app.include_router(briefing_router)
 app.include_router(watchlist_router)
 app.include_router(import_export_router)
 app.include_router(groups_router)

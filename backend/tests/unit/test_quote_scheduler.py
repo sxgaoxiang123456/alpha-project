@@ -99,46 +99,42 @@ def test_send_briefing_on_trading_day():
     market_index_service.get_indices.return_value = {
         "上证指数": Mock(current_value=3050.25, change_percent=0.5),
     }
-    push_service = Mock()
-    push_service_factory = Mock(return_value=push_service)
+    briefing_service = Mock()
+    briefing_service_factory = Mock(return_value=briefing_service)
 
     scheduler = QuoteScheduler(
         quote_service=quote_service,
         market_index_service=market_index_service,
         is_trading_day=lambda current_date: True,
-        push_service_factory=push_service_factory,
+        briefing_service_factory=briefing_service_factory,
     )
 
     scheduler.send_briefing_if_trading_day(current_date=date(2026, 6, 4))
 
-    push_service_factory.assert_called_once()
-    push_service.send.assert_called_once()
-    # 验证消息类型是 briefing
-    call_args = push_service.send.call_args[0][0]
-    assert call_args.message_type == "briefing"
-    assert "上证指数" in call_args.content["market_indices"]
+    briefing_service_factory.assert_called_once()
+    briefing_service.generate.assert_called_once_with(current_date=date(2026, 6, 4))
 
 
 def test_skip_briefing_on_non_trading_day():
     quote_service = Mock()
     market_index_service = Mock()
-    push_service = Mock()
-    push_service_factory = Mock(return_value=push_service)
+    briefing_service = Mock()
+    briefing_service_factory = Mock(return_value=briefing_service)
 
     scheduler = QuoteScheduler(
         quote_service=quote_service,
         market_index_service=market_index_service,
         is_trading_day=lambda current_date: False,
-        push_service_factory=push_service_factory,
+        briefing_service_factory=briefing_service_factory,
     )
 
     scheduler.send_briefing_if_trading_day(current_date=date(2026, 6, 6))
 
-    push_service_factory.assert_not_called()
-    push_service.send.assert_not_called()
+    briefing_service_factory.assert_not_called()
+    briefing_service.generate.assert_not_called()
 
 
-def test_skip_briefing_when_push_service_not_configured():
+def test_skip_briefing_when_briefing_service_not_configured():
     quote_service = Mock()
     market_index_service = Mock()
 
@@ -146,7 +142,7 @@ def test_skip_briefing_when_push_service_not_configured():
         quote_service=quote_service,
         market_index_service=market_index_service,
         is_trading_day=lambda current_date: True,
-        push_service_factory=None,
+        briefing_service_factory=None,
     )
 
     scheduler.send_briefing_if_trading_day(current_date=date(2026, 6, 4))
@@ -154,7 +150,7 @@ def test_skip_briefing_when_push_service_not_configured():
     quote_service.get_watchlist_quotes.assert_not_called()
 
 
-def test_register_briefing_job_adds_nine_oclock_cron_job():
+def test_register_briefing_job_adds_850_cron_job():
     scheduler_backend = Mock()
     quote_scheduler = Mock()
 
@@ -163,8 +159,8 @@ def test_register_briefing_job_adds_nine_oclock_cron_job():
     scheduler_backend.add_job.assert_called_once_with(
         quote_scheduler.send_briefing_if_trading_day,
         "cron",
-        hour=9,
-        minute=0,
+        hour=8,
+        minute=50,
         id="briefing_push",
         replace_existing=True,
     )
