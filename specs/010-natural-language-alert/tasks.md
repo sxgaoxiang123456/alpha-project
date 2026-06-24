@@ -27,7 +27,7 @@
 **Purpose**: 核心基础设施：schema、规则解析器、股票匹配、LLM 兜底编排  
 **⚠️ CRITICAL**: 本阶段完成前不可开始 user story 实现
 
-- [ ] T002 [P] [BE] Create `backend/app/schemas/nl_alert.py` with `NaturalLanguageAlertRequest`, `NaturalLanguageAlertResponse`, `StockCandidate`, `AlertRuleSummary` schemas  
+- [x] T002 [P] [BE] Create `backend/app/schemas/nl_alert.py` with `NaturalLanguageAlertRequest`, `NaturalLanguageAlertResponse`, `StockCandidate`, `AlertRuleSummary` schemas  
   `[FR-010/FR-013 来源] | [依赖: 无] | [验证: schema 实例化通过，候选列表字段校验生效]`
 
 - [ ] T003 [P] [BE] Create `backend/app/services/rule_based_parser.py` to extract stock/condition_type/threshold and compute per-dimension confidence from core Chinese patterns  
