@@ -42,7 +42,7 @@ curl -X POST http://127.0.0.1:8000/api/alerts/natural-language \
 ```bash
 curl -X POST http://127.0.0.1:8000/api/alerts/natural-language \
   -H "Content-Type: application/json" \
-  -d '{"query": "五粮液跌幅超过 3% 提醒我"}'
+  -d '{"query": "茅台涨幅超过 2% 提醒我"}'
 ```
 
 ### 3.3 歧义候选

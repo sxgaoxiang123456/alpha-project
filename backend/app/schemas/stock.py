@@ -35,7 +35,7 @@ class StockResponse(StockBase):
 class StockSearchResult(StockResponse):
     """股票搜索候选结果 schema。"""
 
-
+    market_cap: float | None = Field(default=None, ge=0)
 
 def validate_stock_code(value: str) -> str:
     """校验 A 股 6 位数字代码。"""

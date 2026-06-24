@@ -1,8 +1,10 @@
+import difflib
 from collections.abc import Callable, Iterable, Mapping
 from typing import Any
 
 from pydantic import ValidationError
 
+from backend.app.schemas.nl_alert import StockCandidate
 from backend.app.schemas.stock import StockSearchResult, validate_stock_code
 
 StockProviderLookup = Callable[[str], Any]
@@ -74,6 +76,79 @@ def search_stocks(
     if not results and _provider_items(provider_result):
         raise StockDataSourceUnavailableError("股票数据源返回结构异常")
     return results
+
+
+def search_stock_candidates(
+    query: str | None,
+    *,
+    akshare_lookup: StockProviderLookup | None = None,
+    baostock_lookup: StockProviderLookup | None = None,
+    top_n: int = 10,
+) -> list[StockCandidate]:
+    """搜索股票候选列表，按名称匹配分数和总市值排序。
+
+    Args:
+        query: 用户输入的股票名称或 6 位代码。
+        akshare_lookup: 可选的 AkShare 查询注入，用于测试。
+        baostock_lookup: 可选的 BaoStock 查询注入，用于测试。
+        top_n: 最大返回候选数。
+
+    Returns:
+        排序后的 StockCandidate 列表。
+    """
+    keyword = _normalize_query(query)
+    if not keyword:
+        return []
+
+    if _is_ascii_six_digit(keyword):
+        stock = search_stock(
+            keyword,
+            akshare_lookup=akshare_lookup,
+            baostock_lookup=baostock_lookup,
+        )
+        if stock is None:
+            return []
+        return [
+            StockCandidate(
+                stock_code=stock.code,
+                stock_name=stock.name,
+                sector=stock.sector,
+                market_cap=stock.market_cap,
+                match_score=1.0,
+            )
+        ]
+
+    stocks = search_stocks(
+        keyword,
+        akshare_lookup=akshare_lookup,
+        baostock_lookup=baostock_lookup,
+    )
+
+    candidates: list[StockCandidate] = []
+    for stock in stocks:
+        score = _compute_match_score(keyword, stock.name)
+        candidates.append(
+            StockCandidate(
+                stock_code=stock.code,
+                stock_name=stock.name,
+                sector=stock.sector,
+                market_cap=stock.market_cap,
+                match_score=score,
+            )
+        )
+
+    candidates.sort(key=lambda c: (*c.sort_key, c.stock_code))
+    return candidates[:top_n]
+
+
+def _compute_match_score(query: str, name: str) -> float:
+    query = query.lower()
+    name = name.lower()
+    if query == name:
+        return 1.0
+    if query in name:
+        return 0.9
+    return round(difflib.SequenceMatcher(None, query, name).ratio(), 2)
 
 
 def _normalize_query(query: str | None) -> str:
@@ -155,12 +230,16 @@ def _coerce_stock_result(raw: Mapping[str, Any]) -> StockSearchResult | None:
     status = _normalize_status(raw.get("status", "正常"))
 
     try:
+        market_cap = raw.get("market_cap") or raw.get("total_mv")
+        if market_cap is not None:
+            market_cap = float(market_cap)
         return StockSearchResult(
             code=code,
             name=str(name).strip() if name is not None else "",
             market=str(market).strip() if market is not None else "",
             sector=raw.get("sector") or raw.get("行业"),
             status=status,
+            market_cap=market_cap,
         )
     except (TypeError, ValueError, ValidationError):
         return None

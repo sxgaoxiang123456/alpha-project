@@ -47,6 +47,9 @@ class Settings(BaseSettings):
     deepseek_retry_attempts: int = Field(default=3, ge=1, le=5)
     deepseek_retry_interval_seconds: int = Field(default=5, ge=1, le=30)
 
+    # 自然语言预警配置
+    nl_alert_confidence_threshold: float = Field(default=0.7, ge=0.0, le=1.0)
+
     # 加密配置
     encryption_key: str | None = None
 

@@ -17,7 +17,7 @@
 
 **Purpose**: 创建 LLM 兜底 Prompt 模板
 
-- [ ] T001 [BE] Create `backend/app/templates/prompts/nl_alert.j2` with system role, parsing instructions, condition type mapping and structured JSON output format  
+- [x] T001 [BE] Create `backend/app/templates/prompts/nl_alert.j2` with system role, parsing instructions, condition type mapping and structured JSON output format  
   `[FR-001/FR-002/FR-003/FR-004 来源] | [依赖: 无] | [验证: 模板可渲染，输出包含 stock_code/condition_type/threshold/confidence 占位符]`
 
 ---
@@ -27,16 +27,16 @@
 **Purpose**: 核心基础设施：schema、规则解析器、股票匹配、LLM 兜底编排  
 **⚠️ CRITICAL**: 本阶段完成前不可开始 user story 实现
 
-- [ ] T002 [P] [BE] Create `backend/app/schemas/nl_alert.py` with `NaturalLanguageAlertRequest`, `NaturalLanguageAlertResponse`, `StockCandidate`, `AlertRuleSummary` schemas  
+- [x] T002 [P] [BE] Create `backend/app/schemas/nl_alert.py` with `NaturalLanguageAlertRequest`, `NaturalLanguageAlertResponse`, `StockCandidate`, `AlertRuleSummary` schemas  
   `[FR-010/FR-013 来源] | [依赖: 无] | [验证: schema 实例化通过，候选列表字段校验生效]`
 
-- [ ] T003 [P] [BE] Create `backend/app/services/rule_based_parser.py` to extract stock/condition_type/threshold and compute per-dimension confidence from core Chinese patterns  
+- [x] T003 [P] [BE] Create `backend/app/services/rule_based_parser.py` to extract stock/condition_type/threshold and compute per-dimension confidence from core Chinese patterns  
   `[FR-002/FR-003/FR-004/FR-006 来源] | [依赖: 无] | [验证: 输入「茅台跌破1500」返回 price_below/1500/置信度1.0]`
 
-- [ ] T004 [P] [BE] Extend `backend/app/services/stock_search.py` to return sorted candidate list (match_score desc, then market_cap desc) with `sector` and `market_cap` fields  
+- [x] T004 [P] [BE] Extend `backend/app/services/stock_search.py` to return sorted candidate list (match_score desc, then market_cap desc) with `sector` and `market_cap` fields  
   `[FR-005 来源] | [依赖: 无] | [验证: 输入「银行」返回至少2只候选，按规则排序]`
 
-- [ ] T005 [BE] Create `backend/app/services/nl_alert_parser.py` orchestrating `RuleBasedParser` → LLM fallback via `BriefingLLMClient` → normalized `ParsedAlertIntent`  
+- [x] T005 [BE] Create `backend/app/services/nl_alert_parser.py` orchestrating `RuleBasedParser` → LLM fallback via `BriefingLLMClient` → normalized `ParsedAlertIntent`  
   `[FR-001/FR-006/FR-007 来源] | [依赖: T001, T003] | [验证: mock 规则命中返回高置信度；mock 规则未命中调用 LLM；mock LLM 失败返回低置信度降级]`
 
 **Checkpoint**: Foundation ready — 解析器可独立运行并返回结构化意图或降级标记
@@ -48,19 +48,19 @@
 **Goal**: 用户输入标准自然语言指令，3 秒内成功创建价格/涨跌幅预警规则  
 **Independent Test**: `curl` 调用标准句式，返回 success=true 与规则摘要
 
-- [ ] T006 [US1] [BE] Create `backend/app/routers/alerts_nl.py` with `POST /api/alerts/natural-language` endpoint (input validation → parse → rule validation → create AlertRule)  
+- [x] T006 [US1] [BE] Create `backend/app/routers/alerts_nl.py` with `POST /api/alerts/natural-language` endpoint (input validation → parse → rule validation → create AlertRule)  
   `[FR-008/FR-009/FR-010/FR-011 来源] | [依赖: T002, T005] | [验证: 200 返回成功创建 price_above/price_below/change_pct_above/change_pct_below]`
 
-- [ ] T007 [US1] [BE] Register `alerts_nl_router` in `backend/app/main.py` under `/api/alerts/natural-language`  
+- [x] T007 [US1] [BE] Register `alerts_nl_router` in `backend/app/main.py` under `/api/alerts/natural-language`  
   `[FR-012 来源] | [依赖: T006] | [验证: 服务启动后 endpoint 可访问]`
 
-- [ ] T008 [P] [US1] [FE] Create `frontend/src/templates/components/nl_alert_input.html` with input box, submit button and result/candidate container  
+- [x] T008 [P] [US1] [FE] Create `frontend/src/templates/components/nl_alert_input.html` with input box, submit button and result/candidate container  
   `[FR-012 来源] | [依赖: 无] | [验证: 组件独立渲染，占位文案为中文]`
 
-- [ ] T009 [P] [US1] [FE] Integrate `nl_alert_input` component into `frontend/src/templates/dashboard.html`, `watchlist.html` and `alert_rules.html`  
+- [x] T009 [P] [US1] [FE] Integrate `nl_alert_input` component into `frontend/src/templates/dashboard.html`, `watchlist.html` and `alert_rules.html`  
   `[FR-012 来源] | [依赖: T008] | [验证: 三个页面均可见独立输入框]`
 
-- [ ] T010 [US1] [INT] Validate standard natural language alert creation via backend unit/integration tests and `quickstart.md` curl commands  
+- [x] T010 [US1] [INT] Validate standard natural language alert creation via backend unit/integration tests and `quickstart.md` curl commands  
   `[FR-001-FR-013] | [依赖: T006, T007, T009] | [验证: pytest 通过；curl 返回 success=true]`
 
 **Checkpoint**: US1 完整闭环——标准句式可解析、可创建、前端入口可见
@@ -72,10 +72,10 @@
 **Goal**: 歧义名称返回候选列表，用户选择后自动完成创建  
 **Independent Test**: 输入「银行跌破10元」，返回 candidates；选择后成功创建
 
-- [ ] T011 [US2] [BE] Implement ambiguity candidate response and `selected_stock_code` auto-resubmit support in `backend/app/services/nl_alert_parser.py` and `backend/app/routers/alerts_nl.py`  
+- [x] T011 [US2] [BE] Implement ambiguity candidate response and `selected_stock_code` auto-resubmit support in `backend/app/services/nl_alert_parser.py` and `backend/app/routers/alerts_nl.py`  
   `[FR-005/FR-013 来源] | [依赖: T004, T006] | [验证: 输入歧义名称返回 candidates；携带 selected_stock_code 后成功创建]`
 
-- [ ] T012 [US2] [FE] Render candidate list and auto-resubmit UI in `frontend/src/templates/components/nl_alert_input.html` and validate ambiguity flow in browser  
+- [x] T012 [US2] [FE] Render candidate list and auto-resubmit UI in `frontend/src/templates/components/nl_alert_input.html` and validate ambiguity flow in browser  
   `[FR-005/FR-013 来源] | [依赖: T008, T011] | [验证: 点击候选后自动重提交并显示创建成功]`
 
 **Checkpoint**: US2 验证通过——歧义交互闭环
@@ -87,7 +87,7 @@
 **Goal**: 无法确定意图时明确拒绝并引导重试/手动配置  
 **Independent Test**: 输入「帮我看着点茅台」，返回 success=false 与明确提示
 
-- [ ] T013 [US3] [BE] Implement confidence threshold guard in `backend/app/services/nl_alert_parser.py` and map low-confidence response in `backend/app/routers/alerts_nl.py`, validate rejection  
+- [x] T013 [US3] [BE] Implement confidence threshold guard in `backend/app/services/nl_alert_parser.py` and map low-confidence response in `backend/app/routers/alerts_nl.py`, validate rejection  
   `[FR-006 来源] | [依赖: T005, T006] | [验证: 输入模糊语句返回 success=false 与手动配置引导]`
 
 **Checkpoint**: US3 验证通过——低置信度不创建规则
@@ -99,7 +99,7 @@
 **Goal**: 识别到成交量等不支持条件时给出明确提示  
 **Independent Test**: 输入「茅台成交量突破10万手」，返回暂不支持成交量
 
-- [ ] T014 [US4] [BE] Implement unsupported condition detection in `backend/app/services/rule_based_parser.py` and LLM prompt, add error message in `backend/app/routers/alerts_nl.py`, validate response  
+- [x] T014 [US4] [BE] Implement unsupported condition detection in `backend/app/services/rule_based_parser.py` and LLM prompt, add error message in `backend/app/routers/alerts_nl.py`, validate response  
   `[FR-007 来源] | [依赖: T003, T005, T006] | [验证: 输入成交量条件返回 success=false 与「暂不支持成交量条件」]`
 
 **Checkpoint**: US4 验证通过——不支持条件明确拒绝
@@ -110,10 +110,10 @@
 
 **Purpose**: 端到端回归与文档收尾
 
-- [ ] T015 [INT] Run full backend test suite (`tests/unit/`, `tests/integration/`) and validate `quickstart.md` manual flows  
+- [x] T015 [INT] Run full backend test suite (`tests/unit/`, `tests/integration/`) and validate `quickstart.md` manual flows  
   `[FR-001-FR-013] | [依赖: T010, T012, T013, T014] | [验证: pytest 全量通过；curl 覆盖标准/歧义/低置信度/不支持条件]`
 
-- [ ] T016 [INT] Update `state.md` and finalize `tasks.md` checkboxes after all previous tasks complete  
+- [x] T016 [INT] Update `state.md` and finalize `tasks.md` checkboxes after all previous tasks complete  
   `[FR-001-FR-013] | [依赖: T015] | [验证: tasks.md 全部勾选；state.md 状态与当前任务一致]`
 
 **Checkpoint**: F8 全量功能可演示
