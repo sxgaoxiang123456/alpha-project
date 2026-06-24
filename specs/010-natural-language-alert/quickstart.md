@@ -32,7 +32,7 @@ NL_ALERT_CONFIDENCE_THRESHOLD=0.7
 
 ```bash
 cd backend
-curl -X POST http://127.0.0.1:8000/api/alerts/natural-language \
+curl -X POST http://127.0.0.1:8000/alerts/natural-language \
   -H "Content-Type: application/json" \
   -d '{"query": "茅台跌破 1500 提醒我"}'
 ```
@@ -40,15 +40,15 @@ curl -X POST http://127.0.0.1:8000/api/alerts/natural-language \
 ### 3.2 涨跌幅预警
 
 ```bash
-curl -X POST http://127.0.0.1:8000/api/alerts/natural-language \
+curl -X POST http://127.0.0.1:8000/alerts/natural-language \
   -H "Content-Type: application/json" \
-  -d '{"query": "五粮液跌幅超过 3% 提醒我"}'
+  -d '{"query": "茅台涨幅超过 2% 提醒我"}'
 ```
 
 ### 3.3 歧义候选
 
 ```bash
-curl -X POST http://127.0.0.1:8000/api/alerts/natural-language \
+curl -X POST http://127.0.0.1:8000/alerts/natural-language \
   -H "Content-Type: application/json" \
   -d '{"query": "银行跌破 10 元提醒我"}'
 ```
@@ -56,7 +56,7 @@ curl -X POST http://127.0.0.1:8000/api/alerts/natural-language \
 返回候选后，选择招商银行重新提交：
 
 ```bash
-curl -X POST http://127.0.0.1:8000/api/alerts/natural-language \
+curl -X POST http://127.0.0.1:8000/alerts/natural-language \
   -H "Content-Type: application/json" \
   -d '{"query": "银行跌破 10 元提醒我", "selected_stock_code": "600036"}'
 ```
@@ -64,7 +64,7 @@ curl -X POST http://127.0.0.1:8000/api/alerts/natural-language \
 ### 3.4 低置信度输入
 
 ```bash
-curl -X POST http://127.0.0.1:8000/api/alerts/natural-language \
+curl -X POST http://127.0.0.1:8000/alerts/natural-language \
   -H "Content-Type: application/json" \
   -d '{"query": "帮我看着点茅台"}'
 ```
@@ -72,7 +72,7 @@ curl -X POST http://127.0.0.1:8000/api/alerts/natural-language \
 ## 4. 查看预警规则
 
 ```bash
-curl http://127.0.0.1:8000/api/alerts
+curl http://127.0.0.1:8000/alerts
 ```
 
 ## 5. 常见问题
