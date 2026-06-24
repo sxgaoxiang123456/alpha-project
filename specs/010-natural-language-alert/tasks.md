@@ -36,7 +36,7 @@
 - [x] T004 [P] [BE] Extend `backend/app/services/stock_search.py` to return sorted candidate list (match_score desc, then market_cap desc) with `sector` and `market_cap` fields  
   `[FR-005 来源] | [依赖: 无] | [验证: 输入「银行」返回至少2只候选，按规则排序]`
 
-- [ ] T005 [BE] Create `backend/app/services/nl_alert_parser.py` orchestrating `RuleBasedParser` → LLM fallback via `BriefingLLMClient` → normalized `ParsedAlertIntent`  
+- [x] T005 [BE] Create `backend/app/services/nl_alert_parser.py` orchestrating `RuleBasedParser` → LLM fallback via `BriefingLLMClient` → normalized `ParsedAlertIntent`  
   `[FR-001/FR-006/FR-007 来源] | [依赖: T001, T003] | [验证: mock 规则命中返回高置信度；mock 规则未命中调用 LLM；mock LLM 失败返回低置信度降级]`
 
 **Checkpoint**: Foundation ready — 解析器可独立运行并返回结构化意图或降级标记
