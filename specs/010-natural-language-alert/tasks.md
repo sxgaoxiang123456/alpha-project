@@ -54,10 +54,10 @@
 - [x] T007 [US1] [BE] Register `alerts_nl_router` in `backend/app/main.py` under `/api/alerts/natural-language`  
   `[FR-012 来源] | [依赖: T006] | [验证: 服务启动后 endpoint 可访问]`
 
-- [ ] T008 [P] [US1] [FE] Create `frontend/src/templates/components/nl_alert_input.html` with input box, submit button and result/candidate container  
+- [x] T008 [P] [US1] [FE] Create `frontend/src/templates/components/nl_alert_input.html` with input box, submit button and result/candidate container  
   `[FR-012 来源] | [依赖: 无] | [验证: 组件独立渲染，占位文案为中文]`
 
-- [ ] T009 [P] [US1] [FE] Integrate `nl_alert_input` component into `frontend/src/templates/dashboard.html`, `watchlist.html` and `alert_rules.html`  
+- [x] T009 [P] [US1] [FE] Integrate `nl_alert_input` component into `frontend/src/templates/dashboard.html`, `watchlist.html` and `alert_rules.html`  
   `[FR-012 来源] | [依赖: T008] | [验证: 三个页面均可见独立输入框]`
 
 - [ ] T010 [US1] [INT] Validate standard natural language alert creation via backend unit/integration tests and `quickstart.md` curl commands  

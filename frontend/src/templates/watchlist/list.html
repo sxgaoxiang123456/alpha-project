@@ -25,6 +25,8 @@
 
 <!-- Main Workspace Grid -->
 <div class="grid grid-cols-12 gap-container-gap">
+    {% include "components/nl_alert_input.html" %}
+
     {% if items %}
         {% include "components/filter_sidebar.html" %}
         {% include "components/stock_table.html" %}

@@ -14,6 +14,10 @@
 {% block content %}
 <!-- Dashboard Content -->
 <main class="w-full grid grid-cols-12 gap-container-gap">
+    <div class="col-span-12">
+        {% include "components/nl_alert_input.html" %}
+    </div>
+
     {% if view.degraded %}
     <div class="col-span-12 bg-market-warning/10 border border-market-warning rounded p-4 flex items-center gap-2">
         <span class="material-symbols-outlined text-market-warning">warning</span>
