@@ -33,7 +33,7 @@
 - [x] T003 [P] [BE] Create `backend/app/services/rule_based_parser.py` to extract stock/condition_type/threshold and compute per-dimension confidence from core Chinese patterns  
   `[FR-002/FR-003/FR-004/FR-006 来源] | [依赖: 无] | [验证: 输入「茅台跌破1500」返回 price_below/1500/置信度1.0]`
 
-- [ ] T004 [P] [BE] Extend `backend/app/services/stock_search.py` to return sorted candidate list (match_score desc, then market_cap desc) with `sector` and `market_cap` fields  
+- [x] T004 [P] [BE] Extend `backend/app/services/stock_search.py` to return sorted candidate list (match_score desc, then market_cap desc) with `sector` and `market_cap` fields  
   `[FR-005 来源] | [依赖: 无] | [验证: 输入「银行」返回至少2只候选，按规则排序]`
 
 - [ ] T005 [BE] Create `backend/app/services/nl_alert_parser.py` orchestrating `RuleBasedParser` → LLM fallback via `BriefingLLMClient` → normalized `ParsedAlertIntent`  
