@@ -1,7 +1,7 @@
 # 实施进度 · F8 自然语言设预警
 
 ## 当前任务
-[>] T016 · 更新 `state.md` 与 `tasks.md` 完成状态
+F8 全部 task 已完成，等待 merge 回 develop
 
 ## 已完成
 [x] T001 · 创建 `backend/app/templates/prompts/nl_alert.j2` Prompt 模板
@@ -19,6 +19,11 @@
 [x] T013 · 实现低置信度拒绝提示
 [x] T014 · 实现不支持条件类型提示
 [x] T015 · 全量后端回归与 quickstart manual flow 验证
+[x] T016 · 更新 `state.md` 与 `tasks.md` 完成状态
+[x] Code Review 修复（invalid 兜底、selected_stock_code 条件校验、排序稳定键、锁注释）
+
+## 阻塞项
+（无）
 
 ## 阻塞项
 （无）
