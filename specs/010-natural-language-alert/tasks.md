@@ -17,7 +17,7 @@
 
 **Purpose**: 创建 LLM 兜底 Prompt 模板
 
-- [ ] T001 [BE] Create `backend/app/templates/prompts/nl_alert.j2` with system role, parsing instructions, condition type mapping and structured JSON output format  
+- [x] T001 [BE] Create `backend/app/templates/prompts/nl_alert.j2` with system role, parsing instructions, condition type mapping and structured JSON output format  
   `[FR-001/FR-002/FR-003/FR-004 来源] | [依赖: 无] | [验证: 模板可渲染，输出包含 stock_code/condition_type/threshold/confidence 占位符]`
 
 ---
