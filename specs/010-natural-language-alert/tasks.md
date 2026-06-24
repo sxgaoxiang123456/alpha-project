@@ -48,10 +48,10 @@
 **Goal**: 用户输入标准自然语言指令，3 秒内成功创建价格/涨跌幅预警规则  
 **Independent Test**: `curl` 调用标准句式，返回 success=true 与规则摘要
 
-- [ ] T006 [US1] [BE] Create `backend/app/routers/alerts_nl.py` with `POST /api/alerts/natural-language` endpoint (input validation → parse → rule validation → create AlertRule)  
+- [x] T006 [US1] [BE] Create `backend/app/routers/alerts_nl.py` with `POST /api/alerts/natural-language` endpoint (input validation → parse → rule validation → create AlertRule)  
   `[FR-008/FR-009/FR-010/FR-011 来源] | [依赖: T002, T005] | [验证: 200 返回成功创建 price_above/price_below/change_pct_above/change_pct_below]`
 
-- [ ] T007 [US1] [BE] Register `alerts_nl_router` in `backend/app/main.py` under `/api/alerts/natural-language`  
+- [x] T007 [US1] [BE] Register `alerts_nl_router` in `backend/app/main.py` under `/api/alerts/natural-language`  
   `[FR-012 来源] | [依赖: T006] | [验证: 服务启动后 endpoint 可访问]`
 
 - [ ] T008 [P] [US1] [FE] Create `frontend/src/templates/components/nl_alert_input.html` with input box, submit button and result/candidate container  
