@@ -177,18 +177,22 @@ ENCRYPTION_KEY=your-encryption-key-here
 QUOTE_REFRESH_INTERVAL_MINUTES=3
 QUOTE_CACHE_TTL_SECONDS=300
 HEALTH_CHECK_INTERVAL_MINUTES=5
+
+# 飞书主推送通道（可选，三项均非空时启用）
+FEISHU_APP_ID=cli_xxxxxxxxxxxx
+FEISHU_APP_SECRET=your-app-secret
+FEISHU_BRAND=feishu          # 可选，默认 feishu
+FEISHU_CHAT_ID=oc_xxxxxxxxxxxx
 ```
 
 ### 推送通道配置
 
-在系统设置页（`/settings`）配置：
-
-| 通道 | 需要配置 | 说明 |
+| 通道 | 配置方式 | 说明 |
 |------|---------|------|
-| **Telegram** | Bot Token + Chat ID | 从 [@BotFather](https://t.me/BotFather) 获取 Token |
-| **飞书** | Webhook URL | 飞书机器人 webhook 地址 |
+| **飞书** | `.env` 环境变量 | 提供飞书自建应用的 `FEISHU_APP_ID`、`FEISHU_APP_SECRET`、`FEISHU_CHAT_ID`；修改后需重启服务生效 |
+| **Telegram** | 系统设置页 | 在设置页（`/settings`）配置 Bot Token + Chat ID |
 
-> 推送通道为可选配置。未配置时，预警触发仍会在 Dashboard 显示并记录日志。
+> 飞书主通道配置状态可在系统设置页查看。推送通道为可选配置，未配置时预警触发仍会记录本地推送日志。
 
 ---
 

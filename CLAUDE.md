@@ -52,9 +52,8 @@
 |:---|:---|:---|
 | `bash setup.sh` | **构建/重建虚拟环境**（首次进入或 worktree 切换后必跑） | `backend/setup.sh` |
 | `bash setup.sh -k` | 保留已有 `.venv`，仅安装依赖 | `backend/setup.sh` |
-| `.venv/bin/python -m pytest tests/` | 运行全量测试 | `001/tasks.md` T24 |
-| `.venv/bin/python -m pytest tests/unit/` | 运行单元测试 | `001/tasks.md` T24 |
-| `.venv/bin/python -m pytest tests/integration/` | 运行集成测试 | `001/tasks.md` T25 |
+| `.venv/bin/python -m pytest tests/unit/ tests/integration/ -v` | 运行单元+集成测试（**第一批，必须先跑**） | `backend/tests/CLAUDE.md` |
+| `.venv/bin/python -m pytest tests/e2e/ -v` | 运行 E2E 测试（**第二批，单独跑，避免事件循环污染**） | `backend/tests/CLAUDE.md` |
 | `.venv/bin/python -m uvicorn app.main:app` | 启动 FastAPI 服务 | `001/tasks.md` T2 |
 | `docker build -t stock-mgt .` | 构建 Docker 镜像 | `001/tasks.md` T1 |
 
@@ -155,6 +154,7 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 | `specs/004-price-alert/{spec,plan,tasks}.md` | F4 开发时 | 预警规则、检测引擎、冷却期 |
 | `specs/005-push-notification/{spec,plan,tasks}.md` | F5 开发时 | 飞书/Telegram 推送、双通道冗余 |
 | `specs/006-dashboard/{spec,plan,tasks}.md` | F6 开发时 | Dashboard、设置页、前端组件 |
+| `backend/tests/CLAUDE.md` | **任何涉及测试的操作前必读** | 测试运行规则、事件循环铁律、E2E fixture 规范、常见失败诊断 |
 | `.specify/templates/{spec,plan,tasks}-template.md` | 新建 feature 时 | 标准化文档模板 |
 
 ## 11. LEARNINGS 自动加载

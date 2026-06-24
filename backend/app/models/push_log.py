@@ -20,6 +20,7 @@ class PushLog(Base):
     status: Mapped[str] = mapped_column(String(16), nullable=False, default="pending")
     error_reason: Mapped[str | None] = mapped_column(String(512), nullable=True)
     elapsed_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    metadata_json: Mapped[str | None] = mapped_column(String(1024), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, nullable=False, default=_utcnow
     )

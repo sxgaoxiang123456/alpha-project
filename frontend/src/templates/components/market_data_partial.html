@@ -1,0 +1,13 @@
+<!-- Market Data Partial — AJAX 刷新用，仅行情数据（大盘指数 + 自选股），不含简报 -->
+{% with market_indices=market_indices %}
+{% include "components/market_index.html" %}
+{% endwith %}
+
+<!-- Left Column: Watchlist -->
+<div class="col-span-12 lg:col-span-8 flex flex-col gap-container-gap">
+    {% with watchlist=watchlist %}
+    {% include "components/watchlist_snapshot.html" %}
+    {% include "components/onboarding.html" %}
+    {% endwith %}
+    {% include "components/quick_actions.html" %}
+</div>

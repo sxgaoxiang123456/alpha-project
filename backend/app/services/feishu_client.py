@@ -1,9 +1,15 @@
 import json
 import subprocess
+import sys
 
 
 class FeishuClient:
-    """飞书 Open API 客户端，通过 lark-cli 发送卡片消息。"""
+    """飞书 Open API 客户端，通过 lark-cli 发送卡片消息。
+
+    lark-cli v1.x 使用预先注册的应用身份（config init + auth login），
+    不支持内联 --app-id / --app-secret。构造函数中保证 lark-cli 配置完成，
+    发送时用 --as bot 切换为机器人身份。
+    """
 
     def __init__(
         self,
@@ -16,6 +22,32 @@ class FeishuClient:
         self.app_secret = app_secret
         self.brand = brand
         self.chat_id = chat_id
+        self._ensure_config()
+
+    def _ensure_config(self):
+        """确保 lark-cli 已注册本应用，缺少时自动 init。"""
+        try:
+            result = subprocess.run(
+                ["lark-cli", "config", "show"],
+                capture_output=True, text=True, timeout=10,
+            )
+            if result.returncode == 0:
+                info = json.loads(result.stdout)
+                if info.get("appId") == self.app_id:
+                    return  # already configured
+        except Exception:
+            pass  # lark-cli may not be installed; non-fatal
+
+        try:
+            subprocess.run(
+                ["lark-cli", "config", "init",
+                 "--app-id", self.app_id,
+                 "--brand", self.brand],
+                input=self.app_secret + "\n",
+                capture_output=True, text=True, timeout=30,
+            )
+        except Exception:
+            pass  # non-fatal: proceed with existing config if any
 
     def send_card(self, card_content: dict) -> dict:
         """发送飞书卡片消息。
@@ -68,6 +100,8 @@ class FeishuClient:
         # stdout 为空或无法解析，退到 stderr / returncode
         if result.returncode != 0:
             error_msg = result.stderr.strip() or "Unknown subprocess error"
+            if self.app_secret and self.app_secret in error_msg:
+                error_msg = error_msg.replace(self.app_secret, "***")
             return {
                 "success": False,
                 "error_type": "network_error",
@@ -81,17 +115,20 @@ class FeishuClient:
         }
 
     def _call_lark_cli(self, payload: dict) -> subprocess.CompletedProcess:
+        """调用 lark-cli api，使用预注册的机器人身份。
+
+        lark-cli v1.x 不支持内联 --app-id/--app-secret，需预先运行
+        lark-cli config init + lark-cli auth login 完成注册和鉴权。
+        """
         cmd = [
             "lark-cli",
             "api",
             "POST",
-            "open-apis/im/v1/messages",
+            "im/v1/messages",
+            "--params", json.dumps({"receive_id_type": "chat_id"}),
             "--data",
             json.dumps(payload, ensure_ascii=False),
-            "--app-id",
-            self.app_id,
-            "--app-secret",
-            self.app_secret,
+            "--as", "bot",
         ]
         return subprocess.run(
             cmd,

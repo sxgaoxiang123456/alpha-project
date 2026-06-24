@@ -1,4 +1,5 @@
 import asyncio
+import json
 import time
 from datetime import UTC, datetime
 from decimal import Decimal
@@ -15,7 +16,9 @@ from backend.app.services.dashboard_service import DashboardService
 
 
 def _make_db():
-    engine = create_engine("sqlite:///:memory:")
+    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
+    # 确保所有模型表被注册
+    import backend.app.models  # noqa: F401
     Base.metadata.create_all(bind=engine)
     Session = sessionmaker(bind=engine)
     return Session()
@@ -55,7 +58,8 @@ def _mock_cache_service():
 
 
 class TestDashboardService:
-    def test_parallel_calls_aggregation(self):
+    @pytest.mark.asyncio
+    async def test_parallel_calls_aggregation(self):
         """验证并行调用 5 个上游服务，聚合结果完整。"""
         db = _make_db()
         market_svc = _mock_market_service()
@@ -70,7 +74,7 @@ class TestDashboardService:
             timeout_seconds=0.1,
         )
 
-        result = asyncio.run(service.build_dashboard_view())
+        result = await service.build_dashboard_view()
 
         assert isinstance(result, DashboardViewResponse)
         assert len(result.market_indices) == 1
@@ -85,7 +89,8 @@ class TestDashboardService:
         quote_svc.get_watchlist_quotes.assert_called_once()
         cache_svc.get.assert_called_once()
 
-    def test_timeout_degradation(self):
+    @pytest.mark.asyncio
+    async def test_timeout_degradation(self):
         """验证单个服务超时后降级，不影响整体响应。"""
         db = _make_db()
         market_svc = _mock_market_service()
@@ -108,7 +113,7 @@ class TestDashboardService:
             timeout_seconds=0.1,
         )
 
-        result = asyncio.run(service.build_dashboard_view())
+        result = await service.build_dashboard_view()
 
         # 大盘数据正常返回
         assert len(result.market_indices) == 1
@@ -117,7 +122,8 @@ class TestDashboardService:
         # 整体响应仍成功
         assert isinstance(result, DashboardViewResponse)
 
-    def test_all_empty_data(self):
+    @pytest.mark.asyncio
+    async def test_all_empty_data(self):
         """验证无自选股、无预警时的空数据聚合。"""
         db = _make_db()
         market_svc = MagicMock()
@@ -135,10 +141,45 @@ class TestDashboardService:
             timeout_seconds=0.1,
         )
 
-        result = asyncio.run(service.build_dashboard_view())
+        result = await service.build_dashboard_view()
 
         assert result.market_indices == []
         assert result.watchlist == []
         assert result.alerts == []
         assert result.push_history == []
         assert result.channel_status == []
+
+    @pytest.mark.asyncio
+    async def test_full_briefing_cache_parsed_for_dashboard(self):
+        """简报缓存包含大盘/异动/降级标记时，Dashboard 应完整解析。"""
+        db = _make_db()
+        market_svc = _mock_market_service()
+        quote_svc = _mock_quote_service()
+        cache_svc = MagicMock()
+        cache_svc.get = MagicMock(return_value=json.dumps({
+            "insights": ["科技股活跃"],
+            "market_indices": {"上证指数": {"current": 3050.12, "change_pct": 0.85}},
+            "top_movers": [
+                {"stock_code": "600000", "stock_name": "浦发银行", "change_percent": 2.5, "move_type": "price_surge"},
+            ],
+            "is_degraded": False,
+            "generated_at": datetime.now(UTC).isoformat(),
+        }))
+
+        service = DashboardService(
+            db=db,
+            market_index_service=market_svc,
+            quote_service=quote_svc,
+            cache_service=cache_svc,
+            timeout_seconds=0.1,
+        )
+
+        result = await service.build_dashboard_view()
+
+        assert result.briefing is not None
+        assert result.briefing.insights == ["科技股活跃"]
+        assert "上证指数" in result.briefing.market_indices
+        assert result.briefing.market_indices["上证指数"]["current"] == 3050.12
+        assert len(result.briefing.top_movers) == 1
+        assert result.briefing.top_movers[0]["stock_name"] == "浦发银行"
+        assert result.briefing.is_degraded is False

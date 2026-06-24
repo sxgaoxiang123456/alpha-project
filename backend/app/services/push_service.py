@@ -1,4 +1,3 @@
-import asyncio
 import html
 import json
 import time
@@ -19,10 +18,7 @@ class PushService:
         self.telegram = telegram_client
 
     def send(self, message: PushMessageRequest) -> str:
-        """提交推送请求，异步执行发送，返回 message_id。
-
-        调用方不等待发送完成，发送结果通过 PushLog 查询。
-        """
+        """提交推送请求，同步执行发送，返回 message_id。"""
         message_id = str(uuid.uuid4())
 
         log = PushLog(
@@ -34,19 +30,8 @@ class PushService:
         self.db.add(log)
         self.db.commit()
 
-        try:
-            loop = asyncio.get_running_loop()
-            loop.create_task(self._execute_send_async(message_id, message))
-        except RuntimeError:
-            self._execute_send(message_id, message)
+        self._execute_send(message_id, message)
         return message_id
-
-    async def _execute_send_async(self, message_id: str, message: PushMessageRequest):
-        """异步包装，实际调用同步发送逻辑。"""
-        try:
-            await asyncio.to_thread(self._execute_send, message_id, message)
-        except Exception:
-            self._mark_failed(message_id)
 
     def _execute_send(self, message_id: str, message: PushMessageRequest):
         """同步执行发送逻辑：通道检查 → 主通道尝试 → 重试 → 降级 → 日志更新。"""
@@ -83,8 +68,10 @@ class PushService:
             if fallback_result is not None
             else primary_result
         )
+        metadata = self._extract_log_metadata(message)
         self._update_log(
-            message_id, used_channel, primary_result, fallback_result, elapsed_ms, channel_status
+            message_id, used_channel, primary_result, fallback_result, elapsed_ms, channel_status,
+            metadata=metadata,
         )
 
         # 更新通道失败计数
@@ -128,6 +115,7 @@ class PushService:
         fallback_result: dict | None,
         elapsed_ms: int,
         primary_status: str,
+        metadata: dict | None = None,
     ):
         """更新推送日志状态。"""
         log = (
@@ -139,6 +127,8 @@ class PushService:
             return
 
         log.elapsed_ms = elapsed_ms
+        if metadata:
+            log.metadata_json = json.dumps(metadata, ensure_ascii=False)
 
         final_result = fallback_result if fallback_result is not None else primary_result
 
@@ -261,6 +251,17 @@ class PushService:
             log.error_reason = "Async execution exception"
             self.db.commit()
 
+    def _extract_log_metadata(self, message: PushMessageRequest) -> dict | None:
+        """从消息内容中提取需要写入 PushLog 的元数据。"""
+        if not isinstance(message.content, dict):
+            return None
+        if message.message_type == "briefing":
+            return {
+                "is_degraded": message.content.get("is_degraded"),
+                "degraded_reason": message.content.get("degraded_reason"),
+            }
+        return message.content.get("metadata")
+
     # ---------- 格式化方法 (T7/T8) ----------
 
     def _format_content(self, message: PushMessageRequest) -> dict:
@@ -299,6 +300,9 @@ class PushService:
             "date": content.get("date", ""),
             "market_indices": content.get("market_indices", {}),
             "top_movers": content.get("top_movers", []),
+            "insights": content.get("insights", []),
+            "is_degraded": content.get("is_degraded", False),
+            "degraded_reason": content.get("degraded_reason"),
         }
 
     def _content_to_text(self, content: dict) -> str:
@@ -334,8 +338,14 @@ class PushService:
         date = html.escape(str(content.get("date", "")))
         indices = content.get("market_indices", {})
         top_movers = content.get("top_movers", [])
+        insights = content.get("insights", [])
+        is_degraded = content.get("is_degraded", False)
+        degraded_reason = content.get("degraded_reason")
 
         lines = [f"📊 早盘简报 {date}", ""]
+        if is_degraded:
+            lines.append(f"⚠️ 模板降级：{html.escape(str(degraded_reason))}")
+            lines.append("")
         lines.append("【大盘指数】")
         for name, value in indices.items():
             lines.append(f"  {html.escape(str(name))}: {html.escape(str(value))}")
@@ -347,6 +357,13 @@ class PushService:
                 f"({html.escape(str(mover.get('code', '')))}): "
                 f"{html.escape(str(mover.get('change_pct', '')))}%"
             )
+        if insights:
+            lines.append("")
+            lines.append("【AI 解读】")
+            for insight in insights:
+                lines.append(f"  • {html.escape(str(insight))}")
+        lines.append("")
+        lines.append("仅供参考，不构成投资建议")
         return "\n".join(lines)
 
     # ---------- 截断方法 (T9) ----------

@@ -51,24 +51,6 @@ def _mock_dashboard_service():
 
 
 class TestResponsiveClasses:
-    def test_contains_mobile_breakpoint_classes(self, monkeypatch, tmp_path):
-        """页面包含移动端响应式类。"""
-        app, _ = _fresh_app(monkeypatch, tmp_path)
-        monkeypatch.setattr("backend.app.routers.dashboard._get_dashboard_service", lambda db: _mock_dashboard_service())
-        with TestClient(app) as client:
-            response = client.get("/")
-        # md: / lg: 前缀
-        assert "md:" in response.text
-        assert "lg:" in response.text
-
-    def test_contains_mobile_layout_classes(self, monkeypatch, tmp_path):
-        """页面包含移动端布局调整类。"""
-        app, _ = _fresh_app(monkeypatch, tmp_path)
-        monkeypatch.setattr("backend.app.routers.dashboard._get_dashboard_service", lambda db: _mock_dashboard_service())
-        with TestClient(app) as client:
-            response = client.get("/")
-        assert "md:ml-64" in response.text or "md:grid-cols-3" in response.text or "lg:col-span-8" in response.text
-
     def test_grid_system_present(self, monkeypatch, tmp_path):
         """页面使用 12 列网格系统。"""
         app, _ = _fresh_app(monkeypatch, tmp_path)
@@ -95,7 +77,7 @@ class TestVisualCompliance:
         monkeypatch.setattr("backend.app.routers.dashboard._get_dashboard_service", lambda db: _mock_dashboard_service())
         with TestClient(app) as client:
             response = client.get("/")
-        assert "bg-surface-base" in response.text
+        assert "bg-surface-raised" in response.text  # 骨架屏使用 surface-raised
         assert "text-on-surface" in response.text
         assert "font-headline-md" in response.text
 

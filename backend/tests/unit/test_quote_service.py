@@ -1,6 +1,7 @@
 import asyncio
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
+from unittest.mock import patch
 
 import pytest
 from sqlalchemy import create_engine
@@ -58,7 +59,7 @@ def test_quote_service_fetches_watchlist_quotes_and_returns_cleaned_models():
     from backend.app.schemas.quote import Quote
     from backend.app.services.quote_service import QuoteService
 
-    engine = create_engine("sqlite:///:memory:")
+    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
     try:
         Base.metadata.create_all(bind=engine)
         Session = sessionmaker(bind=engine)
@@ -77,11 +78,13 @@ def test_quote_service_fetches_watchlist_quotes_and_returns_cleaned_models():
             session.commit()
 
             facade = FakeFacade()
-            quotes = QuoteService(
+            svc = QuoteService(
                 db=session,
                 facade=facade,
                 cleaner=DataCleaner(),
-            ).get_watchlist_quotes(actual_timestamp=actual_timestamp)
+            )
+            with patch.object(svc, '_schedule_historical_persistence', return_value=None):
+                quotes = svc.get_watchlist_quotes(actual_timestamp=actual_timestamp)
 
         assert facade.requested_codes == ["600519", "000001"]
         assert len(quotes) == 2
@@ -103,7 +106,7 @@ def test_quote_service_writes_cleaned_quotes_to_cache_with_five_minute_ttl():
     from backend.app.schemas.quote import Quote
     from backend.app.services.quote_service import QuoteService
 
-    engine = create_engine("sqlite:///:memory:")
+    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
     try:
         Base.metadata.create_all(bind=engine)
         Session = sessionmaker(bind=engine)
@@ -146,10 +149,11 @@ def test_quote_service_writes_cleaned_quotes_to_cache_with_five_minute_ttl():
 
 
 @pytest.mark.asyncio
-async def test_quote_service_persists_historical_quote_in_background_task():
+async def test_quote_service_persists_historical_quote_in_background_task(tmp_path):
     from backend.app.services.quote_service import QuoteService
 
-    engine = create_engine("sqlite:///:memory:")
+    db_path = tmp_path / "test.db"
+    engine = create_engine(f"sqlite:///{db_path}", connect_args={"check_same_thread": False})
     try:
         Base.metadata.create_all(bind=engine)
         Session = sessionmaker(bind=engine)
@@ -172,7 +176,11 @@ async def test_quote_service_persists_historical_quote_in_background_task():
                 history_session_factory=Session,
             ).get_watchlist_quotes(actual_timestamp=actual_timestamp)
 
-            await asyncio.sleep(0)
+            # 等待后台线程完成
+            await asyncio.sleep(0.3)
+
+            # 刷新 session 以获取其他线程写入的数据
+            session.expire_all()
 
             historical_quote = session.get(
                 HistoricalQuote,

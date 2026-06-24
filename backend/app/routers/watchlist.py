@@ -71,9 +71,20 @@ def add_watchlist_item(
             db.commit()
         except IntegrityError as exc:
             db.rollback()
+            err_msg = str(exc.orig) if exc.orig else str(exc)
+            if "UNIQUE" in err_msg:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=f"股票 {item.stock_code} 已存在于自选股列表中",
+                ) from exc
+            if "FOREIGN KEY" in err_msg:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="系统数据异常：默认分组缺失，请重启服务或联系管理员",
+                ) from exc
             raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=f"股票 {item.stock_code} 已存在于自选股列表中",
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"数据库写入失败：{err_msg}",
             ) from exc
         db.refresh(watchlist_item)
 

@@ -155,7 +155,7 @@ def full_chain_stack(tmp_path_factory):
     url = f"http://127.0.0.1:{port}"
     for _ in range(30):
         try:
-            if requests.get(url, timeout=2).status_code == 200:
+            if requests.get(f"{url}/health", timeout=2).status_code == 200:
                 break
         except Exception:
             pass
@@ -360,7 +360,10 @@ class TestJourneyUS2_FirstTimeOnboarding:
         """
         # 由于 session fixture 已 seed 数据，这里验证"有数据时的正常展示"
         # 空引导场景留给局部前后端测试（单 feature 切片）
-        resp = requests.get(full_chain_stack.url, timeout=5)
+        resp = requests.get(f"{full_chain_stack.url}/health", timeout=5)
+        assert resp.status_code == 200
+
+        resp = requests.get(full_chain_stack.url, timeout=30)
         assert resp.status_code == 200
         content = resp.text
         # 有自选股时，不应出现"添加第一只"引导
@@ -416,11 +419,38 @@ class TestJourneyNonUI_BriefingGeneration:
             def _mock_push_factory():
                 return PushService(db=db, feishu_client=None, telegram_client=None)
 
+            # F7 之后，QuoteScheduler 通过 briefing_service_factory 编排简报生成
+            class _StubBriefingService:
+                def __init__(self, push_service):
+                    self.push_service = push_service
+
+                def generate(self, *, current_date=None):
+                    from datetime import date as _date
+
+                    message = PushMessageRequest(
+                        message_type="briefing",
+                        content={
+                            "date": (
+                                current_date.isoformat()
+                                if current_date
+                                else _date.today().isoformat()
+                            ),
+                            "market_indices": {},
+                            "top_movers": [],
+                            "insights": ["stub briefing"],
+                            "is_degraded": False,
+                        },
+                    )
+                    self.push_service.send(message)
+
+            def _mock_briefing_factory():
+                return _StubBriefingService(_mock_push_factory())
+
             scheduler = QuoteScheduler(
                 quote_service=None,  # send_briefing 不依赖 quote_service
                 market_index_service=_MockMarketIndexService(),
                 is_trading_day=lambda _d: True,  # mock 交易日
-                push_service_factory=_mock_push_factory,
+                briefing_service_factory=_mock_briefing_factory,
             )
 
             # 编排驱动：手动触发定时任务（不等 cron）

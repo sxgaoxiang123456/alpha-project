@@ -41,6 +41,26 @@ class CacheService:
             entry.expires_at = now + timedelta(seconds=ttl)
             self.db.commit()
 
+    def set_nx(self, key: str, content: str, ttl_seconds: int | None = None) -> bool:
+        """仅在 key 不存在或已过期时写入缓存，返回是否写入成功。"""
+        with _cache_lock:
+            now = _utc_now()
+            ttl = ttl_seconds if ttl_seconds is not None else self.DEFAULT_TTL_SECONDS
+
+            entry = self.db.get(CacheEntry, key)
+            if entry is not None and entry.expires_at >= now:
+                return False
+
+            if entry is None:
+                entry = CacheEntry(key=key)
+                self.db.add(entry)
+
+            entry.content = content
+            entry.cached_at = now
+            entry.expires_at = now + timedelta(seconds=ttl)
+            self.db.commit()
+            return True
+
     def get(self, key: str) -> str | None:
         """查询缓存，过期返回 None。"""
         entry = self.db.get(CacheEntry, key)

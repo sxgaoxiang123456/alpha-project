@@ -6,7 +6,7 @@ import logging
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, sessionmaker
 
 from backend.app.config import get_settings
 from backend.app.models.alert_trigger import AlertTrigger
@@ -44,12 +44,16 @@ class DashboardService:
         quote_service: Any,
         cache_service: Any,
         timeout_seconds: float | None = None,
+        session_factory: Any | None = None,
+        redis_cache: Any | None = None,
     ):
         self.db = db
         self.market_index_service = market_index_service
         self.quote_service = quote_service
         self.cache_service = cache_service
         self.timeout_seconds = timeout_seconds or self.DEFAULT_TIMEOUT_SECONDS
+        self._session_factory = session_factory or sessionmaker(bind=db.get_bind())
+        self.redis_cache = redis_cache
 
     async def build_dashboard_view(self) -> DashboardViewResponse:
         """聚合 Dashboard 首页全部数据。
@@ -61,7 +65,7 @@ class DashboardService:
         # 并行调用外部上游服务（可能涉及网络 I/O）
         external_results = await asyncio.gather(
             self._with_timeout(self._run_in_thread(self._get_market_indices), [], "market_indices"),
-            self._with_timeout(self._run_in_thread(self._get_watchlist_data), [], "watchlist"),
+            self._with_timeout(self._run_in_thread(self._get_watchlist_data), self._get_watchlist_fallback(), "watchlist"),
             self._with_timeout(self._run_in_thread(self._get_briefing), None, "briefing"),
             return_exceptions=True,
         )
@@ -70,10 +74,16 @@ class DashboardService:
         market_indices = market_indices if isinstance(market_indices, list) else []
         watchlist = watchlist if isinstance(watchlist, list) else []
 
-        # 数据库查询顺序执行（同一个 session 不支持并发）
-        alerts = self._get_today_alerts()
-        push_history = self._get_push_history()
-        channel_status = self._get_channel_status()
+        # 数据库查询并行执行（独立 session + asyncio.gather）
+        db_results = await asyncio.gather(
+            self._with_timeout(self._run_in_thread(self._get_today_alerts_parallel), [], "alerts"),
+            self._with_timeout(self._run_in_thread(self._get_push_history_parallel), [], "push_history"),
+            self._with_timeout(self._run_in_thread(self._get_channel_status_parallel), [], "channel_status"),
+            return_exceptions=True,
+        )
+        alerts = db_results[0] if isinstance(db_results[0], list) else []
+        push_history = db_results[1] if isinstance(db_results[1], list) else []
+        channel_status = db_results[2] if isinstance(db_results[2], list) else []
 
         # 检测是否有数据源降级
         degraded = any(
@@ -94,6 +104,31 @@ class DashboardService:
             degradation_message="数据更新延迟，展示缓存数据" if degraded else None,
         )
 
+    async def get_market_data(self) -> dict[str, Any]:
+        """仅获取行情数据（大盘指数 + 自选股），用于 Partial 刷新。
+
+        不查询预警、推送历史、通道状态、简报等不随每次刷新变化的数据。
+        """
+        external_results = await asyncio.gather(
+            self._with_timeout(self._run_in_thread(self._get_market_indices), [], "market_indices"),
+            self._with_timeout(self._run_in_thread(self._get_watchlist_data), self._get_watchlist_fallback(), "watchlist"),
+            return_exceptions=True,
+        )
+        market_indices = external_results[0] if isinstance(external_results[0], list) else []
+        watchlist = external_results[1] if isinstance(external_results[1], list) else []
+
+        degraded = any(
+            getattr(idx, "source_status", "") == "unavailable"
+            for idx in market_indices
+        ) or not market_indices
+
+        return {
+            "market_indices": market_indices,
+            "watchlist": watchlist,
+            "degraded": degraded,
+            "last_refresh": datetime.now(UTC).isoformat(),
+        }
+
     async def _with_timeout(
         self, coro: Any, fallback: Any, name: str
     ) -> Any:
@@ -113,8 +148,8 @@ class DashboardService:
         return asyncio.to_thread(func)
 
     def _get_market_indices(self) -> list[MarketSnapshot]:
-        """获取大盘指数快照。"""
-        indices = self.market_index_service.get_indices()
+        """获取大盘指数快照（优先读 Redis 缓存）。"""
+        indices = self.market_index_service.get_indices(use_cache=True)
         return [
             MarketSnapshot(
                 name=idx.index_name,
@@ -126,32 +161,96 @@ class DashboardService:
             for idx in indices
         ]
 
+    def _get_watchlist_fallback(self) -> list[StockCardData]:
+        """行情获取超时/失败时的降级数据：从数据库返回基础列表（无行情）。"""
+        from backend.app.models.stock import Stock
+        from backend.app.models.watchlist import WatchlistItem
+
+        items = (
+            self.db.query(WatchlistItem)
+            .order_by(WatchlistItem.id)
+            .all()
+        )
+        if not items:
+            return []
+
+        codes = [item.stock_code for item in items]
+        db_stocks = {
+            s.code: s.name
+            for s in self.db.query(Stock).filter(Stock.code.in_(codes)).all()
+        }
+
+        return [
+            StockCardData(
+                code=item.stock_code,
+                name=db_stocks.get(item.stock_code, item.stock_code),
+                current_price=None,
+                change_percent=None,
+                change_amount=None,
+                updated_at=None,
+            )
+            for item in items
+        ]
+
     def _get_watchlist_data(self) -> list[StockCardData]:
-        """获取自选股行情数据。"""
-        quotes = self.quote_service.get_watchlist_quotes()
+        """获取自选股行情数据。
+
+        行情获取失败时，clean_quote 会把 stock_name 回退为 stock_code；
+        这里用数据库中的 stocks 表做名称兜底，确保列表始终展示正确名称。
+        """
+        quotes = self.quote_service.get_watchlist_quotes(use_cache=True)
+        if not quotes:
+            return []
+
+        codes = [q.stock_code for q in quotes]
+        from backend.app.models.stock import Stock
+        db_stocks = {s.code: s.name for s in self.db.query(Stock).filter(Stock.code.in_(codes)).all()}
+
         return [
             StockCardData(
                 code=q.stock_code,
-                name=q.stock_name,
-                current_price=float(q.current_price or 0),
-                change_percent=float(q.change_percent or 0),
-                change_amount=float(q.change_amount or 0),
+                name=db_stocks.get(q.stock_code, q.stock_name),
+                current_price=float(q.current_price) if q.current_price is not None else None,
+                change_percent=float(q.change_percent) if q.change_percent is not None else None,
+                change_amount=float(q.change_amount) if q.change_amount is not None else None,
                 updated_at=q.updated_at,
             )
             for q in quotes
         ]
 
+    def _parse_briefing_data(self, data: Any) -> BriefingData:
+        """将缓存中的简报 dict 解析为 BriefingData。"""
+        if not isinstance(data, dict):
+            return BriefingData(insights=[])
+        insights = data.get("insights", [])
+        if not isinstance(insights, list):
+            insights = [str(insights)]
+        return BriefingData(
+            insights=insights,
+            generated_at=data.get("generated_at"),
+            market_indices=data.get("market_indices", {}),
+            top_movers=data.get("top_movers", []),
+            is_degraded=data.get("is_degraded", False),
+            degraded_reason=data.get("degraded_reason"),
+        )
+
     def _get_briefing(self) -> BriefingData | None:
-        """获取最新 AI 简报。"""
+        """获取最新 AI 简报（优先读 Redis，miss 时回退 SQLite cache）。"""
+        # 优先读 Redis
+        if self.redis_cache is not None:
+            cached = self.redis_cache.get("latest_briefing")
+            if cached is not None:
+                return self._parse_briefing_data(cached)
+
         raw = self.cache_service.get("latest_briefing")
         if not raw:
             return BriefingData(insights=[])
         try:
             data = json.loads(raw) if isinstance(raw, str) else raw
-            insights = data.get("insights", [])
-            return BriefingData(
-                insights=insights if isinstance(insights, list) else [str(insights)],
-            )
+            # 写入 Redis 缓存
+            if self.redis_cache is not None:
+                self.redis_cache.set("latest_briefing", data, ttl_seconds=300)
+            return self._parse_briefing_data(data)
         except Exception:
             logger.exception("简报解析失败")
             return BriefingData(insights=[])
@@ -215,3 +314,66 @@ class DashboardService:
             )
             for c in channels
         ]
+
+    # ---- 并行查询方法（使用独立 session） ----
+
+    def _get_today_alerts_parallel(self) -> list[AlertSummary]:
+        """获取今日预警汇总（独立 session 版本，用于并行查询）。"""
+        from datetime import date
+
+        today = datetime.now(UTC).date()
+        start_of_day = datetime(today.year, today.month, today.day, tzinfo=UTC)
+        with self._session_factory() as session:
+            triggers = (
+                session.query(AlertTrigger)
+                .filter(AlertTrigger.triggered_at >= start_of_day)
+                .order_by(AlertTrigger.triggered_at.desc())
+                .limit(50)
+                .all()
+            )
+            return [
+                AlertSummary(
+                    stock_code=t.stock_code,
+                    stock_name=t.stock_code,
+                    condition=f"{t.condition_type} {t.trigger_value}",
+                    level=t.level,
+                    triggered_at=t.triggered_at,
+                )
+                for t in triggers
+            ]
+
+    def _get_push_history_parallel(self, limit: int = 100) -> list[PushHistoryItem]:
+        """获取最近推送历史（独立 session 版本，用于并行查询）。"""
+        with self._session_factory() as session:
+            logs = (
+                session.query(PushLog)
+                .order_by(PushLog.created_at.desc())
+                .limit(limit)
+                .all()
+            )
+            return [
+                PushHistoryItem(
+                    message_type=log.message_type,
+                    title=log.message_id,
+                    sent_at=log.created_at,
+                    channel=log.channel,
+                    status=PushStatus(log.status) if log.status in {"success", "failed", "pending"} else PushStatus.FAILED,
+                    failure_reason=log.error_reason,
+                )
+                for log in logs
+            ]
+
+    def _get_channel_status_parallel(self) -> list[ChannelStatusItem]:
+        """获取推送通道健康状态（独立 session 版本，用于并行查询）。"""
+        with self._session_factory() as session:
+            channels = session.query(PushChannel).all()
+            return [
+                ChannelStatusItem(
+                    name=c.name,
+                    status=ChannelHealth(c.status) if c.status in {"active", "degraded", "unavailable"} else ChannelHealth.UNAVAILABLE,
+                    rate_limited=c.rate_limited,
+                    last_updated=c.updated_at,
+                    message="限流中" if c.rate_limited else None,
+                )
+                for c in channels
+            ]
