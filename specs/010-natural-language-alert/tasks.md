@@ -48,10 +48,10 @@
 **Goal**: 用户输入标准自然语言指令，3 秒内成功创建价格/涨跌幅预警规则  
 **Independent Test**: `curl` 调用标准句式，返回 success=true 与规则摘要
 
-- [x] T006 [US1] [BE] Create `backend/app/routers/alerts_nl.py` with `POST /alerts/natural-language` endpoint (input validation → parse → rule validation → create AlertRule)  
+- [x] T006 [US1] [BE] Create `backend/app/routers/alerts_nl.py` with `POST /api/alerts/natural-language` endpoint (input validation → parse → rule validation → create AlertRule)  
   `[FR-008/FR-009/FR-010/FR-011 来源] | [依赖: T002, T005] | [验证: 200 返回成功创建 price_above/price_below/change_pct_above/change_pct_below]`
 
-- [x] T007 [US1] [BE] Register `alerts_nl_router` in `backend/app/main.py` under `/alerts/natural-language`  
+- [x] T007 [US1] [BE] Register `alerts_nl_router` in `backend/app/main.py` under `/api/alerts/natural-language`  
   `[FR-012 来源] | [依赖: T006] | [验证: 服务启动后 endpoint 可访问]`
 
 - [x] T008 [P] [US1] [FE] Create `frontend/src/templates/components/nl_alert_input.html` with input box, submit button and result/candidate container  
@@ -110,10 +110,10 @@
 
 **Purpose**: 端到端回归与文档收尾
 
-- [ ] T015 [INT] Run full backend test suite (`tests/unit/`, `tests/integration/`) and validate `quickstart.md` manual flows  
+- [x] T015 [INT] Run full backend test suite (`tests/unit/`, `tests/integration/`) and validate `quickstart.md` manual flows  
   `[FR-001-FR-013] | [依赖: T010, T012, T013, T014] | [验证: pytest 全量通过；curl 覆盖标准/歧义/低置信度/不支持条件]`
 
-- [ ] T016 [INT] Update `state.md` and finalize `tasks.md` checkboxes after all previous tasks complete  
+- [x] T016 [INT] Update `state.md` and finalize `tasks.md` checkboxes after all previous tasks complete  
   `[FR-001-FR-013] | [依赖: T015] | [验证: tasks.md 全部勾选；state.md 状态与当前任务一致]`
 
 **Checkpoint**: F8 全量功能可演示

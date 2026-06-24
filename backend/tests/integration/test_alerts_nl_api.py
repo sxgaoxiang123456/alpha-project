@@ -63,7 +63,7 @@ def _make_client():
 class TestCreateAlertFromNaturalLanguage:
     def test_create_price_below(self):
         client, _ = _make_client()
-        resp = client.post("/alerts/natural-language", json={"query": "茅台跌破 1500 提醒我"})
+        resp = client.post("/api/alerts/natural-language", json={"query": "茅台跌破 1500 提醒我"})
         assert resp.status_code == 200, resp.json()
         data = resp.json()
         assert data["success"] is True
@@ -74,7 +74,7 @@ class TestCreateAlertFromNaturalLanguage:
 
     def test_create_price_above_with_code(self):
         client, _ = _make_client()
-        resp = client.post("/alerts/natural-language", json={"query": "600519 涨到 1600 提醒我"})
+        resp = client.post("/api/alerts/natural-language", json={"query": "600519 涨到 1600 提醒我"})
         assert resp.status_code == 200, resp.json()
         data = resp.json()
         assert data["rule"]["condition_type"] == "price_above"
@@ -82,7 +82,7 @@ class TestCreateAlertFromNaturalLanguage:
 
     def test_create_change_pct_below(self):
         client, _ = _make_client()
-        resp = client.post("/alerts/natural-language", json={"query": "五粮液跌幅超过 3% 提醒我"})
+        resp = client.post("/api/alerts/natural-language", json={"query": "五粮液跌幅超过 3% 提醒我"})
         assert resp.status_code == 200, resp.json()
         data = resp.json()
         assert data["rule"]["condition_type"] == "change_pct_below"
@@ -90,7 +90,7 @@ class TestCreateAlertFromNaturalLanguage:
 
     def test_ambiguous_stock_name_returns_candidates(self):
         client, _ = _make_client()
-        resp = client.post("/alerts/natural-language", json={"query": "银行跌破 10 元提醒我"})
+        resp = client.post("/api/alerts/natural-language", json={"query": "银行跌破 10 元提醒我"})
         assert resp.status_code == 200, resp.json()
         data = resp.json()
         assert data["success"] is False
@@ -99,7 +99,7 @@ class TestCreateAlertFromNaturalLanguage:
 
     def test_selected_stock_code_creates_rule(self):
         client, _ = _make_client()
-        resp = client.post("/alerts/natural-language", json={
+        resp = client.post("/api/alerts/natural-language", json={
             "query": "银行跌破 10 元提醒我",
             "selected_stock_code": "601166",
         })
@@ -110,7 +110,7 @@ class TestCreateAlertFromNaturalLanguage:
 
     def test_low_confidence_rejected(self):
         client, _ = _make_client()
-        resp = client.post("/alerts/natural-language", json={"query": "帮我看着点茅台"})
+        resp = client.post("/api/alerts/natural-language", json={"query": "帮我看着点茅台"})
         assert resp.status_code == 200, resp.json()
         data = resp.json()
         assert data["success"] is False
@@ -118,7 +118,7 @@ class TestCreateAlertFromNaturalLanguage:
 
     def test_unsupported_volume_condition(self):
         client, _ = _make_client()
-        resp = client.post("/alerts/natural-language", json={"query": "茅台成交量突破 10 万手提醒我"})
+        resp = client.post("/api/alerts/natural-language", json={"query": "茅台成交量突破 10 万手提醒我"})
         assert resp.status_code == 200, resp.json()
         data = resp.json()
         assert data["success"] is False
@@ -126,18 +126,18 @@ class TestCreateAlertFromNaturalLanguage:
 
     def test_empty_query_rejected(self):
         client, _ = _make_client()
-        resp = client.post("/alerts/natural-language", json={"query": ""})
+        resp = client.post("/api/alerts/natural-language", json={"query": ""})
         assert resp.status_code == 422
 
     def test_too_long_query_rejected(self):
         client, _ = _make_client()
-        resp = client.post("/alerts/natural-language", json={"query": "x" * 201})
+        resp = client.post("/api/alerts/natural-language", json={"query": "x" * 201})
         assert resp.status_code == 422
 
     def test_duplicate_rule_rejected(self):
         client, _ = _make_client()
-        client.post("/alerts/natural-language", json={"query": "茅台跌破 1500 提醒我"})
-        resp = client.post("/alerts/natural-language", json={"query": "茅台跌破 1500 提醒我"})
+        client.post("/api/alerts/natural-language", json={"query": "茅台跌破 1500 提醒我"})
+        resp = client.post("/api/alerts/natural-language", json={"query": "茅台跌破 1500 提醒我"})
         assert resp.status_code == 200, resp.json()
         data = resp.json()
         assert data["success"] is False
@@ -147,13 +147,13 @@ class TestCreateAlertFromNaturalLanguage:
         client, _ = _make_client()
         for i in range(50):
             code = f"60{i:04d}"
-            resp = client.post("/alerts/natural-language", json={
+            resp = client.post("/api/alerts/natural-language", json={
                 "query": f"{code} 跌到 1 提醒我",
             })
             assert resp.status_code == 200, f"第 {i+1} 条失败: {resp.json()}"
             assert resp.json()["success"] is True, resp.json()
 
-        resp = client.post("/alerts/natural-language", json={"query": "茅台跌破 1500 提醒我"})
+        resp = client.post("/api/alerts/natural-language", json={"query": "茅台跌破 1500 提醒我"})
         assert resp.status_code == 200, resp.json()
         data = resp.json()
         assert data["success"] is False

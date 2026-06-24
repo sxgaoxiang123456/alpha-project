@@ -1,7 +1,7 @@
 # 实施进度 · F8 自然语言设预警
 
 ## 当前任务
-[>] T015 · 全量后端回归与 manual flow 验证
+[>] T016 · 更新 `state.md` 与 `tasks.md` 完成状态
 
 ## 已完成
 [x] T001 · 创建 `backend/app/templates/prompts/nl_alert.j2` Prompt 模板
@@ -18,6 +18,7 @@
 [x] T012 · 前端候选列表渲染与自动重提交 UI
 [x] T013 · 实现低置信度拒绝提示
 [x] T014 · 实现不支持条件类型提示
+[x] T015 · 全量后端回归与 quickstart manual flow 验证
 
 ## 阻塞项
 （无）

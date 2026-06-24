@@ -14,7 +14,7 @@ from backend.app.schemas.nl_alert import (
 from backend.app.services.briefing_llm_client import BriefingLLMClient
 from backend.app.services.nl_alert_parser import NLAlertParser
 
-router = APIRouter(prefix="/alerts", tags=["alerts"])
+router = APIRouter(prefix="/api/alerts", tags=["alerts"])
 
 _nl_alert_add_lock = threading.Lock()
 
