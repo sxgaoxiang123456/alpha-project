@@ -137,7 +137,7 @@ def search_stock_candidates(
             )
         )
 
-    candidates.sort(key=lambda c: c.sort_key)
+    candidates.sort(key=lambda c: (*c.sort_key, c.stock_code))
     return candidates[:top_n]
 
 

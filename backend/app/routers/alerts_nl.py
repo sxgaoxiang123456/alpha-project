@@ -63,6 +63,10 @@ def create_alert_from_natural_language(
                 success=False,
                 message="暂不支持组合条件",
             )
+        return NaturalLanguageAlertResponse(
+            success=False,
+            message="输入无效，请用『股票名+条件』格式重试",
+        )
 
     if intent.unsupported_condition:
         return NaturalLanguageAlertResponse(
@@ -109,6 +113,8 @@ def _create_rule(
     settings = get_settings()
     max_rules = settings.max_alert_rules
 
+    # 单用户 MVP 下使用进程内锁保护上限/重复检查；后续若换成 PostgreSQL
+    # 可将锁范围缩小到查询后、插入前的最小临界区。
     with _nl_alert_add_lock:
         active_count = db.query(AlertRule).filter_by(status="active").count()
         if active_count >= max_rules:

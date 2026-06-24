@@ -57,7 +57,7 @@ class NLAlertParser:
             return self._resolve_stock(rule_intent, selected_stock_code, stock_resolver)
 
         # 用户已指定股票代码：保留规则解析的条件，直接解析指定股票
-        if selected_stock_code:
+        if selected_stock_code and rule_intent.condition_type is not None and rule_intent.threshold is not None:
             resolved = replace(
                 rule_intent,
                 stock_code=selected_stock_code,
