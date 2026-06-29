@@ -148,8 +148,10 @@ class DashboardService:
         return asyncio.to_thread(func)
 
     def _get_market_indices(self) -> list[MarketSnapshot]:
-        """获取大盘指数快照（优先读 Redis 缓存）。"""
-        indices = self.market_index_service.get_indices(use_cache=True)
+        """获取大盘指数快照（只读缓存）。"""
+        cached = self.market_index_service.get_cached_indices()
+        if cached is None:
+            return []
         return [
             MarketSnapshot(
                 name=idx.index_name,
@@ -158,7 +160,7 @@ class DashboardService:
                 change_amount=float(idx.change_amount or 0),
                 updated_at=idx.updated_at,
             )
-            for idx in indices
+            for idx in cached
         ]
 
     def _get_watchlist_fallback(self) -> list[StockCardData]:
@@ -193,12 +195,10 @@ class DashboardService:
         ]
 
     def _get_watchlist_data(self) -> list[StockCardData]:
-        """获取自选股行情数据。
-
-        行情获取失败时，clean_quote 会把 stock_name 回退为 stock_code；
-        这里用数据库中的 stocks 表做名称兜底，确保列表始终展示正确名称。
-        """
-        quotes = self.quote_service.get_watchlist_quotes(use_cache=True)
+        """获取自选股行情数据（只读缓存）。"""
+        quotes = self.quote_service.get_cached_watchlist_quotes()
+        if quotes is None:
+            return self._get_watchlist_fallback()
         if not quotes:
             return []
 
