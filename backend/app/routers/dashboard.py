@@ -3,7 +3,7 @@
 import hashlib
 import json
 
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, Depends, Request, Response, status
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
@@ -125,3 +125,14 @@ async def market_data_partial(request: Request, db: Session = Depends(get_db)):
     # 添加 ETag 头
     html.headers["etag"] = etag
     return html
+
+
+@router.post("/market_data/refresh")
+async def refresh_market_data(request: Request):
+    """触发一次后台行情刷新，立即返回 202 Accepted。"""
+    quote_scheduler = request.app.state.quote_scheduler
+    if quote_scheduler.is_refresh_running():
+        return Response(status_code=status.HTTP_429_TOO_MANY_REQUESTS)
+
+    quote_scheduler.trigger_refresh()
+    return Response(status_code=status.HTTP_202_ACCEPTED, content='{"status": "accepted"}', media_type="application/json")

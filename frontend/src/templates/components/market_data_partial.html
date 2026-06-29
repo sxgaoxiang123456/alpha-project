@@ -1,4 +1,11 @@
 <!-- Market Data Partial — AJAX 刷新用，仅行情数据（大盘指数 + 自选股），不含简报 -->
+{% if degraded %}
+<div class="col-span-12 bg-market-warning/10 border border-market-warning rounded p-4 mb-4 flex items-center gap-2" data-degraded="true">
+    <span class="material-symbols-outlined text-market-warning">sync</span>
+    <span class="font-body-md text-body-md text-market-warning">数据准备中，请稍候…</span>
+</div>
+{% endif %}
+
 {% with market_indices=market_indices %}
 {% include "components/market_index.html" %}
 {% endwith %}
