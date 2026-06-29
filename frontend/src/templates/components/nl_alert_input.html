@@ -1,0 +1,24 @@
+<div class="nl-alert-input-component mb-6" id="{{ component_id|default('nl-alert-input') }}" data-submit-url="{{ submit_url|default('/api/alerts/natural-language') }}">
+    <div class="flex gap-3">
+        <input
+            type="text"
+            class="nl-alert-input flex-1 bg-surface-raised border border-outline-variant rounded py-2.5 px-4 font-body-md text-body-md text-on-surface placeholder-on-surface-variant focus:border-primary-container focus:outline-none transition-colors"
+            placeholder="{{ placeholder|default('例如：茅台跌破 1500 提醒我') }}"
+            maxlength="200"
+            autocomplete="off"
+        >
+        <button
+            class="nl-alert-submit flex items-center gap-2 bg-primary-container text-on-primary-container hover:bg-primary hover:text-on-primary rounded px-5 py-2.5 font-headline-md text-headline-md transition-colors"
+            type="button"
+        >
+            <span class="material-symbols-outlined text-[18px]">add_alert</span>
+            创建预警
+        </button>
+    </div>
+    <div class="nl-alert-result mt-3 hidden font-body-md text-body-md"></div>
+    <div class="nl-alert-candidates mt-3 hidden space-y-2"></div>
+</div>
+<script type="module">
+    import { initNLAlertInput } from '/static/js/nl_alert_input.js';
+    initNLAlertInput(document.getElementById('{{ component_id|default('nl-alert-input') }}'));
+</script>

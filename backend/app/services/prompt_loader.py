@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from typing import Any
 
 from jinja2 import Environment, FileSystemLoader, TemplateNotFound
 
@@ -28,16 +29,21 @@ class PromptLoader:
         alert_history: list[str] | None = None,
     ) -> str:
         """渲染简报 Prompt。"""
+        return self.render_template(
+            self.TEMPLATE_NAME,
+            today=today,
+            market_indices=market_indices,
+            top_movers=top_movers,
+            alert_history=alert_history,
+        )
+
+    def render_template(self, template_name: str, **kwargs: Any) -> str:
+        """渲染任意 Prompt 模板。"""
         try:
-            template = self._env.get_template(self.TEMPLATE_NAME)
+            template = self._env.get_template(template_name)
         except TemplateNotFound as exc:
             raise RuntimeError(
-                f"Prompt 模板未找到: {self.template_dir / self.TEMPLATE_NAME}"
+                f"Prompt 模板未找到: {self.template_dir / template_name}"
             ) from exc
 
-        return template.render(
-            today=today,
-            market_indices=market_indices or {},
-            top_movers=top_movers or [],
-            alert_history=alert_history or [],
-        )
+        return template.render(**kwargs)

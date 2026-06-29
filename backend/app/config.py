@@ -17,7 +17,9 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
 
     # 数据源配置
-    data_source_timeout: int = 10  # 单次请求超时（秒）
+    data_source_timeout: int = 10  # 单次请求超时（秒），已废弃，请使用 datasource_fallback_timeout
+    datasource_primary_timeout: int = Field(default=10, ge=1)  # 主数据源超时（秒）
+    datasource_fallback_timeout: int = Field(default=30, ge=1)  # 备用数据源超时（秒）
     data_source_retry: int = 1  # 重试次数
     health_check_interval_minutes: int = 5  # 健康检查间隔（分钟）
 
@@ -46,6 +48,9 @@ class Settings(BaseSettings):
     deepseek_timeout_seconds: int = Field(default=30, ge=5, le=120)
     deepseek_retry_attempts: int = Field(default=3, ge=1, le=5)
     deepseek_retry_interval_seconds: int = Field(default=5, ge=1, le=30)
+
+    # 自然语言预警配置
+    nl_alert_confidence_threshold: float = Field(default=0.7, ge=0.0, le=1.0)
 
     # 加密配置
     encryption_key: str | None = None
