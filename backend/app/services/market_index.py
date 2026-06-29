@@ -24,6 +24,41 @@ class MarketIndexService:
         self.ttl_seconds = ttl_seconds
         self.redis_cache = redis_cache
 
+    def get_cached_indices(self) -> list[MarketIndex] | None:
+        """只读缓存获取大盘指数，不触发外部数据源抓取。"""
+        timestamp = datetime.now(UTC)
+
+        # 1. 优先读 Redis
+        if self.redis_cache is not None:
+            cached = self.redis_cache.get("quotes:market")
+            if cached is not None:
+                return [
+                    MarketIndex(
+                        index_code=idx["index_code"],
+                        index_name=idx.get("index_name", idx["index_code"]),
+                        current_point=Decimal(str(idx.get("current_point", 0))),
+                        change_percent=Decimal(str(idx.get("change_percent", 0))),
+                        change_amount=Decimal(str(idx.get("change_amount", 0))),
+                        turnover=Decimal(str(idx.get("turnover", 0))),
+                        updated_at=datetime.fromisoformat(idx["updated_at"]) if idx.get("updated_at") else timestamp,
+                        source_status=idx.get("source_status", "cached"),
+                        actual_timestamp=datetime.fromisoformat(idx["actual_timestamp"]) if idx.get("actual_timestamp") else timestamp,
+                    )
+                    for idx in cached
+                ]
+
+        # 2. Redis 缺失/不可用，回退 SQLite CacheService
+        if self.cache is not None:
+            indices: list[MarketIndex] = []
+            for code in self.INDEX_CODES:
+                raw = self.cache.get(f"market_index:{code}")
+                if raw is None:
+                    return None
+                indices.append(MarketIndex.model_validate_json(raw))
+            return indices
+
+        return None
+
     def get_indices(self, *, actual_timestamp: datetime | None = None, use_cache: bool = False) -> list[MarketIndex]:
         timestamp = actual_timestamp or datetime.now(UTC)
 
