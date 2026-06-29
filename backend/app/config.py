@@ -17,7 +17,9 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
 
     # 数据源配置
-    data_source_timeout: int = 10  # 单次请求超时（秒）
+    data_source_timeout: int = 10  # 单次请求超时（秒），已废弃，请使用 datasource_fallback_timeout
+    datasource_primary_timeout: int = Field(default=10, ge=1)  # 主数据源超时（秒）
+    datasource_fallback_timeout: int = Field(default=30, ge=1)  # 备用数据源超时（秒）
     data_source_retry: int = 1  # 重试次数
     health_check_interval_minutes: int = 5  # 健康检查间隔（分钟）
 

@@ -31,6 +31,28 @@ def test_settings_uses_sqlite_default_when_database_url_missing(monkeypatch):
     assert settings.database_url == "sqlite:///./data/watchlist.db"
 
 
+def test_settings_reads_datasource_timeouts_from_environment(monkeypatch):
+    monkeypatch.setenv("DATASOURCE_PRIMARY_TIMEOUT", "5")
+    monkeypatch.setenv("DATASOURCE_FALLBACK_TIMEOUT", "45")
+    config = import_fresh("backend.app.config", "backend.app.config")
+
+    settings = config.Settings(_env_file=None)
+
+    assert settings.datasource_primary_timeout == 5
+    assert settings.datasource_fallback_timeout == 45
+
+
+def test_settings_datasource_timeout_defaults(monkeypatch):
+    monkeypatch.delenv("DATASOURCE_PRIMARY_TIMEOUT", raising=False)
+    monkeypatch.delenv("DATASOURCE_FALLBACK_TIMEOUT", raising=False)
+    config = import_fresh("backend.app.config", "backend.app.config")
+
+    settings = config.Settings(_env_file=None)
+
+    assert settings.datasource_primary_timeout == 10
+    assert settings.datasource_fallback_timeout == 30
+
+
 def test_database_exposes_engine_session_base_and_init_db(monkeypatch, tmp_path):
     database_path = tmp_path / "watchlist.db"
     monkeypatch.setenv("DATABASE_URL", f"sqlite:///{database_path}")

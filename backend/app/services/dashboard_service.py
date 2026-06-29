@@ -26,7 +26,7 @@ from backend.app.schemas.dashboard import (
 
 logger = logging.getLogger(__name__)
 
-_TIMEOUT_SECONDS = float(get_settings().data_source_timeout)
+_TIMEOUT_SECONDS = float(get_settings().datasource_fallback_timeout)
 
 
 class DashboardService:
@@ -35,7 +35,7 @@ class DashboardService:
     通过依赖注入接收各上游服务实例，便于测试时 mock。
     """
 
-    DEFAULT_TIMEOUT_SECONDS = float(get_settings().data_source_timeout)
+    DEFAULT_TIMEOUT_SECONDS = float(get_settings().datasource_fallback_timeout)
 
     def __init__(
         self,

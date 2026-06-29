@@ -11,6 +11,7 @@
 #   2. backend/.venv 虚拟环境是否存在
 #   3. 关键 Python 依赖是否已安装
 #   4. backend/.env 配置文件是否存在
+#   5. Redis 容器是否已启动（如 Docker Compose 可用）
 
 set -euo pipefail
 
@@ -166,7 +167,34 @@ fi
 mkdir -p "$PROJECT_ROOT/data"
 echo -e "${GREEN}[OK]${NC} 数据目录已就绪"
 
-# --- 7. 检查端口占用 ---
+# --- 7. 启动 Redis ---
+if command -v docker &>/dev/null && docker compose version &>/dev/null; then
+    echo -e "${BLUE}[INFO]${NC} 启动 Redis 服务..."
+    if (cd "$PROJECT_ROOT" && docker compose up -d redis); then
+        echo -e "${GREEN}[OK]${NC} Redis 容器已启动"
+        # 等待 Redis 真正可连接，避免后端启动时永久降级为 SQLite
+        echo -n "[INFO] 等待 Redis 就绪 ... "
+        _redis_ready=0
+        for _ in {1..30}; do
+            if docker exec stock-mgt-redis redis-cli ping 2>/dev/null | grep -q PONG; then
+                _redis_ready=1
+                break
+            fi
+            sleep 1
+        done
+        if [ "$_redis_ready" -eq 1 ]; then
+            echo -e "${GREEN}已就绪${NC}"
+        else
+            echo -e "${YELLOW}未就绪，后端将降级为 SQLite 缓存${NC}"
+        fi
+    else
+        echo -e "${YELLOW}[WARN]${NC} Redis 容器启动失败，后端将降级为 SQLite 缓存"
+    fi
+else
+    echo -e "${YELLOW}[WARN]${NC} 未检测到 Docker Compose，跳过 Redis 启动"
+fi
+
+# --- 8. 检查端口占用 ---
 if lsof -Pi :"$PORT" -sTCP:LISTEN -t &>/dev/null; then
     echo -e "${YELLOW}[WARN] 端口 $PORT 已被占用${NC}"
     echo "尝试释放端口..."
@@ -179,7 +207,7 @@ if lsof -Pi :"$PORT" -sTCP:LISTEN -t &>/dev/null; then
     echo -e "${GREEN}[OK]${NC} 端口 $PORT 已释放"
 fi
 
-# --- 8. 启动服务 ---
+# --- 9. 启动服务 ---
 echo ""
 echo -e "${BLUE}========================================${NC}"
 echo -e "${GREEN}  服务启动成功！                        ${NC}"
@@ -199,13 +227,29 @@ echo ""
 cd "$BACKEND_DIR"
 export PYTHONPATH="$PROJECT_ROOT"
 
-# 捕获信号优雅退出
+# 捕获信号优雅退出，脚本终止时一并停止 Redis
+_cleanup_done=0
 cleanup() {
+    if [ "$_cleanup_done" -eq 1 ]; then
+        return
+    fi
+    _cleanup_done=1
     echo ""
-    echo -e "${YELLOW}[INFO] 正在停止服务...${NC}"
+    echo -e "${YELLOW}[INFO]${NC} 正在停止服务..."
+    if [ -n "${UVICORN_PID:-}" ] && kill -0 "$UVICORN_PID" 2>/dev/null; then
+        kill -TERM "$UVICORN_PID" 2>/dev/null || true
+        wait "$UVICORN_PID" 2>/dev/null || true
+    fi
+    if command -v docker &>/dev/null && docker compose version &>/dev/null; then
+        echo -e "${YELLOW}[INFO]${NC} 正在停止 Redis..."
+        (cd "$PROJECT_ROOT" && docker compose down redis) &>/dev/null || true
+    fi
     exit 0
 }
 trap cleanup INT TERM
 
-# 启动 uvicorn
-exec "$UVICORN_BIN" app.main:app --host "$HOST" --port "$PORT" --reload
+# 启动 uvicorn（后台运行，便于脚本终止时执行 cleanup）
+"$UVICORN_BIN" app.main:app --host "$HOST" --port "$PORT" --reload &
+UVICORN_PID=$!
+wait "$UVICORN_PID" || true
+cleanup

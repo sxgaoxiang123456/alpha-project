@@ -5,10 +5,14 @@
 """
 
 from abc import ABC, abstractmethod
-from threading import Lock
 from typing import Any
 
 import requests
+
+from backend.app.services.baostock_client import (
+    login as baostock_login,
+    query_history_k_data_plus,
+)
 
 
 class DataSourceError(Exception):
@@ -134,7 +138,6 @@ class BaoStockDataSource(DataSource):
     """BaoStock 备用数据源适配器。"""
 
     INDEX_CODES = {"sh000001", "sz399001", "sz399006", "sz399005"}
-    _lock = Lock()
 
     def fetch_realtime(self, codes: list[str]) -> dict[str, dict[str, Any]]:
         if not codes:
@@ -176,84 +179,81 @@ class BaoStockDataSource(DataSource):
         """实际调用 BaoStock API，子类/测试可覆盖。
 
         统一使用日线：最新 close 为 price，前一日 close 为 pre_close。
-        BaoStock 全局连接不支持并发，使用类级锁串行化。
+        通过 baostock_client 复用全局登录态，减少每次 login/logout 开销。
         """
-        import baostock as bs
+        from datetime import date, timedelta
 
-        with self._lock:
-            lg = bs.login()
-            if lg.error_code != "0":
-                raise DataSourceError("unknown", f"BaoStock login failed: {lg.error_msg}")
+        baostock_login()
 
-            try:
-                result: dict[str, dict[str, Any]] = {}
-                for code in codes:
-                    bs_code = self._to_baostock_code(code)
-                    # 统一使用日线：最新 close 为 price，前一日 close 为 pre_close
-                    frequency = "d"
-                    fields = "date,code,open,high,low,close,volume,amount"
+        result: dict[str, dict[str, Any]] = {}
+        end = date.today().strftime("%Y-%m-%d")
+        start = (date.today() - timedelta(days=5)).strftime("%Y-%m-%d")
 
-                    from datetime import date, timedelta
-                    end = date.today().strftime("%Y-%m-%d")
-                    start = (date.today() - timedelta(days=5)).strftime("%Y-%m-%d")
+        for code in codes:
+            bs_code = self._to_baostock_code(code)
+            # 统一使用日线：最新 close 为 price，前一日 close 为 pre_close
+            frequency = "d"
+            fields = "date,code,open,high,low,close,volume,amount"
 
-                    rs = bs.query_history_k_data_plus(
-                        bs_code,
-                        fields,
-                        start_date=start,
-                        end_date=end,
-                        frequency=frequency,
-                        adjustflag="3",
-                    )
-                    if rs.error_code != "0":
-                        continue
+            rs = query_history_k_data_plus(
+                bs_code,
+                fields,
+                start_date=start,
+                end_date=end,
+                frequency=frequency,
+                adjustflag="3",
+            )
+            if getattr(rs, "error_code", "0") != "0":
+                continue
 
-                    data_list = []
-                    while rs.error_code == "0" and rs.next():
-                        data_list.append(rs.get_row_data())
+            data_list = []
+            while getattr(rs, "error_code", "0") == "0" and rs.next():
+                data_list.append(rs.get_row_data())
 
-                    if len(data_list) >= 2:
-                        # 最新一根 K 线
-                        latest = data_list[-1]
-                        # 前一根 K 线的收盘价作为昨收
-                        prev = data_list[-2]
-                        close_val = float(latest[5]) if latest[5] else 0.0
-                        prev_close = float(prev[5]) if prev[5] else 0.0
-                        change_pct = (
-                            (close_val - prev_close) / prev_close * 100
-                            if prev_close > 0 else 0.0
-                        )
-                        result[code] = {
-                            "name": "",
-                            "price": close_val,
-                            "change_pct": round(change_pct, 2),
-                            "change_amount": round(close_val - prev_close, 2),
-                            "open": float(latest[2]) if latest[2] else 0.0,
-                            "high": float(latest[3]) if latest[3] else 0.0,
-                            "low": float(latest[4]) if latest[4] else 0.0,
-                            "pre_close": prev_close,
-                            "volume": int(latest[6]) if latest[6] else 0,
-                            "amount": float(latest[7]) if latest[7] else 0.0,
-                        }
-                    elif len(data_list) == 1:
-                        # 只有一根 K 线，无法计算涨跌幅
-                        latest = data_list[0]
-                        close_val = float(latest[5]) if latest[5] else 0.0
-                        result[code] = {
-                            "name": "",
-                            "price": close_val,
-                            "change_pct": 0.0,
-                            "change_amount": 0.0,
-                            "open": float(latest[2]) if latest[2] else 0.0,
-                            "high": float(latest[3]) if latest[3] else 0.0,
-                            "low": float(latest[4]) if latest[4] else 0.0,
-                            "pre_close": close_val,
-                            "volume": int(latest[6]) if latest[6] else 0,
-                            "amount": float(latest[7]) if latest[7] else 0.0,
-                        }
-                return result
-            finally:
-                bs.logout()
+            if len(data_list) >= 2:
+                # 最新一根 K 线
+                latest = data_list[-1]
+                # 前一根 K 线的收盘价作为昨收
+                prev = data_list[-2]
+                close_val = float(latest[5]) if latest[5] else 0.0
+                prev_close = float(prev[5]) if prev[5] else 0.0
+                change_pct = (
+                    (close_val - prev_close) / prev_close * 100
+                    if prev_close > 0 else 0.0
+                )
+                result[code] = {
+                    "name": "",
+                    "price": close_val,
+                    "change_pct": round(change_pct, 2),
+                    "change_amount": round(close_val - prev_close, 2),
+                    "open": float(latest[2]) if latest[2] else 0.0,
+                    "high": float(latest[3]) if latest[3] else 0.0,
+                    "low": float(latest[4]) if latest[4] else 0.0,
+                    "pre_close": prev_close,
+                    "volume": int(latest[6]) if latest[6] else 0,
+                    "amount": float(latest[7]) if latest[7] else 0.0,
+                }
+            elif len(data_list) == 1:
+                # 只有一根 K 线，无法计算涨跌幅
+                latest = data_list[0]
+                close_val = float(latest[5]) if latest[5] else 0.0
+                result[code] = {
+                    "name": "",
+                    "price": close_val,
+                    "change_pct": 0.0,
+                    "change_amount": 0.0,
+                    "open": float(latest[2]) if latest[2] else 0.0,
+                    "high": float(latest[3]) if latest[3] else 0.0,
+                    "low": float(latest[4]) if latest[4] else 0.0,
+                    "pre_close": close_val,
+                    "volume": int(latest[6]) if latest[6] else 0,
+                    "amount": float(latest[7]) if latest[7] else 0.0,
+                }
+
+        if not result:
+            raise DataSourceError("unknown", "BaoStock returned no valid data")
+
+        return result
 
     def _to_baostock_code(self, code: str) -> str:
         """将系统代码格式转为 BaoStock 格式。"""
