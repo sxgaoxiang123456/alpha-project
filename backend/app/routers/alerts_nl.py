@@ -82,9 +82,12 @@ def create_alert_from_natural_language(
         )
 
     if intent.confidence < parser.confidence_threshold:
+        message = intent.message
+        if not message or "未能找到匹配股票" not in message:
+            message = "未能理解，请用『股票名+条件』格式重试，或前往预警页面手动配置"
         return NaturalLanguageAlertResponse(
             success=False,
-            message="未能理解，请用『股票名+条件』格式重试，或前往预警页面手动配置",
+            message=message,
         )
 
     if not intent.stock_code or not intent.condition_type or intent.threshold is None:
@@ -145,7 +148,6 @@ def _create_rule(
         )
         db.add(rule)
         db.commit()
-        db.refresh(rule)
 
     label = _CONDITION_LABELS.get(condition_type, condition_type)
     return NaturalLanguageAlertResponse(
