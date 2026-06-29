@@ -134,10 +134,10 @@ class TestETagSmoke:
         # 等待 JS 轮询触发（首次 fetchMarketData 在页面加载后执行）
         time.sleep(2)
 
-        # 通过浏览器性能条目验证请求
+        # 通过浏览器性能条目验证请求（排除 /market_data/refresh POST 请求）
         entries = page.evaluate("""
             () => performance.getEntriesByType('resource')
-                .filter(e => e.name.includes('/market_data'))
+                .filter(e => e.name.includes('/market_data') && !e.name.includes('/market_data/refresh'))
         """)
 
         assert len(entries) > 0, "未检测到 /market_data 请求"
@@ -154,9 +154,10 @@ class TestETagSmoke:
         # 等待至少一次轮询
         time.sleep(3)
 
+        # 通过浏览器性能条目验证请求（排除 /market_data/refresh POST 请求）
         entries = page.evaluate("""
             () => performance.getEntriesByType('resource')
-                .filter(e => e.name.includes('/market_data'))
+                .filter(e => e.name.includes('/market_data') && !e.name.includes('/market_data/refresh'))
         """)
 
         assert len(entries) >= 1, "未检测到 /market_data 轮询请求"

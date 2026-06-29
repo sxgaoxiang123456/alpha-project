@@ -35,6 +35,49 @@ class QuoteService:
         self.history_session_factory = history_session_factory or sessionmaker(bind=db.get_bind())
         self.redis_cache = redis_cache
 
+    def get_cached_watchlist_quotes(self) -> list[Quote] | None:
+        """只读缓存获取自选股行情，不触发外部数据源抓取。"""
+        items = self.db.query(WatchlistItem).order_by(WatchlistItem.id).all()
+        codes = [item.stock_code for item in items]
+        if not codes:
+            return []
+
+        timestamp = datetime.now(UTC)
+        sorted_codes = ",".join(sorted(codes))
+
+        # 1. 优先读 Redis
+        if self.redis_cache is not None:
+            cached = self.redis_cache.get(f"quotes:watchlist:{sorted_codes}")
+            if cached is not None:
+                return [
+                    Quote(
+                        stock_code=q["stock_code"],
+                        stock_name=q.get("stock_name", q["stock_code"]),
+                        current_price=Decimal(str(q.get("current_price", 0))) if q.get("current_price") is not None else None,
+                        change_percent=Decimal(str(q.get("change_percent", 0))) if q.get("change_percent") is not None else None,
+                        change_amount=Decimal(str(q.get("change_amount", 0))) if q.get("change_amount") is not None else None,
+                        volume=int(q.get("volume", 0)) if q.get("volume") is not None else None,
+                        turnover=Decimal(str(q.get("turnover", 0))) if q.get("turnover") is not None else None,
+                        updated_at=datetime.fromisoformat(q["updated_at"]) if q.get("updated_at") else timestamp,
+                        status=q.get("status", "normal"),
+                        source_status=q.get("source_status", "cached"),
+                        actual_timestamp=datetime.fromisoformat(q["actual_timestamp"]) if q.get("actual_timestamp") else timestamp,
+                    )
+                    for q in cached
+                ]
+
+        # 2. Redis 缺失/不可用，回退 SQLite CacheService（按 code 逐个读）
+        if self.cache is not None:
+            quotes: list[Quote] = []
+            for code in codes:
+                raw = self.cache.get(f"quote:{code}")
+                if raw is None:
+                    return None
+                quotes.append(Quote.model_validate_json(raw))
+            return quotes
+
+        return None
+
     def get_watchlist_quotes(
         self,
         *,

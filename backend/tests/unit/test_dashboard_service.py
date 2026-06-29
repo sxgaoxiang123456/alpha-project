@@ -26,7 +26,7 @@ def _make_db():
 
 def _mock_market_service():
     s = MagicMock()
-    s.get_indices = MagicMock(return_value=[
+    s.get_cached_indices = MagicMock(return_value=[
         MarketIndex(
             index_code="sh000001", index_name="上证指数",
             current_point=Decimal("3000.50"), change_percent=Decimal("1.23"),
@@ -40,7 +40,7 @@ def _mock_market_service():
 
 def _mock_quote_service():
     s = MagicMock()
-    s.get_watchlist_quotes = MagicMock(return_value=[
+    s.get_cached_watchlist_quotes = MagicMock(return_value=[
         Quote(
             stock_code="600000", stock_name="浦发银行",
             current_price=Decimal("10.50"), change_percent=Decimal("2.50"),
@@ -85,8 +85,8 @@ class TestDashboardService:
         assert len(result.briefing.insights) == 1
 
         # 验证并行调用发生
-        market_svc.get_indices.assert_called_once()
-        quote_svc.get_watchlist_quotes.assert_called_once()
+        market_svc.get_cached_indices.assert_called_once()
+        quote_svc.get_cached_watchlist_quotes.assert_called_once()
         cache_svc.get.assert_called_once()
 
     @pytest.mark.asyncio
@@ -101,7 +101,7 @@ class TestDashboardService:
             return []
 
         quote_svc = MagicMock()
-        quote_svc.get_watchlist_quotes = slow_quote
+        quote_svc.get_cached_watchlist_quotes = slow_quote
 
         cache_svc = _mock_cache_service()
 
@@ -127,9 +127,9 @@ class TestDashboardService:
         """验证无自选股、无预警时的空数据聚合。"""
         db = _make_db()
         market_svc = MagicMock()
-        market_svc.get_indices = MagicMock(return_value=[])
+        market_svc.get_cached_indices = MagicMock(return_value=[])
         quote_svc = MagicMock()
-        quote_svc.get_watchlist_quotes = MagicMock(return_value=[])
+        quote_svc.get_cached_watchlist_quotes = MagicMock(return_value=[])
         cache_svc = MagicMock()
         cache_svc.get = MagicMock(return_value=None)
 

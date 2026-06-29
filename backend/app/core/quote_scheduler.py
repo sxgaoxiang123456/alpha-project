@@ -48,6 +48,16 @@ class QuoteScheduler:
         finally:
             self._quote_refresh_done.set()
 
+    def is_refresh_running(self) -> bool:
+        """是否有行情刷新任务正在执行。"""
+        return not self._quote_refresh_done.is_set()
+
+    def trigger_refresh(self) -> None:
+        """在后台线程触发一次行情刷新。"""
+        if self.is_refresh_running():
+            raise RuntimeError("refresh already running")
+        threading.Thread(target=self.refresh_if_trading_day, daemon=True).start()
+
     def wait_for_quote_refresh(self, timeout_seconds: int = 15) -> bool:
         """等待正在执行的行情刷新完成，超时返回 False。"""
         return self._quote_refresh_done.wait(timeout=timeout_seconds)
