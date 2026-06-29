@@ -84,6 +84,28 @@
         console.info('[Dashboard] 数据源恢复，恢复自动刷新');
     }
 
+    function triggerBackgroundRefresh() {
+        fetch('/market_data/refresh', { method: 'POST' })
+            .then(function (response) {
+                if (!response.ok && response.status !== 429) {
+                    console.warn('[Dashboard] 后台刷新触发失败:', response.status);
+                }
+            })
+            .catch(function (err) {
+                console.warn('[Dashboard] 后台刷新请求异常:', err);
+            });
+    }
+
+    // 绑定手动同步按钮
+    const syncBtn = document.getElementById('sync-btn');
+    if (syncBtn) {
+        syncBtn.addEventListener('click', function () {
+            triggerBackgroundRefresh();
+            // 立即拉取一次，若刷新已完成可立即看到最新数据
+            fetchMarketData();
+        });
+    }
+
     // 使用 IntersectionObserver：页面不可见时暂停，可见时恢复
     const visibilityObserver = new IntersectionObserver(function (entries) {
         entries.forEach(function (entry) {
@@ -114,6 +136,7 @@
     });
 
     // 初始启动
+    triggerBackgroundRefresh();
     startPolling();
     fetchMarketData();
 })();
